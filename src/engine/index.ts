@@ -1,10 +1,25 @@
 /**
  * Engine module
- * 
- * Provides core engine systems: rendering, input, audio.
+ *
+ * Provides core engine systems: rendering, input, audio, asset management.
  * Replacement for grim.dll functionality.
  */
 
 export { Renderer, type RendererOptions } from './Renderer';
 export { InputManager, KeyCode, type KeyCodeType } from './InputManager';
 export { AudioManager, type AudioManagerOptions } from './AudioManager';
+export {
+  AssetManager,
+  type AssetManagerOptions,
+  type AssetLoadResult,
+  type AssetType,
+} from './AssetManager';
+export {
+  SpriteAtlas,
+  SpriteAnimator,
+  type SpriteFrame,
+  type SpriteAnimation,
+  type SpriteAtlasData,
+  type SpriteAtlasFrame,
+  type SpriteAtlasAnimation,
+} from './SpriteAtlas';
