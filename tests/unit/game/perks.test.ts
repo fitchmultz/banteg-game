@@ -58,16 +58,16 @@ describe('Perk Data', () => {
 
   it('should define incompatible perks correctly', () => {
     const thickSkinned = getPerkData(PerkId.THICK_SKINNED);
-    expect(thickSkinned!.incompatibleWith).toContain(PerkId.REGENERATION);
-    expect(thickSkinned!.incompatibleWith).toContain(PerkId.GREATER_REGENERATION);
+    expect(thickSkinned?.incompatibleWith).toContain(PerkId.REGENERATION);
+    expect(thickSkinned?.incompatibleWith).toContain(PerkId.GREATER_REGENERATION);
   });
 
   it('should define prerequisite perks correctly', () => {
     const greaterRegen = getPerkData(PerkId.GREATER_REGENERATION);
-    expect(greaterRegen!.requiresPerk).toBe(PerkId.REGENERATION);
+    expect(greaterRegen?.requiresPerk).toBe(PerkId.REGENERATION);
 
     const perkMaster = getPerkData(PerkId.PERK_MASTER);
-    expect(perkMaster!.requiresPerk).toBe(PerkId.PERK_EXPERT);
+    expect(perkMaster?.requiresPerk).toBe(PerkId.PERK_EXPERT);
   });
 });
 
@@ -101,9 +101,9 @@ describe('Perk Compatibility', () => {
   });
 
   it('should prevent exceeding max rank', () => {
-    const sharpshooterData = getPerkData(PerkId.SHARPSHOOTER)!;
+    const sharpshooterData = getPerkData(PerkId.SHARPSHOOTER);
     const selectedPerks = new Map<PerkId, number>([
-      [PerkId.SHARPSHOOTER, sharpshooterData.maxRank],
+      [PerkId.SHARPSHOOTER, sharpshooterData?.maxRank ?? 5],
     ]);
 
     expect(isPerkCompatible(PerkId.SHARPSHOOTER, selectedPerks)).toBe(false);
@@ -143,8 +143,8 @@ describe('Perk Choices Generation', () => {
       for (let i = 0; i < 50; i++) {
         const choices = generatePerkChoices(selectedPerks, 1, false, false);
         for (const choice of choices) {
-          const perk = getPerkData(choice)!;
-          expect(perk.isRare).not.toBe(true);
+          const perk = getPerkData(choice);
+          expect(perk?.isRare).not.toBe(true);
         }
       }
     } finally {
@@ -290,15 +290,15 @@ describe('Available Perks', () => {
     const available = getAvailablePerks(selectedPerks, 1, true);
 
     for (const perkId of available) {
-      const perk = getPerkData(perkId)!;
-      expect(perk.isRare).not.toBe(true);
+      const perk = getPerkData(perkId);
+      expect(perk?.isRare).not.toBe(true);
     }
   });
 
   it('should exclude maxed out perks', () => {
-    const sharpshooterData = getPerkData(PerkId.SHARPSHOOTER)!;
+    const sharpshooterData = getPerkData(PerkId.SHARPSHOOTER);
     const selectedPerks = new Map<PerkId, number>([
-      [PerkId.SHARPSHOOTER, sharpshooterData.maxRank],
+      [PerkId.SHARPSHOOTER, sharpshooterData?.maxRank ?? 5],
     ]);
     const available = getAvailablePerks(selectedPerks, 1, false);
 

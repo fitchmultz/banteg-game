@@ -1,2 +1,27 @@
+# Environment variables
 .env
+
+# Ralph cache/state
 .ralph
+
+# Dependencies
+node_modules
+
+# Build artifacts (keep dist/ structure for deployment, ignore generated files)
+dist/*.js
+dist/*.js.map
+dist/*.css
+dist/assets/index-*
+!dist/index.html
+!dist/assets/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

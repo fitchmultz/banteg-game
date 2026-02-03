@@ -1,8 +1,8 @@
 /**
  * Crimsonland Remake - Main Entry Point
  *
- * Initializes the game engine, ECS systems, and starts the game loop.
- * Now with quest system, perks, and progression tracking.
+ * Initializes the game engine, ECS systems, and manages game state.
+ * Now with main menu, quest system, perks, and progression tracking.
  */
 
 import { EntityManager, SystemManager } from './core/ecs';
@@ -26,35 +26,60 @@ import {
 import { GameModeManager, SurvivalMode, QuestMode } from './game/modes';
 import { PlayerFactory } from './game/entities';
 import { ProgressionManager } from './game/progression';
-import { PerkSelectUI, QuestMenuUI } from './game/ui';
-import { type GameState, PerkId } from './types';
+import { PerkSelectUI, QuestMenuUI, MainMenuUI, PauseMenuUI, GameOverUI } from './game/ui';
+import { type GameState, type GameMode, PerkId } from './types';
 
 const GAME_WIDTH = 1024;
 const GAME_HEIGHT = 768;
 const TARGET_UPS = 60;
 
+type AppState =
+  | { type: 'MENU' }
+  | { type: 'PLAYING'; gameLoop: GameLoop }
+  | { type: 'PAUSED'; gameLoop: GameLoop }
+  | { type: 'GAME_OVER'; isVictory: boolean };
+
 // Global game state (for easy access from callbacks)
-const gameState: {
+interface GlobalGameState {
+  appState: AppState;
   gameModeManager: GameModeManager | null;
   survivalMode: SurvivalMode | null;
   questMode: QuestMode | null;
   perkSystem: PerkSystem | null;
   progressionManager: ProgressionManager | null;
+  mainMenuUI: MainMenuUI | null;
   perkSelectUI: PerkSelectUI | null;
   questMenuUI: QuestMenuUI | null;
-  currentState: GameState | null;
+  pauseMenuUI: PauseMenuUI | null;
+  gameOverUI: GameOverUI | null;
+  currentGameState: GameState | null;
   playerEntityId: number | null;
-} = {
+  renderSystem: RenderSystem | null;
+}
+
+const gameState: GlobalGameState = {
+  appState: { type: 'MENU' },
   gameModeManager: null,
   survivalMode: null,
   questMode: null,
   perkSystem: null,
   progressionManager: null,
+  mainMenuUI: null,
   perkSelectUI: null,
   questMenuUI: null,
-  currentState: null,
+  pauseMenuUI: null,
+  gameOverUI: null,
+  currentGameState: null,
   playerEntityId: null,
+  renderSystem: null,
 };
+
+// Core engine instances
+let entityManager: EntityManager;
+let systemManager: SystemManager;
+let renderer: Renderer;
+let input: InputManager;
+let audio: AudioManager;
 
 async function init(): Promise<void> {
   const container = document.getElementById('game-container');
@@ -63,17 +88,23 @@ async function init(): Promise<void> {
   }
 
   // Initialize renderer
-  const renderer = new Renderer(container, {
+  renderer = new Renderer(container, {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
     smoothing: false,
   });
 
   // Initialize input manager
-  const input = new InputManager(renderer.getCanvas());
+  input = new InputManager(renderer.getCanvas());
+
+  // Enable touch controls if on touch device
+  if (InputManager.isTouchDevice()) {
+    input.enableTouchControls();
+    console.log('Touch controls enabled');
+  }
 
   // Initialize audio manager
-  const audio = new AudioManager({
+  audio = new AudioManager({
     sfxVolume: 0.7,
     musicVolume: 0.5,
   });
@@ -88,8 +119,8 @@ async function init(): Promise<void> {
   );
 
   // Initialize ECS
-  const entityManager = new EntityManager();
-  const systemManager = new SystemManager();
+  entityManager = new EntityManager();
+  systemManager = new SystemManager();
 
   // Initialize progression manager
   const progressionManager = new ProgressionManager({
@@ -109,7 +140,7 @@ async function init(): Promise<void> {
   const gameModeManager = new GameModeManager({
     onStateChange: (newState, oldState) => {
       console.log(`Game state changed: ${oldState?.type} -> ${newState.type}`);
-      gameState.currentState = newState;
+      gameState.currentGameState = newState;
 
       // Handle PERK_SELECT state
       if (newState.type === 'PERK_SELECT') {
@@ -117,55 +148,33 @@ async function init(): Promise<void> {
       } else if (newState.type === 'PLAYING') {
         // Hide perk selection UI if visible
         gameState.perkSelectUI?.hide();
+      } else if (newState.type === 'GAME_OVER' || newState.type === 'VICTORY') {
+        handleGameOver(newState.type === 'VICTORY', newState.stats);
       }
     },
     onGameOver: (stats) => {
       console.log('Game Over!', stats);
-      // Record survival run if in survival mode
       gameState.survivalMode?.endRun();
     },
   });
   gameState.gameModeManager = gameModeManager;
 
-  // Initialize spawn system
-  const spawnSystem = new SpawnSystem(entityManager, {
-    mapWidth: 2048,
-    mapHeight: 2048,
-    spawnMargin: 100,
-  });
-
-  // Initialize perk system
-  const perkSystem = new PerkSystem(entityManager, {
-    onPerkApplied: (_entityId, perkId, newRank) => {
-      console.log(`Perk applied: ${PerkId[perkId]} (rank ${newRank})`);
-    },
-    onFatalLottery: (_entityId, survived, xpGained) => {
-      console.log(`Fatal Lottery: survived=${survived}, xp=${xpGained}`);
-      if (!survived && gameState.playerEntityId !== null) {
-        // Player died from fatal lottery
-        gameModeManager.gameOver();
-      }
-    },
-    onInfernalContract: (_entityId, levelsGained) => {
-      console.log(`Infernal Contract: +${levelsGained} levels`);
-    },
-  });
-  gameState.perkSystem = perkSystem;
-
   // Initialize survival mode with perk system
   const survivalMode = new SurvivalMode(
     entityManager,
-    spawnSystem,
+    new SpawnSystem(entityManager, {
+      mapWidth: 2048,
+      mapHeight: 2048,
+      spawnMargin: 100,
+    }),
     {
       onWaveStart: (wave) => {
         console.log(`Wave ${wave} started!`);
       },
       onLevelUp: (level) => {
         console.log(`Level up! Now level ${level}`);
-        // Start perk selection
-        gameState.perkSelectUI?.show(
-          perkSystem.generatePerkChoices(gameState.playerEntityId ?? 0, 3)
-        );
+        // Perk choices will be generated when game starts
+        gameState.perkSelectUI?.show([]);
       },
       onPerkSelectionStart: (choices) => {
         gameModeManager.setState({ type: 'PERK_SELECT', choices });
@@ -177,10 +186,25 @@ async function init(): Promise<void> {
         // Could update XP bar UI here
       },
     },
-    perkSystem,
+    new PerkSystem(entityManager, {
+      onPerkApplied: (_entityId, perkId, newRank) => {
+        console.log(`Perk applied: ${PerkId[perkId]} (rank ${newRank})`);
+      },
+      onFatalLottery: (_entityId, survived, xpGained) => {
+        console.log(`Fatal Lottery: survived=${survived}, xp=${xpGained}`);
+        if (!survived && gameState.playerEntityId !== null) {
+          gameModeManager.gameOver();
+        }
+      },
+      onInfernalContract: (_entityId, levelsGained) => {
+        console.log(`Infernal Contract: +${levelsGained} levels`);
+      },
+    }),
     progressionManager
   );
   gameState.survivalMode = survivalMode;
+  // PerkSystem is available through survivalMode's callbacks
+  // Access perk system through gameState - will be initialized on game start
 
   // Initialize quest mode with progression
   const questMode = new QuestMode(
@@ -191,10 +215,11 @@ async function init(): Promise<void> {
       },
       onQuestComplete: (questId, stats) => {
         console.log(`Quest completed: ${questId}`, stats);
-        // Return to menu or start next quest
+        handleGameOver(true, stats);
       },
       onQuestFail: (questId, stats) => {
         console.log(`Quest failed: ${questId}`, stats);
+        handleGameOver(false, stats);
       },
       onObjectiveUpdate: (_objective, _current, _target) => {
         // Update objective UI
@@ -203,6 +228,128 @@ async function init(): Promise<void> {
     progressionManager
   );
   gameState.questMode = questMode;
+
+  // Initialize UI components
+  gameState.mainMenuUI = new MainMenuUI({
+    canvas: renderer.getCanvas(),
+    onSelectMode: (mode) => startGame(mode),
+    onShowOptions: () => {
+      console.log('Options menu not implemented yet');
+    },
+    onShowCredits: () => {
+      console.log('Credits not implemented yet');
+    },
+  });
+
+  gameState.perkSelectUI = new PerkSelectUI({
+    canvas: renderer.getCanvas(),
+    onSelect: (perkId) => {
+      const choices = gameState.perkSelectUI?.getChoices() ?? [];
+      survivalMode.selectPerk(choices.indexOf(perkId));
+      gameState.perkSelectUI?.hide();
+      gameModeManager.setState({ type: 'PLAYING', mode: { type: 'SURVIVAL' } });
+    },
+  });
+
+  gameState.questMenuUI = new QuestMenuUI({
+    canvas: renderer.getCanvas(),
+    progressionManager,
+    onStartQuest: (questId) => {
+      gameState.questMenuUI?.hide();
+      questMode.startQuest(questId);
+      gameModeManager.startGame({ type: 'QUEST', questId });
+    },
+    onBack: () => {
+      gameState.questMenuUI?.hide();
+      showMainMenu();
+    },
+  });
+
+  gameState.pauseMenuUI = new PauseMenuUI({
+    canvas: renderer.getCanvas(),
+    onResume: resumeGame,
+    onRestart: restartGame,
+    onMainMenu: returnToMainMenu,
+    onShowOptions: () => {
+      console.log('Options menu not implemented yet');
+    },
+  });
+
+  gameState.gameOverUI = new GameOverUI({
+    canvas: renderer.getCanvas(),
+    onNewRun: restartGame,
+    onMainMenu: returnToMainMenu,
+  });
+
+  // Show main menu
+  showMainMenu();
+
+  // Start the menu loop
+  startMenuLoop();
+
+  // Cleanup on unload
+  window.addEventListener('beforeunload', cleanup);
+
+  console.log('Crimsonland Remake initialized');
+  console.log('Controls:');
+  console.log('  WASD - Move');
+  console.log('  Mouse - Aim');
+  console.log('  Left Click - Fire');
+  console.log('  R - Reload');
+  console.log('  Escape - Pause');
+
+  // Expose game state for debugging
+  (window as unknown as Record<string, unknown>).gameState = gameState;
+  (window as unknown as Record<string, unknown>).toggleFps = () => {
+    gameState.renderSystem?.toggleFps();
+  };
+}
+
+function showMainMenu(): void {
+  gameState.appState = { type: 'MENU' };
+  gameState.mainMenuUI?.show();
+  gameState.pauseMenuUI?.hide();
+  gameState.gameOverUI?.hide();
+  gameState.perkSelectUI?.hide();
+  gameState.questMenuUI?.hide();
+}
+
+function startMenuLoop(): void {
+  let lastTime = performance.now();
+
+  function menuLoop(currentTime: number): void {
+    if (gameState.appState.type !== 'MENU') return;
+
+    const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+    lastTime = currentTime;
+
+    // Clear screen
+    renderer.clearBlack();
+
+    // Update and render main menu
+    gameState.mainMenuUI?.update(dt);
+    gameState.mainMenuUI?.render();
+
+    // Also render quest menu if visible
+    if (gameState.questMenuUI?.isShown()) {
+      gameState.questMenuUI?.render();
+    }
+
+    requestAnimationFrame(menuLoop);
+  }
+
+  requestAnimationFrame(menuLoop);
+}
+
+function startGame(mode: GameMode): void {
+  // Hide all menus
+  gameState.mainMenuUI?.hide();
+  gameState.questMenuUI?.hide();
+  gameState.gameOverUI?.hide();
+
+  // Clear existing entities and systems
+  systemManager.clear();
+  entityManager.clear();
 
   // Initialize game systems
   const inputSystem = new InputSystem(input);
@@ -213,45 +360,78 @@ async function init(): Promise<void> {
   const collisionSystem = new CollisionSystem(entityManager);
   const healthSystem = new HealthSystem(entityManager, {
     onPlayerDeath: () => {
-      progressionManager.recordDeath();
-      gameModeManager.gameOver();
+      gameState.progressionManager?.recordDeath();
+      gameState.gameModeManager?.gameOver();
     },
-    onCreatureDeath: (creatureTypeId, _position) => {
-      spawnSystem.onEnemyDefeated();
+    onCreatureDeath: (creatureTypeId, position) => {
+      // Screen shake on enemy death
+      if (position && gameState.renderSystem) {
+        const shakeIntensity = 2 + Math.random() * 3;
+        gameState.renderSystem.shake(shakeIntensity, 0.1);
+
+        // Particle effects
+        const particleSystem = gameState.renderSystem.getParticleSystem();
+        particleSystem.emitBloodSplatter(position.x, position.y, Math.random() * Math.PI * 2, 5);
+      }
+
+      new SpawnSystem(entityManager, {
+        mapWidth: 2048,
+        mapHeight: 2048,
+        spawnMargin: 100,
+      }).onEnemyDefeated();
 
       // Record kill in appropriate mode
-      if (gameModeManager.isPlaying()) {
-        const state = gameModeManager.getState();
+      if (gameState.gameModeManager?.isPlaying()) {
+        const state = gameState.gameModeManager.getState();
         if (state.type === 'PLAYING') {
           if (state.mode.type === 'SURVIVAL') {
-            survivalMode.recordKill(10);
+            gameState.survivalMode?.recordKill(10);
           } else if (state.mode.type === 'QUEST') {
-            questMode.recordKill(creatureTypeId, 10);
+            gameState.questMode?.recordKill(creatureTypeId, 10);
           }
         }
       }
 
       // Track in progression
       if (creatureTypeId !== undefined) {
-        progressionManager.recordKill(creatureTypeId);
+        gameState.progressionManager?.recordKill(creatureTypeId);
       }
     },
     onScoreChange: (score) => {
-      gameModeManager.updateStats({ score });
+      gameState.gameModeManager?.updateStats({ score });
     },
     onXPChange: (xp) => {
       // Apply XP multiplier from perks
       const multiplier =
-        gameState.playerEntityId !== null
-          ? perkSystem.getXpMultiplier(gameState.playerEntityId)
+        gameState.playerEntityId !== null && gameState.perkSystem
+          ? gameState.perkSystem.getXpMultiplier(gameState.playerEntityId)
           : 1;
-      survivalMode.addXP(Math.floor(xp * multiplier));
+      gameState.survivalMode?.addXP(Math.floor(xp * multiplier));
     },
   });
   const bonusSystem = new BonusSystem(entityManager);
   const effectSystem = new EffectSystem(entityManager);
   const lifetimeSystem = new LifetimeSystem(entityManager);
-  const renderSystem = new RenderSystem(entityManager, renderer);
+  const renderSystem = new RenderSystem(entityManager, renderer, input);
+  gameState.renderSystem = renderSystem;
+
+  // Create perk system for this game session
+  const perkSystem = new PerkSystem(entityManager, {
+    onPerkApplied: (_entityId, perkId, newRank) => {
+      console.log(`Perk applied: ${PerkId[perkId]} (rank ${newRank})`);
+      gameState.progressionManager?.recordPerkChosen(perkId);
+    },
+    onFatalLottery: (_entityId, survived, xpGained) => {
+      console.log(`Fatal Lottery: survived=${survived}, xp=${xpGained}`);
+      if (!survived && gameState.playerEntityId !== null) {
+        gameState.gameModeManager?.gameOver();
+      }
+    },
+    onInfernalContract: (_entityId, levelsGained) => {
+      console.log(`Infernal Contract: +${levelsGained} levels`);
+    },
+  });
+  gameState.perkSystem = perkSystem;
 
   // Add systems in priority order
   systemManager.addSystem(inputSystem);
@@ -261,7 +441,11 @@ async function init(): Promise<void> {
   systemManager.addSystem(projectileSystem);
   systemManager.addSystem(collisionSystem);
   systemManager.addSystem(healthSystem);
-  systemManager.addSystem(spawnSystem);
+  systemManager.addSystem(new SpawnSystem(entityManager, {
+    mapWidth: 2048,
+    mapHeight: 2048,
+    spawnMargin: 100,
+  }));
   systemManager.addSystem(bonusSystem);
   systemManager.addSystem(effectSystem);
   systemManager.addSystem(perkSystem);
@@ -274,52 +458,28 @@ async function init(): Promise<void> {
     weaponId: 0, // Pistol
   });
   gameState.playerEntityId = playerEntity.id;
-  survivalMode.setPlayerEntity(playerEntity.id);
+  gameState.survivalMode?.setPlayerEntity(playerEntity.id);
 
   // Set camera to player position
   renderSystem.setCameraPosition(0, 0);
 
-  // Initialize UI components
-  const perkSelectUI = new PerkSelectUI({
-    canvas: renderer.getCanvas(),
-    onSelect: (perkId) => {
-      survivalMode.selectPerk(perkSelectUI.getChoices().indexOf(perkId));
-      perkSelectUI.hide();
-      gameModeManager.setState({ type: 'PLAYING', mode: { type: 'SURVIVAL' } });
-    },
-  });
-  gameState.perkSelectUI = perkSelectUI;
+  // Start the appropriate mode
+  if (mode.type === 'SURVIVAL') {
+    gameState.survivalMode?.start();
+  } else if (mode.type === 'QUEST') {
+    gameState.questMode?.startQuest(mode.questId);
+  }
 
-  const questMenuUI = new QuestMenuUI({
-    canvas: renderer.getCanvas(),
-    progressionManager,
-    onStartQuest: (questId) => {
-      questMenuUI.hide();
-      questMode.startQuest(questId);
-      gameModeManager.startGame({ type: 'QUEST', questId });
-    },
-    onBack: () => {
-      questMenuUI.hide();
-      // Return to main menu
-    },
-  });
-  gameState.questMenuUI = questMenuUI;
+  gameState.gameModeManager?.startGame(mode);
 
-  // Start survival mode by default
-  survivalMode.start();
-  gameModeManager.startGame({ type: 'SURVIVAL' });
-
-  // Game loop
+  // Create game loop
   const gameLoop = new GameLoop(
     entityManager,
     systemManager,
     () => {
       // Render UI overlays
       if (gameState.perkSelectUI?.isShown()) {
-        gameState.perkSelectUI.render();
-      }
-      if (gameState.questMenuUI?.isShown()) {
-        gameState.questMenuUI.render();
+        gameState.perkSelectUI?.render();
       }
     },
     {
@@ -328,64 +488,140 @@ async function init(): Promise<void> {
     }
   );
 
-  // Handle pause/resume
-  window.addEventListener('keydown', (e) => {
-    if (e.code === 'Escape') {
-      if (perkSelectUI.isShown()) {
-        // Don't allow escape during perk selection
-        return;
-      }
-
-      if (gameModeManager.isPlaying()) {
-        gameModeManager.pause();
-        gameLoop.stop();
-      } else if (gameModeManager.isPaused()) {
-        gameModeManager.resume();
-        gameLoop.start();
-      }
-    }
-
-    // Quest menu hotkey
-    if (e.code === 'KeyQ' && !gameModeManager.isPlaying()) {
-      questMenuUI.show();
-    }
-  });
-
-  // Start the game
+  gameState.appState = { type: 'PLAYING', gameLoop };
   gameLoop.start();
 
-  // Cleanup on unload
-  window.addEventListener('beforeunload', () => {
-    // Save progression
-    progressionManager.save();
+  // Start game music
+  // audio.playTune('game', true);
+}
 
-    // Cleanup
-    gameLoop.destroy();
-    input.destroy();
-    audio.destroy();
-    perkSelectUI.destroy();
-    questMenuUI.destroy();
-    systemManager.clear();
-    entityManager.clear();
+function pauseGame(): void {
+  if (gameState.appState.type !== 'PLAYING') return;
+
+  const { gameLoop } = gameState.appState;
+  gameLoop.stop();
+
+  const stats = gameState.gameModeManager?.getStats() ?? {
+    score: 0,
+    kills: 0,
+    timeElapsed: 0,
+    level: 1,
+  };
+
+  gameState.pauseMenuUI?.show(stats);
+  gameState.appState = { type: 'PAUSED', gameLoop };
+}
+
+function resumeGame(): void {
+  if (gameState.appState.type !== 'PAUSED') return;
+
+  const { gameLoop } = gameState.appState;
+  gameState.pauseMenuUI?.hide();
+  gameState.appState = { type: 'PLAYING', gameLoop };
+  gameLoop.start();
+}
+
+function restartGame(): void {
+  gameState.pauseMenuUI?.hide();
+  gameState.gameOverUI?.hide();
+
+  // Get current mode
+  const currentState = gameState.gameModeManager?.getState();
+  if (currentState?.type === 'PLAYING') {
+    startGame(currentState.mode);
+  } else {
+    // Default to survival
+    startGame({ type: 'SURVIVAL' });
+  }
+}
+
+function returnToMainMenu(): void {
+  // Stop any running game loop
+  if (gameState.appState.type === 'PLAYING' || gameState.appState.type === 'PAUSED') {
+    gameState.appState.gameLoop.destroy();
+  }
+
+  gameState.pauseMenuUI?.hide();
+  gameState.gameOverUI?.hide();
+  gameState.gameModeManager?.returnToMenu();
+
+  showMainMenu();
+  startMenuLoop();
+}
+
+function handleGameOver(isVictory: boolean, stats: { score: number; kills: number; timeElapsed: number; level: number }): void {
+  if (gameState.appState.type === 'PLAYING') {
+    gameState.appState.gameLoop.stop();
+  }
+
+  // Get best score for comparison
+  const survivalRecord = gameState.progressionManager?.getSurvivalHighScore();
+  const bestScore = survivalRecord && survivalRecord.bestScore > 0 ? survivalRecord.bestScore : undefined;
+
+  gameState.gameOverUI?.show({
+    ...stats,
+    isVictory,
+    ...(bestScore !== undefined && { bestScore }),
   });
 
-  // Periodic save (every 30 seconds)
-  setInterval(() => {
-    progressionManager.save();
-  }, 30000);
-
-  console.log('Crimsonland Remake initialized');
-  console.log('Controls:');
-  console.log('  WASD - Move');
-  console.log('  Mouse - Aim');
-  console.log('  Left Click - Fire');
-  console.log('  R - Reload');
-  console.log('  Escape - Pause');
-  console.log('  Q - Quest Menu (when not playing)');
-
-  // Expose game state for debugging
-  (window as unknown as Record<string, unknown>).gameState = gameState;
+  gameState.appState = { type: 'GAME_OVER', isVictory };
 }
+
+function cleanup(): void {
+  // Save progression
+  gameState.progressionManager?.save();
+
+  // Cleanup all systems
+  if (gameState.appState.type === 'PLAYING' || gameState.appState.type === 'PAUSED') {
+    gameState.appState.gameLoop.destroy();
+  }
+
+  input.destroy();
+  audio.destroy();
+  gameState.mainMenuUI?.destroy();
+  gameState.perkSelectUI?.destroy();
+  gameState.questMenuUI?.destroy();
+  gameState.pauseMenuUI?.destroy();
+  gameState.gameOverUI?.destroy();
+  systemManager.clear();
+  entityManager.clear();
+}
+
+// Handle keyboard input
+document.addEventListener('keydown', (e) => {
+  // Toggle FPS counter with F3
+  if (e.code === 'F3') {
+    gameState.renderSystem?.toggleFps();
+    return;
+  }
+
+  // Handle pause
+  if (e.code === 'Escape') {
+    if (gameState.appState.type === 'PLAYING') {
+      if (!gameState.perkSelectUI?.isShown()) {
+        pauseGame();
+      }
+    } else if (gameState.appState.type === 'PAUSED') {
+      resumeGame();
+    }
+    return;
+  }
+
+  // Quest menu from main menu
+  if (e.code === 'KeyQ' && gameState.appState.type === 'MENU') {
+    if (gameState.questMenuUI?.isShown()) {
+      gameState.questMenuUI?.hide();
+    } else {
+      gameState.mainMenuUI?.hide();
+      gameState.questMenuUI?.show();
+    }
+  }
+});
+
+// Periodic save (every 30 seconds)
+setInterval(() => {
+  gameState.progressionManager?.save();
+}, 30000);
 
 // Start when DOM is ready
 if (document.readyState === 'loading') {

@@ -23,3 +23,4 @@ export {
   type SpriteAtlasFrame,
   type SpriteAtlasAnimation,
 } from './SpriteAtlas';
+export { ParticleSystem, type Particle, type ParticleEmitterOptions } from './ParticleSystem';

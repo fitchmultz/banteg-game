@@ -45,6 +45,13 @@ export interface SpriteDrawOptions {
   scale?: number;
 }
 
+export interface ScreenShake {
+  intensity: number;
+  duration: number;
+  decay: number;
+  currentTime: number;
+}
+
 interface TransformState {
   rotation: number;
   translation: Vector2;
@@ -69,6 +76,11 @@ export class Renderer {
 
   // Transform state stack
   private stateStack: TransformState[] = [];
+
+  // Screen shake effect
+  private screenShake: ScreenShake | null = null;
+  private shakeOffsetX = 0;
+  private shakeOffsetY = 0;
 
   constructor(container: HTMLElement, options: RendererOptions) {
     this.width = options.width;
@@ -520,6 +532,146 @@ export class Renderer {
 
   getContext(): CanvasRenderingContext2D {
     return this.ctx;
+  }
+
+  // ============================================================================
+  // Screen Shake Effect
+  // ============================================================================
+
+  /**
+   * Trigger a screen shake effect
+   * @param intensity - Maximum pixel offset
+   * @param duration - Duration in seconds
+   * @param decay - How quickly the shake fades (0-1)
+   */
+  shake(intensity: number, duration: number, decay = 0.9): void {
+    // If there's already a shake, use the stronger one
+    if (this.screenShake && this.screenShake.intensity > intensity) {
+      return;
+    }
+    this.screenShake = {
+      intensity,
+      duration,
+      decay,
+      currentTime: 0,
+    };
+  }
+
+  /**
+   * Update screen shake (call once per frame)
+   */
+  updateScreenShake(dt: number): void {
+    if (!this.screenShake) {
+      this.shakeOffsetX = 0;
+      this.shakeOffsetY = 0;
+      return;
+    }
+
+    this.screenShake.currentTime += dt;
+
+    if (this.screenShake.currentTime >= this.screenShake.duration) {
+      this.screenShake = null;
+      this.shakeOffsetX = 0;
+      this.shakeOffsetY = 0;
+      return;
+    }
+
+    // Calculate remaining intensity
+    const progress = this.screenShake.currentTime / this.screenShake.duration;
+    const currentIntensity = this.screenShake.intensity * (1 - progress) * this.screenShake.decay;
+
+    // Random offset
+    this.shakeOffsetX = (Math.random() - 0.5) * 2 * currentIntensity;
+    this.shakeOffsetY = (Math.random() - 0.5) * 2 * currentIntensity;
+  }
+
+  /**
+   * Get current shake offset for applying to camera
+   */
+  getShakeOffset(): { x: number; y: number } {
+    return { x: this.shakeOffsetX, y: this.shakeOffsetY };
+  }
+
+  // ============================================================================
+  // Glow and Lighting Effects
+  // ============================================================================
+
+  /**
+   * Draw a radial glow effect using a gradient
+   */
+  drawGlow(x: number, y: number, radius: number, color: { r: number; g: number; b: number; a?: number }): void {
+    const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
+    const alpha = color.a ?? 1;
+    gradient.addColorStop(0, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha})`);
+    gradient.addColorStop(0.5, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha * 0.3})`);
+    gradient.addColorStop(1, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, 0)`);
+
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  /**
+   * Draw a shadow/darkness effect
+   */
+  drawShadow(x: number, y: number, radius: number, darkness = 0.5): void {
+    const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(0, 0, 0, ${darkness})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+  }
+
+  /**
+   * Draw a light source with flicker effect
+   */
+  drawLight(
+    x: number,
+    y: number,
+    radius: number,
+    color: { r: number; g: number; b: number },
+    intensity = 1,
+    flicker = 0
+  ): void {
+    const flickerAmount = flicker > 0 ? (Math.random() - 0.5) * flicker : 0;
+    const currentIntensity = Math.max(0, intensity + flickerAmount);
+
+    const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
+    gradient.addColorStop(0, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity})`);
+    gradient.addColorStop(0.4, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity * 0.3})`);
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+    this.ctx.globalCompositeOperation = 'screen';
+    this.ctx.fillStyle = gradient;
+    this.ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    this.ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /**
+   * Draw a trail effect (semi-transparent fading line)
+   */
+  drawTrail(
+    points: { x: number; y: number }[],
+    color: { r: number; g: number; b: number; a: number },
+    width: number
+  ): void {
+    if (points.length < 2) return;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(points[0]?.x ?? 0, points[0]?.y ?? 0);
+
+    for (let i = 1; i < points.length; i++) {
+      const point = points[i];
+      if (point) {
+        this.ctx.lineTo(point.x, point.y);
+      }
+    }
+
+    this.ctx.strokeStyle = `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${color.a})`;
+    this.ctx.lineWidth = width;
+    this.ctx.lineCap = 'round';
+    this.ctx.lineJoin = 'round';
+    this.ctx.stroke();
   }
 
   /**

@@ -3,6 +3,39 @@
 A browser-based remake of Crimsonland, a top-down shooter originally released in 2003.
 This project is based on analysis of the decompiled C source code from the original game.
 
+## Play Online
+
+🎮 **[Play the game here](https://mitchfultz.github.io/crimsonland-remake/)**
+
+## Features
+
+### Game Modes
+- **Survival Mode**: Fight endless waves of enemies with leveling and perks
+- **Quest Mode**: Complete 21 unique challenges with specific objectives
+
+### Combat System
+- 20+ weapon types (pistols, rifles, shotguns, plasma weapons, and more)
+- 8 enemy types with unique AI behaviors (zombies, spiders, aliens, ghosts)
+- 30+ perks that modify gameplay (fast shot, regeneration, pyromaniac, etc.)
+
+### Visual Effects
+- Particle system for explosions, blood splatter, muzzle flashes
+- Screen shake effects on damage and explosions
+- Glow effects for powerups and active abilities
+- Smooth camera following with view shake
+
+### UI
+- Main menu with animated background particles
+- Pause menu with game stats
+- Game over/victory screens with score tracking
+- Perk selection interface
+- Quest selection menu with progression tracking
+
+### Controls
+- **Keyboard**: WASD to move, Mouse to aim, Click to fire, R to reload
+- **Touch**: Virtual joystick and on-screen buttons (auto-enabled on touch devices)
+- **Hotkeys**: Escape for pause, F3 to toggle FPS counter
+
 ## Tech Stack
 
 - **Language:** TypeScript 5.7+ (strict mode)
@@ -23,15 +56,18 @@ This project is based on analysis of the decompiled C source code from the origi
 │   │   ├── math/          # Vector2, Rectangle, utilities
 │   │   └── GameLoop.ts    # Fixed timestep game loop
 │   ├── engine/
-│   │   ├── Renderer.ts    # Canvas 2D wrapper
-│   │   ├── InputManager.ts
-│   │   └── AudioManager.ts
+│   │   ├── Renderer.ts    # Canvas 2D wrapper with effects
+│   │   ├── InputManager.ts # Keyboard, mouse, touch input
+│   │   ├── AudioManager.ts # Web Audio API wrapper
+│   │   └── ParticleSystem.ts # Visual effects system
 │   ├── game/
 │   │   ├── components.ts  # Game component definitions
 │   │   ├── entities/      # Entity factories
-│   │   ├── systems/       # Game systems
-│   │   ├── modes/         # Quest, Survival, Rush modes
-│   │   └── data/          # Weapon, creature, perk definitions
+│   │   ├── systems/       # Game systems (movement, collision, etc.)
+│   │   ├── modes/         # Quest, Survival game modes
+│   │   ├── data/          # Weapon, creature, perk definitions
+│   │   ├── ui/            # In-game UI components
+│   │   └── progression/   # Stats and unlock tracking
 │   ├── types/             # TypeScript type definitions
 │   └── main.ts            # Entry point
 ├── tests/
@@ -62,6 +98,9 @@ make type-check
 # Build for production
 make build
 
+# Preview production build
+make preview
+
 # Run full CI gate
 make ci
 ```
@@ -82,6 +121,24 @@ The decompiled C source reveals the following key systems:
 - Direct3D 8 wrapper replaced with Canvas 2D
 - DirectSound replaced with Web Audio API
 - DirectInput replaced with standard DOM events
+
+## Deployment
+
+The project is configured for automatic deployment to GitHub Pages via GitHub Actions. 
+See `.github/workflows/deploy.yml` for the workflow configuration.
+
+To deploy manually:
+1. Push to the `main` branch
+2. GitHub Actions will build and deploy automatically
+3. Ensure GitHub Pages is enabled in repository settings
+
+## Mobile Support
+
+The game supports touch controls on mobile devices:
+- Virtual joystick on the left for movement
+- Fire button on the right
+- Reload button above fire
+- Touch controls are automatically enabled on touch-capable devices
 
 ## License
 

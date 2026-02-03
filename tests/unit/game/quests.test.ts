@@ -207,8 +207,8 @@ describe('Quest Spawn Entries', () => {
 
   it('should have time limits for timed quests', () => {
     const timedQuest = getQuestData('land_hostile');
-    expect(timedQuest!.timeLimitMs).toBeDefined();
-    expect(timedQuest!.timeLimitMs).toBeGreaterThan(0);
+    expect(timedQuest?.timeLimitMs).toBeDefined();
+    expect(timedQuest?.timeLimitMs).toBeGreaterThan(0);
   });
 });
 

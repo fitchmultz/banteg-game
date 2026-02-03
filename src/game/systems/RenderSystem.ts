@@ -5,9 +5,9 @@
  * Priority: 200 (last to run)
  */
 
-import { System } from '../../core/ecs/System';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
-import type { Renderer } from '../../engine';
+import { type Renderer, ParticleSystem, type InputManager } from '../../engine';
 import { getWeaponData } from '../data';
 
 export class RenderSystem extends System {
@@ -16,34 +16,98 @@ export class RenderSystem extends System {
 
   private renderer: Renderer;
   private entityManager: EntityManager;
+  private particleSystem: ParticleSystem;
+  private inputManager: InputManager | null = null;
 
   // Camera follow settings
   private cameraSmoothing = 0.1;
   private currentCameraX = 0;
   private currentCameraY = 0;
 
-  constructor(entityManager: EntityManager, renderer: Renderer) {
+  // FPS counter
+  private frameCount = 0;
+  private lastFpsTime = 0;
+  private currentFps = 0;
+  private showFps = false;
+
+  constructor(entityManager: EntityManager, renderer: Renderer, inputManager?: InputManager) {
     super();
     this.entityManager = entityManager;
     this.renderer = renderer;
+    this.inputManager = inputManager ?? null;
+    this.particleSystem = new ParticleSystem(1000);
   }
 
-  update(): void {
+  /**
+   * Get the particle system for emitting effects
+   */
+  getParticleSystem(): ParticleSystem {
+    return this.particleSystem;
+  }
+
+  /**
+   * Toggle FPS counter display
+   */
+  toggleFps(): void {
+    this.showFps = !this.showFps;
+  }
+
+  /**
+   * Trigger screen shake
+   */
+  shake(intensity: number, duration: number): void {
+    this.renderer.shake(intensity, duration);
+  }
+
+  update(_entityManager: EntityManager, context: UpdateContext): void {
+    // Update FPS counter
+    this.updateFps(context.dt);
+
+    // Update screen shake
+    this.renderer.updateScreenShake(context.dt);
+
+    // Update particles
+    this.particleSystem.update(context.dt);
+
     // Clear screen
     this.renderer.clearBlack();
 
-    // Apply camera
+    // Apply camera (with screen shake)
     this.updateCamera();
+    const shakeOffset = this.renderer.getShakeOffset();
+    this.renderer.setCamera(
+      this.currentCameraX + shakeOffset.x,
+      this.currentCameraY + shakeOffset.y
+    );
     this.renderer.applyCamera();
 
     // Render entities
     this.renderEntities();
+
+    // Render particles (world space)
+    this.particleSystem.render(this.renderer);
 
     // Restore camera
     this.renderer.restoreCamera();
 
     // Render UI (in screen space)
     this.renderUI();
+
+    // Render touch controls if enabled
+    if (this.inputManager?.isTouchEnabled()) {
+      const ctx = this.renderer.getContext();
+      this.inputManager.renderTouchControls(ctx);
+    }
+  }
+
+  private updateFps(dt: number): void {
+    this.frameCount++;
+    this.lastFpsTime += dt;
+    if (this.lastFpsTime >= 1) {
+      this.currentFps = this.frameCount;
+      this.frameCount = 0;
+      this.lastFpsTime = 0;
+    }
   }
 
   private updateCamera(): void {
@@ -118,7 +182,7 @@ export class RenderSystem extends System {
       }
     }
 
-    // Render bonuses
+    // Render bonuses with glow effects
     const bonuses = this.entityManager.query(['bonus', 'transform']);
     for (const entity of bonuses) {
       const transform = entity.getComponent<'transform'>('transform');
@@ -126,33 +190,44 @@ export class RenderSystem extends System {
       if (!transform || !bonus) continue;
 
       // Color based on bonus type
+      let glowColor: { r: number; g: number; b: number };
       switch (bonus.bonusType) {
         case 0: // HEALTH
-          this.renderer.setColor(1, 0, 0, 1);
+          glowColor = { r: 1, g: 0, b: 0 };
           break;
         case 1: // AMMO
-          this.renderer.setColor(1, 1, 0, 1);
+          glowColor = { r: 1, g: 1, b: 0 };
           break;
         case 2: // WEAPON_POWER_UP
-          this.renderer.setColor(1, 0.5, 0, 1);
+          glowColor = { r: 1, g: 0.5, b: 0 };
           break;
         case 3: // SPEED_BOOST
-          this.renderer.setColor(0, 1, 1, 1);
+          glowColor = { r: 0, g: 1, b: 1 };
           break;
         case 4: // SHIELD
-          this.renderer.setColor(0, 0.5, 1, 1);
+          glowColor = { r: 0, g: 0.5, b: 1 };
           break;
         case 5: // FIRE_BULLETS
-          this.renderer.setColor(1, 0.3, 0, 1);
+          glowColor = { r: 1, g: 0.3, b: 0 };
           break;
         case 6: // EXP_MULTIPLIER
-          this.renderer.setColor(1, 0, 1, 1);
+          glowColor = { r: 1, g: 0, b: 1 };
           break;
         default:
-          this.renderer.setColor(1, 1, 1, 1);
+          glowColor = { r: 1, g: 1, b: 1 };
       }
 
+      // Draw glow
+      this.renderer.drawGlow(transform.x, transform.y, 20, { ...glowColor, a: 0.5 });
+
+      // Draw bonus
+      this.renderer.setColor(glowColor.r, glowColor.g, glowColor.b, 1);
       this.renderer.drawCircle(transform.x, transform.y, 8);
+
+      // Draw pulsing ring
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
+      this.renderer.setColor(glowColor.r, glowColor.g, glowColor.b, 0.5);
+      this.renderer.drawCircleOutline(transform.x, transform.y, 12 * pulse, 2);
     }
   }
 
@@ -166,46 +241,67 @@ export class RenderSystem extends System {
     if (!playerComp) return;
     const weaponData = getWeaponData(playerComp.weaponId);
 
+    const canvas = this.renderer.getCanvas();
+    const rightEdge = canvas.width;
+
     // Set text color
     this.renderer.setColor(1, 1, 1, 1);
 
     // Health bar
     const healthPercent = playerComp.health / playerComp.maxHealth;
     this.renderer.drawText(`HP: ${Math.ceil(playerComp.health)}/${playerComp.maxHealth}`, 10, 40);
-    this.renderer.drawRectOutline(10, 50, 104, 14, 1);
+    this.renderer.drawRectOutline(10, 50, 204, 14, 1);
+    // Health bar gradient
     this.renderer.setColor(1 - healthPercent, healthPercent, 0, 1);
-    this.renderer.drawRect(12, 52, 100 * healthPercent, 10);
+    this.renderer.drawRect(12, 52, 200 * healthPercent, 10);
+
+    // XP bar (below health)
+    const xpPercent = playerComp.experience / (playerComp.level * 100); // Approximate
+    this.renderer.setColor(1, 1, 1, 1);
+    this.renderer.drawText(`Level ${playerComp.level}`, 10, 85);
+    this.renderer.drawRectOutline(10, 90, 204, 8, 1);
+    this.renderer.setColor(0.2, 0.6, 1, 1);
+    this.renderer.drawRect(12, 92, Math.min(200, 200 * xpPercent), 4);
 
     // Ammo
     this.renderer.setColor(1, 1, 1, 1);
     this.renderer.drawText(
       `Ammo: ${playerComp.clipSize}/${weaponData.clipSize} (${playerComp.ammo})`,
       10,
-      80
+      120
     );
 
     // Weapon name
-    this.renderer.drawText(`Weapon: ${weaponData.name}`, 10, 100);
+    this.renderer.drawText(`Weapon: ${weaponData.name}`, 10, 140);
 
-    // Active effects
-    let yOffset = 120;
+    // Active effects (with icons)
+    let yOffset = 170;
     if (playerComp.shieldTimer > 0) {
+      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 0, g: 0.5, b: 1, a: 0.5 });
       this.renderer.setColor(0, 0.5, 1, 1);
-      this.renderer.drawText(`Shield: ${playerComp.shieldTimer.toFixed(1)}s`, 10, yOffset);
-      yOffset += 20;
+      this.renderer.drawText(`Shield: ${playerComp.shieldTimer.toFixed(1)}s`, 45, yOffset);
+      yOffset += 25;
     }
     if (playerComp.fireBulletsTimer > 0) {
+      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 1, g: 0.3, b: 0, a: 0.5 });
       this.renderer.setColor(1, 0.3, 0, 1);
       this.renderer.drawText(
-        `Fire Bullets: ${playerComp.fireBulletsTimer.toFixed(1)}s`,
-        10,
+        `Fire: ${playerComp.fireBulletsTimer.toFixed(1)}s`,
+        45,
         yOffset
       );
-      yOffset += 20;
+      yOffset += 25;
     }
     if (playerComp.speedBonusTimer > 0) {
+      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 0, g: 1, b: 1, a: 0.5 });
       this.renderer.setColor(0, 1, 1, 1);
-      this.renderer.drawText(`Speed Boost: ${playerComp.speedBonusTimer.toFixed(1)}s`, 10, yOffset);
+      this.renderer.drawText(`Speed: ${playerComp.speedBonusTimer.toFixed(1)}s`, 45, yOffset);
+    }
+
+    // FPS counter (top-right, only if enabled)
+    if (this.showFps) {
+      this.renderer.setColor(0, 1, 0, 0.7);
+      this.renderer.drawText(`FPS: ${this.currentFps}`, rightEdge - 80, 25);
     }
   }
 

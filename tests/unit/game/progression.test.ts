@@ -118,10 +118,10 @@ describe.skip('ProgressionManager', () => {
         kills: 60,
       });
 
-      const highScore = manager.getQuestHighScore('nagolipoli')!;
-      expect(highScore.bestTime).toBe(45);
-      expect(highScore.bestScore).toBe(1500);
-      expect(highScore.attempts).toBe(2);
+      const highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestTime).toBe(45);
+      expect(highScore?.bestScore).toBe(1500);
+      expect(highScore?.attempts).toBe(2);
     });
 
     it('should keep existing high score on worse performance', () => {
@@ -137,9 +137,9 @@ describe.skip('ProgressionManager', () => {
         kills: 50,
       });
 
-      const highScore = manager.getQuestHighScore('nagolipoli')!;
-      expect(highScore.bestTime).toBe(45);
-      expect(highScore.bestScore).toBe(1500);
+      const highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestTime).toBe(45);
+      expect(highScore?.bestScore).toBe(1500);
     });
 
     it('should check quest unlock status', () => {
