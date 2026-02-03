@@ -1,10 +1,10 @@
 /**
  * Game Components
- * 
+ *
  * ECS components representing game state.
  */
 
-import type { Component, EntityId, Color } from '../types';
+import type { Component, Color } from '../types';
 import {
   CreatureTypeId,
   ProjectileTypeId,
@@ -140,7 +140,7 @@ export interface Projectile extends Component {
   projectileTypeId: ProjectileTypeId;
   damage: number;
   lifetime: number;
-  ownerId: EntityId;
+  ownerId: number;
   pierceCount: number;
 }
 
@@ -148,7 +148,7 @@ export function createProjectile(
   projectileTypeId: ProjectileTypeId,
   damage: number,
   lifetime: number,
-  ownerId: EntityId
+  ownerId: number
 ): Projectile {
   return {
     type: 'projectile',
@@ -303,3 +303,18 @@ export type GameComponent =
   | WeaponPickup
   | Lifetime
   | Effect;
+
+// Component type mapping for type-safe lookups
+export interface ComponentTypeMap {
+  transform: Transform;
+  velocity: Velocity;
+  player: Player;
+  creature: Creature;
+  projectile: Projectile;
+  sprite: Sprite;
+  collider: Collider;
+  bonus: Bonus;
+  weaponPickup: WeaponPickup;
+  lifetime: Lifetime;
+  effect: Effect;
+}

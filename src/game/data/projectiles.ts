@@ -1,0 +1,291 @@
+/**
+ * Projectile Data Tables
+ *
+ * Defines projectile types and their properties.
+ */
+
+import { ProjectileTypeId } from '../../types';
+
+export interface ProjectileData {
+  /** Projectile display name */
+  name: string;
+  /** Movement speed (units per second) */
+  speed: number;
+  /** Maximum lifetime (seconds) */
+  lifetime: number;
+  /** Base damage */
+  damage: number;
+  /** Number of enemies projectile can pierce through (0 = no piercing) */
+  pierceCount: number;
+  /** Projectile radius for collision */
+  radius: number;
+  /** Visual size */
+  size: number;
+  /** Whether projectile has fire damage over time effect */
+  fireDamage: boolean;
+  /** Whether projectile is affected by gravity */
+  affectedByGravity: boolean;
+  /** Whether projectile homes in on targets */
+  homing: boolean;
+}
+
+// Projectile data for base game weapons
+export const PROJECTILE_DATA: Record<ProjectileTypeId, ProjectileData> = {
+  [ProjectileTypeId.PISTOL]: {
+    name: 'Pistol Bullet',
+    speed: 600,
+    lifetime: 2.0,
+    damage: 15,
+    pierceCount: 0,
+    radius: 3,
+    size: 4,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.ASSAULT_RIFLE]: {
+    name: 'Rifle Bullet',
+    speed: 700,
+    lifetime: 2.0,
+    damage: 12,
+    pierceCount: 0,
+    radius: 3,
+    size: 4,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.SUBMACHINE_GUN]: {
+    name: 'SMG Bullet',
+    speed: 550,
+    lifetime: 1.5,
+    damage: 8,
+    pierceCount: 0,
+    radius: 2,
+    size: 3,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.SHOTGUN]: {
+    name: 'Shotgun Pellet',
+    speed: 500,
+    lifetime: 1.0,
+    damage: 8,
+    pierceCount: 0,
+    radius: 2,
+    size: 3,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.PLASMA_RIFLE]: {
+    name: 'Plasma Bolt',
+    speed: 500,
+    lifetime: 2.0,
+    damage: 25,
+    pierceCount: 1,
+    radius: 5,
+    size: 8,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.PLASMA_MINIGUN]: {
+    name: 'Plasma Bolt',
+    speed: 550,
+    lifetime: 2.0,
+    damage: 20,
+    pierceCount: 1,
+    radius: 5,
+    size: 8,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.ION_RIFLE]: {
+    name: 'Ion Beam',
+    speed: 800,
+    lifetime: 2.5,
+    damage: 30,
+    pierceCount: 2,
+    radius: 4,
+    size: 6,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.ION_MINIGUN]: {
+    name: 'Ion Beam',
+    speed: 850,
+    lifetime: 2.5,
+    damage: 25,
+    pierceCount: 2,
+    radius: 4,
+    size: 6,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.ION_CANNON]: {
+    name: 'Ion Cannon Blast',
+    speed: 600,
+    lifetime: 3.0,
+    damage: 100,
+    pierceCount: 5,
+    radius: 12,
+    size: 20,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.PLASMA_CANNON]: {
+    name: 'Plasma Orb',
+    speed: 400,
+    lifetime: 3.0,
+    damage: 80,
+    pierceCount: 3,
+    radius: 10,
+    size: 16,
+    fireDamage: true,
+    affectedByGravity: false,
+    homing: true,
+  },
+  [ProjectileTypeId.GAUSS_GUN]: {
+    name: 'Gauss Slug',
+    speed: 1200,
+    lifetime: 3.0,
+    damage: 150,
+    pierceCount: 10,
+    radius: 3,
+    size: 4,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.PULSE_GUN]: {
+    name: 'Pulse Wave',
+    speed: 350,
+    lifetime: 1.5,
+    damage: 15,
+    pierceCount: 0,
+    radius: 15,
+    size: 20,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.BLADE_GUN]: {
+    name: 'Blade',
+    speed: 450,
+    lifetime: 3.0,
+    damage: 40,
+    pierceCount: 5,
+    radius: 6,
+    size: 10,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: true,
+  },
+  [ProjectileTypeId.SPLITTER_GUN]: {
+    name: 'Splitter Shard',
+    speed: 500,
+    lifetime: 2.0,
+    damage: 20,
+    pierceCount: 1,
+    radius: 4,
+    size: 6,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.SHRINKIFIER]: {
+    name: 'Shrink Ray',
+    speed: 400,
+    lifetime: 2.0,
+    damage: 5,
+    pierceCount: 0,
+    radius: 8,
+    size: 12,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.FIRE_BULLETS]: {
+    name: 'Fire Bullet',
+    speed: 550,
+    lifetime: 2.0,
+    damage: 12,
+    pierceCount: 0,
+    radius: 4,
+    size: 6,
+    fireDamage: true,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.PLAGUE_SPREADER]: {
+    name: 'Plague Bolt',
+    speed: 350,
+    lifetime: 3.0,
+    damage: 10,
+    pierceCount: 0,
+    radius: 6,
+    size: 8,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.RAINBOW_GUN]: {
+    name: 'Rainbow Beam',
+    speed: 600,
+    lifetime: 2.5,
+    damage: 35,
+    pierceCount: 2,
+    radius: 5,
+    size: 8,
+    fireDamage: false,
+    affectedByGravity: false,
+    homing: true,
+  },
+  [ProjectileTypeId.ROCKET]: {
+    name: 'Rocket',
+    speed: 400,
+    lifetime: 3.0,
+    damage: 75,
+    pierceCount: 0,
+    radius: 20,
+    size: 12,
+    fireDamage: true,
+    affectedByGravity: false,
+    homing: false,
+  },
+  [ProjectileTypeId.SEEKER_ROCKET]: {
+    name: 'Seeker Rocket',
+    speed: 350,
+    lifetime: 4.0,
+    damage: 60,
+    pierceCount: 0,
+    radius: 18,
+    size: 12,
+    fireDamage: true,
+    affectedByGravity: false,
+    homing: true,
+  },
+  [ProjectileTypeId.ROCKET_MINIGUN]: {
+    name: 'Mini Rocket',
+    speed: 450,
+    lifetime: 2.5,
+    damage: 40,
+    pierceCount: 0,
+    radius: 12,
+    size: 8,
+    fireDamage: true,
+    affectedByGravity: false,
+    homing: false,
+  },
+};
+
+/** Get projectile data by type ID */
+export function getProjectileData(projectileTypeId: ProjectileTypeId): ProjectileData {
+  return PROJECTILE_DATA[projectileTypeId] ?? PROJECTILE_DATA[ProjectileTypeId.PISTOL];
+}

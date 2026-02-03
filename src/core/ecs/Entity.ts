@@ -1,10 +1,11 @@
 /**
  * Entity Component System - Entity
- * 
+ *
  * Entities are lightweight identifiers that group components together.
  */
 
 import type { Component, ComponentType, EntityId } from '../../types';
+import type { ComponentTypeMap } from '../../game/components';
 
 export class Entity {
   private components: Map<ComponentType, Component>;
@@ -22,8 +23,8 @@ export class Entity {
     return this.components.delete(type);
   }
 
-  getComponent<T extends Component>(type: ComponentType): T | undefined {
-    return this.components.get(type) as T | undefined;
+  getComponent<T extends keyof ComponentTypeMap>(type: T): ComponentTypeMap[T] | undefined {
+    return this.components.get(type) as ComponentTypeMap[T] | undefined;
   }
 
   hasComponent(type: ComponentType): boolean {
