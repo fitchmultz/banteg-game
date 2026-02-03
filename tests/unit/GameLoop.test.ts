@@ -255,10 +255,7 @@ describe('GameLoop', () => {
 
       loopWithPause.destroy();
 
-      expect(removeEventListenerSpy).toHaveBeenCalledWith(
-        'visibilitychange',
-        expect.any(Function)
-      );
+      expect(removeEventListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
     });
   });
 

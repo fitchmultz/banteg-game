@@ -19,8 +19,10 @@ import { WeaponId, CreatureTypeId, ProjectileTypeId } from '../../../src/types';
 
 describe('Weapon Data', () => {
   it('should have valid weapon data for all weapon IDs', () => {
-    const weaponIds = Object.values(WeaponId).filter((id): id is WeaponId => typeof id === 'number');
-    
+    const weaponIds = Object.values(WeaponId).filter(
+      (id): id is WeaponId => typeof id === 'number'
+    );
+
     for (const id of weaponIds) {
       const data = getWeaponData(id);
       expect(data).toBeDefined();
@@ -58,8 +60,10 @@ describe('Weapon Data', () => {
 
 describe('Creature Data', () => {
   it('should have valid creature data for all creature types', () => {
-    const creatureIds = Object.values(CreatureTypeId).filter((id): id is CreatureTypeId => typeof id === 'number');
-    
+    const creatureIds = Object.values(CreatureTypeId).filter(
+      (id): id is CreatureTypeId => typeof id === 'number'
+    );
+
     for (const id of creatureIds) {
       const data = getCreatureData(id);
       expect(data).toBeDefined();
@@ -109,8 +113,10 @@ describe('Creature Data', () => {
 
 describe('Projectile Data', () => {
   it('should have valid projectile data for all projectile types', () => {
-    const projectileIds = Object.values(ProjectileTypeId).filter((id): id is ProjectileTypeId => typeof id === 'number');
-    
+    const projectileIds = Object.values(ProjectileTypeId).filter(
+      (id): id is ProjectileTypeId => typeof id === 'number'
+    );
+
     for (const id of projectileIds) {
       const data = getProjectileData(id);
       expect(data).toBeDefined();
@@ -129,7 +135,7 @@ describe('Projectile Data', () => {
   it('should have different speeds for different projectiles', () => {
     const pistol = getProjectileData(ProjectileTypeId.PISTOL);
     const gauss = getProjectileData(ProjectileTypeId.GAUSS_GUN);
-    
+
     expect(gauss.speed).toBeGreaterThan(pistol.speed);
   });
 

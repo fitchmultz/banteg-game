@@ -10,4 +10,7 @@ export { QuestMode } from './QuestMode';
 
 export type { GameModeCallbacks } from './GameModeManager';
 export type { SurvivalModeCallbacks } from './SurvivalMode';
-export type { QuestModeCallbacks, QuestData, QuestObjective } from './QuestMode';
+export type { QuestModeCallbacks } from './QuestMode';
+
+// Re-export quest data types from data module for convenience
+export type { QuestData, QuestObjective, QuestSpawnEntry } from '../data/quests';

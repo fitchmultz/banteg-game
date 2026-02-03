@@ -1,10 +1,11 @@
 /**
  * Entity Component System - EntityManager
- * 
+ *
  * Manages entity creation, destruction, and queries.
  */
 
 import type { ComponentType, EntityId } from '../../types';
+import type { ComponentTypeMap } from '../../game/components';
 import { Entity } from './Entity';
 
 export class EntityManager {
@@ -81,6 +82,31 @@ export class EntityManager {
     for (const entity of this.entities.values()) {
       if (componentTypes.some((type) => entity.hasComponent(type))) {
         results.push(entity);
+      }
+    }
+    return results;
+  }
+
+  /**
+   * Get a component from an entity by its ID
+   */
+  getComponent<T extends keyof ComponentTypeMap>(
+    entityId: EntityId,
+    componentType: T
+  ): ComponentTypeMap[T] | undefined {
+    const entity = this.entities.get(entityId);
+    if (!entity) return undefined;
+    return entity.getComponent(componentType);
+  }
+
+  /**
+   * Get all entity IDs that have a specific component
+   */
+  getEntitiesWithComponent(componentType: ComponentType): EntityId[] {
+    const results: EntityId[] = [];
+    for (const [id, entity] of this.entities) {
+      if (entity.hasComponent(componentType)) {
+        results.push(id);
       }
     }
     return results;

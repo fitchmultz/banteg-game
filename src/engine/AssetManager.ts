@@ -25,12 +25,7 @@ type Asset = HTMLImageElement | AudioBuffer | unknown;
 
 // Type guard to check if asset is image-like
 function isImageLike(asset: unknown): asset is HTMLImageElement {
-  return (
-    typeof asset === 'object' &&
-    asset !== null &&
-    'src' in asset &&
-    'naturalWidth' in asset
-  );
+  return typeof asset === 'object' && asset !== null && 'src' in asset && 'naturalWidth' in asset;
 }
 
 // Type guard to check if asset is audio-like

@@ -108,11 +108,16 @@ export enum PerkId {
   PYROMANIAC = 5,
   DOCTOR = 6,
   PYROKINETIC = 7,
+  BONUS_MAGNET = 8,
+  REFLEX_BOOSTED = 9,
   THICK_SKINNED = 10,
   REGENERATION = 11,
   GREATER_REGENERATION = 12,
   BANDAGE = 13,
   BREATHING_ROOM = 14,
+  REGRESSION_BULLETS = 15,
+  URANIUM_FILLED_BULLETS = 16,
+  POISON_BULLETS = 17,
   AMMUNITION_WITHIN = 20,
   ANXIOUS_LOADER = 21,
   AMMO_MANIAC = 22,
@@ -134,7 +139,7 @@ export enum PerkId {
   BONUS_ECONOMIST = 43,
 }
 
-export type QuestId = 
+export type QuestId =
   | 'nagolipoli'
   | 'monster_blues'
   | 'the_gathering'

@@ -317,13 +317,9 @@ export class Renderer {
     options: SpriteDrawOptions = {}
   ): void {
     const imgWidth =
-      (image as HTMLImageElement).naturalWidth ||
-      (image as HTMLCanvasElement).width ||
-      1;
+      (image as HTMLImageElement).naturalWidth || (image as HTMLCanvasElement).width || 1;
     const imgHeight =
-      (image as HTMLImageElement).naturalHeight ||
-      (image as HTMLCanvasElement).height ||
-      1;
+      (image as HTMLImageElement).naturalHeight || (image as HTMLCanvasElement).height || 1;
 
     const sx = u0 * imgWidth;
     const sy = v0 * imgHeight;
@@ -349,7 +345,17 @@ export class Renderer {
     const drawWidth = width * scale;
     const drawHeight = height * scale;
 
-    this.ctx.drawImage(image, sx, sy, sw, sh, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    this.ctx.drawImage(
+      image,
+      sx,
+      sy,
+      sw,
+      sh,
+      -drawWidth / 2,
+      -drawHeight / 2,
+      drawWidth,
+      drawHeight
+    );
 
     this.ctx.restore();
   }

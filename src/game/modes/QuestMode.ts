@@ -1,105 +1,87 @@
 /**
  * Quest Mode
  *
- * Structured levels with specific objectives and enemy spawn patterns.
+ * Structured levels with specific objectives and time-based enemy spawn patterns.
+ * Updated with QuestSpawnSystem for timeline-based spawning.
  */
 
 import type { EntityManager } from '../../core/ecs';
-import type { QuestId, GameStats } from '../../types';
-import { CreatureFactory } from '../entities';
+import type { QuestId, GameStats, CreatureTypeId } from '../../types';
+import { getQuestData, getAvailableQuests, type QuestData, type QuestObjective } from '../data/quests';
+import { QuestSpawnSystem } from '../systems/QuestSpawnSystem';
+import type { ProgressionManager } from '../progression/ProgressionManager';
 
 export interface QuestModeCallbacks {
   onQuestStart?: (questId: QuestId) => void;
-  onQuestComplete?: (questId: QuestId) => void;
-  onGameOver?: (stats: GameStats) => void;
+  onQuestComplete?: (questId: QuestId, stats: GameStats) => void;
+  onQuestFail?: (questId: QuestId, stats: GameStats) => void;
+  onObjectiveUpdate?: (objective: QuestObjective, current: number, target: number) => void;
+  onSpawn?: (creatureTypeId: CreatureTypeId, count: number) => void;
 }
-
-export interface QuestObjective {
-  type: 'kill_count' | 'survive_time' | 'reach_location';
-  target: number;
-  description: string;
-}
-
-export interface QuestData {
-  id: QuestId;
-  name: string;
-  description: string;
-  objectives: QuestObjective[];
-  spawnTemplates: Array<{ templateId: number; x: number; y: number }>;
-}
-
-// Quest definitions (simplified - only a few quests defined)
-const QUESTS: Partial<Record<QuestId, QuestData>> = {
-  'nagolipoli': {
-    id: 'nagolipoli',
-    name: 'Nagolipoli',
-    description: 'Survive the initial zombie outbreak.',
-    objectives: [{ type: 'survive_time', target: 60, description: 'Survive for 60 seconds' }],
-    spawnTemplates: [
-      { templateId: 0x38, x: 100, y: 100 },
-      { templateId: 0x38, x: -100, y: 100 },
-    ],
-  },
-  'monster_blues': {
-    id: 'monster_blues',
-    name: 'Monster Blues',
-    description: 'Eliminate 50 zombies.',
-    objectives: [{ type: 'kill_count', target: 50, description: 'Kill 50 zombies' }],
-    spawnTemplates: [
-      { templateId: 0x38, x: 200, y: 200 },
-      { templateId: 0x41, x: -200, y: 200 },
-    ],
-  },
-  'the_gathering': {
-    id: 'the_gathering',
-    name: 'The Gathering',
-    description: 'Face increasing waves.',
-    objectives: [{ type: 'kill_count', target: 100, description: 'Kill 100 enemies' }],
-    spawnTemplates: [],
-  },
-  'army_of_three': {
-    id: 'army_of_three',
-    name: 'Army of Three',
-    description: 'Three powerful enemies await.',
-    objectives: [{ type: 'kill_count', target: 3, description: 'Kill 3 elite enemies' }],
-    spawnTemplates: [],
-  },
-};
 
 export class QuestMode {
-  private entityManager: EntityManager;
+  private _entityManager: EntityManager;
   private callbacks: QuestModeCallbacks;
+  private progressionManager: ProgressionManager | undefined;
 
-  // Current quest
+  // Quest spawn system
+  private questSpawnSystem: QuestSpawnSystem;
+
+  // Current quest state
   private currentQuest: QuestData | null = null;
+  private currentQuestId: QuestId | null = null;
   private isActive = false;
+  // private _startTime = 0; // TODO: Implement timing functionality
 
   // Progress tracking
   private killCount = 0;
   private survivalTime = 0;
+  private killCountsByType = new Map<CreatureTypeId, number>();
+  private score = 0;
 
-  constructor(entityManager: EntityManager, callbacks: QuestModeCallbacks = {}) {
-    this.entityManager = entityManager;
+  constructor(
+    entityManager: EntityManager,
+    callbacks: QuestModeCallbacks = {},
+    progressionManager?: ProgressionManager
+  ) {
+    this._entityManager = entityManager;
     this.callbacks = callbacks;
+    this.progressionManager = progressionManager;
+
+    // Initialize quest spawn system
+    this.questSpawnSystem = new QuestSpawnSystem(this._entityManager, {
+      onSpawn: (creatureTypeId, count) => {
+        this.callbacks.onSpawn?.(creatureTypeId, count);
+      },
+      onTimelineComplete: () => {
+        // Timeline complete - all enemies spawned
+      },
+    });
   }
 
   /**
    * Start a quest
    */
   startQuest(questId: QuestId): boolean {
-    const quest = QUESTS[questId];
+    const quest = getQuestData(questId);
     if (!quest) {
       console.warn(`Quest not found: ${questId}`);
       return false;
     }
 
     this.currentQuest = quest;
+    this.currentQuestId = questId;
     this.isActive = true;
+    // this._startTime = performance.now();
+
+    // Reset progress
     this.killCount = 0;
     this.survivalTime = 0;
+    this.killCountsByType.clear();
+    this.score = 0;
 
-    // Spawn initial enemies
-    this.spawnQuestEntities();
+    // Start spawn timeline
+    this.questSpawnSystem.startQuest(quest);
 
     this.callbacks.onQuestStart?.(questId);
     return true;
@@ -111,6 +93,8 @@ export class QuestMode {
   stop(): void {
     this.isActive = false;
     this.currentQuest = null;
+    this.currentQuestId = null;
+    this.questSpawnSystem.stop();
   }
 
   /**
@@ -119,7 +103,20 @@ export class QuestMode {
   update(dt: number): void {
     if (!this.isActive || !this.currentQuest) return;
 
+    // Update spawn timeline
+    this.questSpawnSystem.update(dt);
+
+    // Update survival time
     this.survivalTime += dt;
+
+    // Check time limit
+    if (this.currentQuest.timeLimitMs) {
+      const elapsedMs = this.survivalTime * 1000;
+      if (elapsedMs >= this.currentQuest.timeLimitMs) {
+        this.failQuest('time_limit');
+        return;
+      }
+    }
 
     // Check objectives
     this.checkObjectives();
@@ -128,8 +125,32 @@ export class QuestMode {
   /**
    * Record a kill
    */
-  recordKill(): void {
+  recordKill(creatureTypeId?: CreatureTypeId, rewardValue = 10): void {
+    if (!this.isActive) return;
+
     this.killCount++;
+    this.score += rewardValue;
+
+    if (creatureTypeId !== undefined) {
+      const current = this.killCountsByType.get(creatureTypeId) ?? 0;
+      this.killCountsByType.set(creatureTypeId, current + 1);
+    }
+
+    // Track kill in progression
+    if (creatureTypeId !== undefined) {
+      this.progressionManager?.recordKill(creatureTypeId);
+    }
+
+    // Re-check objectives after kill
+    this.checkObjectives();
+  }
+
+  /**
+   * Add score
+   */
+  addScore(points: number): void {
+    if (!this.isActive) return;
+    this.score += points;
   }
 
   /**
@@ -140,10 +161,29 @@ export class QuestMode {
   }
 
   /**
+   * Get current quest ID
+   */
+  getCurrentQuestId(): QuestId | null {
+    return this.currentQuestId;
+  }
+
+  /**
    * Get quest progress
    */
-  getProgress(): { kills: number; time: number } {
-    return { kills: this.killCount, time: this.survivalTime };
+  getProgress(): {
+    kills: number;
+    time: number;
+    score: number;
+    timelineProgress: number;
+    killCountsByType: Map<CreatureTypeId, number>;
+  } {
+    return {
+      kills: this.killCount,
+      time: this.survivalTime,
+      score: this.score,
+      timelineProgress: this.questSpawnSystem.getProgress(),
+      killCountsByType: new Map(this.killCountsByType),
+    };
   }
 
   /**
@@ -153,17 +193,48 @@ export class QuestMode {
     return this.isActive;
   }
 
-  private spawnQuestEntities(): void {
-    if (!this.currentQuest) return;
+  /**
+   * Get the quest spawn system
+   */
+  getSpawnSystem(): QuestSpawnSystem {
+    return this.questSpawnSystem;
+  }
 
-    for (const spawn of this.currentQuest.spawnTemplates) {
-      CreatureFactory.createFromTemplate(
-        this.entityManager,
-        spawn.templateId,
-        spawn.x,
-        spawn.y
-      );
-    }
+  /**
+   * Pause the quest
+   */
+  pause(): void {
+    this.questSpawnSystem.pause();
+  }
+
+  /**
+   * Resume the quest
+   */
+  resume(): void {
+    this.questSpawnSystem.resume();
+  }
+
+  /**
+   * Get remaining time if there's a time limit
+   */
+  getRemainingTime(): number | null {
+    if (!this.currentQuest?.timeLimitMs) return null;
+
+    const elapsedMs = this.survivalTime * 1000;
+    const remainingMs = this.currentQuest.timeLimitMs - elapsedMs;
+    return Math.max(0, remainingMs / 1000);
+  }
+
+  /**
+   * Get current game stats
+   */
+  getStats(): GameStats {
+    return {
+      score: this.score,
+      kills: this.killCount,
+      timeElapsed: this.survivalTime,
+      level: 1, // Quests don't use levels
+    };
   }
 
   private checkObjectives(): void {
@@ -173,23 +244,43 @@ export class QuestMode {
 
     for (const objective of this.currentQuest.objectives) {
       let complete = false;
+      let current = 0;
 
       switch (objective.type) {
         case 'kill_count':
-          complete = this.killCount >= objective.target;
+          if (objective.creatureTypeId !== undefined) {
+            current = this.killCountsByType.get(objective.creatureTypeId) ?? 0;
+          } else {
+            current = this.killCount;
+          }
+          complete = current >= objective.target;
           break;
+
         case 'survive_time':
+          current = Math.floor(this.survivalTime);
           complete = this.survivalTime >= objective.target;
           break;
+
         case 'reach_location':
-          // Would need player position check
+          // Would need player position check - not implemented
+          current = 0;
           complete = false;
+          break;
+
+        case 'kill_bosses':
+          // Similar to kill_count but for boss types
+          current = this.killCount; // Simplified
+          complete = current >= objective.target;
           break;
       }
 
       if (!complete) {
         allComplete = false;
-        break;
+      }
+
+      // Notify on objective update (throttle to avoid spam)
+      if (current !== objective.target) {
+        this.callbacks.onObjectiveUpdate?.(objective, current, objective.target);
       }
     }
 
@@ -199,23 +290,41 @@ export class QuestMode {
   }
 
   private completeQuest(): void {
-    if (!this.currentQuest) return;
+    if (!this.currentQuest || !this.currentQuestId) return;
 
-    this.callbacks.onQuestComplete?.(this.currentQuest.id);
+    const stats = this.getStats();
+
+    // Record completion in progression
+    this.progressionManager?.recordQuestComplete(this.currentQuestId, {
+      time: this.survivalTime,
+      score: this.score,
+      kills: this.killCount,
+    });
+
+    this.callbacks.onQuestComplete?.(this.currentQuestId, stats);
+    this.isActive = false;
+  }
+
+  private failQuest(_reason: string): void {
+    if (!this.currentQuest || !this.currentQuestId) return;
+
+    const stats = this.getStats();
+
+    this.callbacks.onQuestFail?.(this.currentQuestId, stats);
     this.isActive = false;
   }
 
   /**
-   * Get all available quests
+   * Get all available quests (static helper)
    */
   static getAvailableQuests(): QuestId[] {
-    return Object.keys(QUESTS) as QuestId[];
+    return getAvailableQuests([]);
   }
 
   /**
-   * Get quest data
+   * Get quest data (static helper)
    */
   static getQuestData(questId: QuestId): QuestData | null {
-    return QUESTS[questId] ?? null;
+    return getQuestData(questId) ?? null;
   }
 }

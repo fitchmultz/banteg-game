@@ -6,11 +6,9 @@
  * Priority: 40
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import { AiMode } from '../../types';
-
 
 // AI update interval (seconds) - approx 70 ticks at 60 FPS
 const AI_UPDATE_INTERVAL = 70 / 60;

@@ -5,7 +5,6 @@
  * Priority: 70
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';

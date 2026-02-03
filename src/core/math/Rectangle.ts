@@ -17,29 +17,16 @@ export class Rectangle implements IRectangle {
   }
 
   static fromCenter(center: IVector2, width: number, height: number): Rectangle {
-    return new Rectangle(
-      center.x - width / 2,
-      center.y - height / 2,
-      width,
-      height
-    );
+    return new Rectangle(center.x - width / 2, center.y - height / 2, width, height);
   }
 
   static contains(r: IRectangle, p: IVector2): boolean {
-    return (
-      p.x >= r.x &&
-      p.x < r.x + r.width &&
-      p.y >= r.y &&
-      p.y < r.y + r.height
-    );
+    return p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
   }
 
   static intersects(a: IRectangle, b: IRectangle): boolean {
     return (
-      a.x < b.x + b.width &&
-      a.x + a.width > b.x &&
-      a.y < b.y + b.height &&
-      a.y + a.height > b.y
+      a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
     );
   }
 

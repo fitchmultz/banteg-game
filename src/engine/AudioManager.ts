@@ -1,6 +1,6 @@
 /**
  * Audio Manager
- * 
+ *
  * Replacement for grim.dll's DirectSound wrapper.
  * Uses Web Audio API for SFX and music playback.
  */
@@ -31,16 +31,17 @@ export class AudioManager {
   async initialize(): Promise<void> {
     if (this.ctx) return;
 
-    const AudioContextClass = window.AudioContext || 
+    const AudioContextClass =
+      window.AudioContext ||
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    
+
     if (!AudioContextClass) {
       console.warn('Web Audio API not supported');
       return;
     }
 
     this.ctx = new AudioContextClass();
-    
+
     if (this.ctx.state === 'suspended') {
       await this.ctx.resume();
     }
@@ -59,7 +60,7 @@ export class AudioManager {
       const response = await fetch(url);
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-      
+
       this.samples.set(name, { name, buffer: audioBuffer });
     } catch (error) {
       console.error(`Failed to load sample: ${name}`, error);
@@ -145,7 +146,7 @@ export class AudioManager {
 
     const track = this.tracks.get(name);
     const sample = this.samples.get(name);
-    
+
     if (!track || !sample) {
       console.warn(`Track not found: ${name}`);
       return;
@@ -203,7 +204,7 @@ export class AudioManager {
 
   setMusicVolume(volume: number): void {
     this.musicVolume = Math.max(0, Math.min(1, volume));
-    
+
     for (const track of this.tracks.values()) {
       track.gainNode.gain.value = this.musicVolume;
     }
@@ -235,7 +236,7 @@ export class AudioManager {
 
   destroy(): void {
     this.stopAllMusic();
-    
+
     for (const source of this.activeSfx) {
       source.stop();
     }

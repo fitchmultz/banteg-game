@@ -5,7 +5,6 @@
  * Priority: 200 (last to run)
  */
 
-
 import { System } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import type { Renderer } from '../../engine';
@@ -88,12 +87,7 @@ export class RenderSystem extends System {
       if (!transform || !creature) continue;
 
       // Use creature tint for color
-      this.renderer.setColor(
-        creature.tint.r,
-        creature.tint.g,
-        creature.tint.b,
-        creature.tint.a
-      );
+      this.renderer.setColor(creature.tint.r, creature.tint.g, creature.tint.b, creature.tint.a);
 
       // Draw creature as a circle
       const size = 16 * creature.size;
@@ -202,7 +196,11 @@ export class RenderSystem extends System {
     }
     if (playerComp.fireBulletsTimer > 0) {
       this.renderer.setColor(1, 0.3, 0, 1);
-      this.renderer.drawText(`Fire Bullets: ${playerComp.fireBulletsTimer.toFixed(1)}s`, 10, yOffset);
+      this.renderer.drawText(
+        `Fire Bullets: ${playerComp.fireBulletsTimer.toFixed(1)}s`,
+        10,
+        yOffset
+      );
       yOffset += 20;
     }
     if (playerComp.speedBonusTimer > 0) {

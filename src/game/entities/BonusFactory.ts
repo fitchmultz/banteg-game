@@ -131,11 +131,7 @@ export function createWeaponPickupEntity(
 /**
  * Create a random bonus at the position.
  */
-export function createRandomBonus(
-  entityManager: EntityManager,
-  x: number,
-  y: number
-): Entity {
+export function createRandomBonus(entityManager: EntityManager, x: number, y: number): Entity {
   // Weighted random selection
   const types = [
     { type: BonusType.HEALTH, weight: 20 },

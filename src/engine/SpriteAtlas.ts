@@ -277,8 +277,7 @@ export class SpriteAtlas {
 
     // Calculate total duration (use first frame's duration or default to 100ms per frame)
     const totalDuration =
-      data.duration ??
-      data.frames.reduce((sum, f) => sum + (f.duration ?? 100), 0);
+      data.duration ?? data.frames.reduce((sum, f) => sum + (f.duration ?? 100), 0);
 
     const frameDuration = totalDuration / frames.length / 1000; // Convert to seconds
 

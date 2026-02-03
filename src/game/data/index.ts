@@ -7,3 +7,5 @@
 export * from './weapons';
 export * from './creatures';
 export * from './projectiles';
+export * from './perks';
+export * from './quests';

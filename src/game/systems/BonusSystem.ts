@@ -5,7 +5,6 @@
  * Priority: 90
  */
 
-
 import { System } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import { BonusType } from '../../types';
@@ -83,31 +82,19 @@ export class BonusSystem extends System {
       case BonusType.WEAPON_POWER_UP:
         // Increase weapon damage temporarily
         // (Applied in WeaponSystem when firing)
-        player.fireBulletsTimer = Math.max(
-          player.fireBulletsTimer,
-          this.weaponPowerUpDuration
-        );
+        player.fireBulletsTimer = Math.max(player.fireBulletsTimer, this.weaponPowerUpDuration);
         break;
 
       case BonusType.SPEED_BOOST:
-        player.speedBonusTimer = Math.max(
-          player.speedBonusTimer,
-          this.speedBoostDuration
-        );
+        player.speedBonusTimer = Math.max(player.speedBonusTimer, this.speedBoostDuration);
         break;
 
       case BonusType.SHIELD:
-        player.shieldTimer = Math.max(
-          player.shieldTimer,
-          this.shieldDuration
-        );
+        player.shieldTimer = Math.max(player.shieldTimer, this.shieldDuration);
         break;
 
       case BonusType.FIRE_BULLETS:
-        player.fireBulletsTimer = Math.max(
-          player.fireBulletsTimer,
-          this.fireBulletsDuration
-        );
+        player.fireBulletsTimer = Math.max(player.fireBulletsTimer, this.fireBulletsDuration);
         break;
 
       case BonusType.EXP_MULTIPLIER:

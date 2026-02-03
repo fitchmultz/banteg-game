@@ -51,10 +51,7 @@ export class Vector2 implements IVector2 {
   }
 
   static lerp(a: IVector2, b: IVector2, t: number): Vector2 {
-    return new Vector2(
-      a.x + (b.x - a.x) * t,
-      a.y + (b.y - a.y) * t
-    );
+    return new Vector2(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
   }
 
   static normalize(v: IVector2): Vector2 {

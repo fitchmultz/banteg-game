@@ -1,6 +1,6 @@
 /**
  * Input Manager
- * 
+ *
  * Replacement for grim.dll's DirectInput handling.
  */
 
@@ -36,7 +36,7 @@ export const KeyCode = {
   F: 'KeyF',
 } as const;
 
-export type KeyCodeType = typeof KeyCode[keyof typeof KeyCode];
+export type KeyCodeType = (typeof KeyCode)[keyof typeof KeyCode];
 
 export type MouseButton = 'left' | 'middle' | 'right';
 
@@ -44,7 +44,7 @@ export class InputManager {
   private keys: Map<string, KeyState> = new Map();
   private mouse: MouseState;
   private canvas: HTMLCanvasElement;
-  
+
   private boundHandlers: {
     keyDown: (e: KeyboardEvent) => void;
     keyUp: (e: KeyboardEvent) => void;
@@ -57,7 +57,7 @@ export class InputManager {
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    
+
     this.mouse = {
       x: 0,
       y: 0,
@@ -178,7 +178,7 @@ export class InputManager {
       state = { pressed: false, justPressed: false, justReleased: false };
       this.keys.set(e.code, state);
     }
-    
+
     if (!state.pressed) {
       state.pressed = true;
       state.justPressed = true;
@@ -197,7 +197,7 @@ export class InputManager {
     const rect = this.canvas.getBoundingClientRect();
     const newX = e.clientX - rect.left;
     const newY = e.clientY - rect.top;
-    
+
     this.mouse.dx = newX - this.mouse.x;
     this.mouse.dy = newY - this.mouse.y;
     this.mouse.x = newX;
@@ -226,10 +226,14 @@ export class InputManager {
 
   private getMouseButtonName(button: number): MouseButton | null {
     switch (button) {
-      case 0: return 'left';
-      case 1: return 'middle';
-      case 2: return 'right';
-      default: return null;
+      case 0:
+        return 'left';
+      case 1:
+        return 'middle';
+      case 2:
+        return 'right';
+      default:
+        return null;
     }
   }
 
@@ -239,7 +243,7 @@ export class InputManager {
     this.mouse.dx = 0;
     this.mouse.dy = 0;
     this.mouse.wheel = 0;
-    
+
     for (const button of Object.values(this.mouse.buttons)) {
       button.pressed = false;
       button.justPressed = false;

@@ -24,9 +24,7 @@ describe('InputManager', () => {
 
   describe('keyboard input', () => {
     it('should track key down state', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
 
       expect(input.isKeyDown(KeyCode.W)).toBe(true);
       expect(input.wasKeyPressed(KeyCode.W)).toBe(true);
@@ -34,26 +32,18 @@ describe('InputManager', () => {
 
     it('should track key up state', () => {
       // First press the key
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
 
       // Then release it
-      window.dispatchEvent(
-        new KeyboardEvent('keyup', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: KeyCode.W, bubbles: true }));
 
       expect(input.isKeyDown(KeyCode.W)).toBe(false);
       expect(input.wasKeyReleased(KeyCode.W)).toBe(true);
     });
 
     it('should track multiple keys', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.A, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.A, bubbles: true }));
 
       expect(input.isKeyDown(KeyCode.W)).toBe(true);
       expect(input.isKeyDown(KeyCode.A)).toBe(true);
@@ -61,9 +51,7 @@ describe('InputManager', () => {
     });
 
     it('should clear justPressed on update', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
       expect(input.wasKeyPressed(KeyCode.W)).toBe(true);
 
       input.update();
@@ -72,12 +60,8 @@ describe('InputManager', () => {
     });
 
     it('should clear justReleased on update', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
-      window.dispatchEvent(
-        new KeyboardEvent('keyup', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: KeyCode.W, bubbles: true }));
       expect(input.wasKeyReleased(KeyCode.W)).toBe(true);
 
       input.update();
@@ -249,9 +233,7 @@ describe('InputManager', () => {
 
   describe('state management', () => {
     it('should get full input state', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
 
       const state = input.getState();
       expect(state.keys.has(KeyCode.W)).toBe(true);
@@ -259,9 +241,7 @@ describe('InputManager', () => {
     });
 
     it('should flush input', () => {
-      window.dispatchEvent(
-        new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: KeyCode.W, bubbles: true }));
 
       input.flushInput();
 
@@ -320,9 +300,7 @@ describe('InputManager', () => {
 
     it('should handle key release for never-pressed key', () => {
       // Release a key that was never pressed
-      window.dispatchEvent(
-        new KeyboardEvent('keyup', { code: 'NeverPressed', bubbles: true })
-      );
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'NeverPressed', bubbles: true }));
 
       // Should not throw
       expect(input.wasKeyReleased('NeverPressed')).toBe(false);

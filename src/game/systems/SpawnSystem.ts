@@ -5,7 +5,6 @@
  * Priority: 80
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import { CreatureFactory } from '../entities';
@@ -98,7 +97,7 @@ export class SpawnSystem extends System {
 
     // Generate spawn points around the edges
     const points: { x: number; y: number }[] = [];
-    
+
     // Top and bottom edges
     for (let i = 0; i < 5; i++) {
       const x = (i / 4) * mapWidth - halfWidth;
@@ -125,12 +124,7 @@ export class SpawnSystem extends System {
     const creatureTypeId = selectRandomCreatureForWave(this.wave);
 
     // Spawn the creature
-    CreatureFactory.create(
-      this.entityManager,
-      creatureTypeId,
-      spawnPoint.x,
-      spawnPoint.y
-    );
+    CreatureFactory.create(this.entityManager, creatureTypeId, spawnPoint.x, spawnPoint.y);
 
     this.spawnedThisWave++;
     this.activeEnemies++;
@@ -140,7 +134,7 @@ export class SpawnSystem extends System {
     this.wave++;
     this.waveTimer = 0;
     this.spawnedThisWave = 0;
-    
+
     // Increase target enemies with each wave
     this.targetEnemies = 10 + this.wave * 5;
 

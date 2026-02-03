@@ -16,6 +16,8 @@ export { BonusSystem } from './BonusSystem';
 export { EffectSystem } from './EffectSystem';
 export { LifetimeSystem } from './LifetimeSystem';
 export { RenderSystem } from './RenderSystem';
+export { PerkSystem } from './PerkSystem';
+export { QuestSpawnSystem } from './QuestSpawnSystem';
 
 // System priorities (lower = earlier)
 export const SYSTEM_PRIORITIES = {
@@ -27,8 +29,10 @@ export const SYSTEM_PRIORITIES = {
   CollisionSystem: 60,
   HealthSystem: 70,
   SpawnSystem: 80,
+  QuestSpawnSystem: 85,
   BonusSystem: 90,
   EffectSystem: 100,
   LifetimeSystem: 150,
+  PerkSystem: 160,
   RenderSystem: 200,
 } as const;

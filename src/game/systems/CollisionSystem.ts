@@ -6,7 +6,6 @@
  * Priority: 60
  */
 
-
 import { System } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
@@ -56,7 +55,7 @@ export class CollisionSystem extends System {
     for (const projectile of projectiles) {
       const pCollider = projectile.getComponent<'collider'>('collider');
       if (!pCollider) continue;
-      
+
       // Only check player projectiles against enemies
       if (pCollider.layer !== CollisionLayer.PROJECTILE_PLAYER) continue;
 

@@ -5,7 +5,6 @@
  * Priority: 30
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
@@ -67,10 +66,7 @@ export class WeaponSystem extends System {
         if (state.reloadTimer <= 0) {
           // Reload complete
           state.reloadTimer = 0;
-          const reloadAmount = Math.min(
-            weaponData.clipSize - player.clipSize,
-            player.ammo
-          );
+          const reloadAmount = Math.min(weaponData.clipSize - player.clipSize, player.ammo);
           player.clipSize += reloadAmount;
           player.ammo -= reloadAmount;
         }
@@ -95,9 +91,10 @@ export class WeaponSystem extends System {
       const fireHeld = (player as unknown as Record<string, boolean>).fireHeld;
       const fireJustPressed = (player as unknown as Record<string, boolean>).fireJustPressed;
 
-      const canFire = state.shotCooldown <= 0 &&
-                      player.clipSize > 0 &&
-                      (weaponData.automatic ? fireHeld : fireJustPressed);
+      const canFire =
+        state.shotCooldown <= 0 &&
+        player.clipSize > 0 &&
+        (weaponData.automatic ? fireHeld : fireJustPressed);
 
       if (canFire) {
         this.fireWeapon(entity.id, player, transform, state, weaponData);
@@ -140,10 +137,7 @@ export class WeaponSystem extends System {
     const spreadAmount = weaponData.spread * (1 + state.spreadHeat);
 
     // Increase spread heat
-    state.spreadHeat = Math.min(
-      this.maxSpreadHeat,
-      state.spreadHeat + weaponData.spread * 0.5
-    );
+    state.spreadHeat = Math.min(this.maxSpreadHeat, state.spreadHeat + weaponData.spread * 0.5);
 
     // Fire projectiles
     if (weaponData.pelletCount > 1) {

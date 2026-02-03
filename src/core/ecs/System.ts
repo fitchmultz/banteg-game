@@ -1,6 +1,6 @@
 /**
  * Entity Component System - System
- * 
+ *
  * Systems process entities with specific components each frame.
  */
 
@@ -28,7 +28,7 @@ export class SystemManager {
   addSystem(system: System): void {
     this.systems.push(system);
     this.systems.sort((a, b) => a.priority - b.priority);
-    
+
     if (system.initialize) {
       system.initialize();
     }
@@ -39,12 +39,12 @@ export class SystemManager {
     if (index === -1) {
       return false;
     }
-    
+
     const system = this.systems[index];
     if (system?.destroy) {
       system.destroy();
     }
-    
+
     this.systems.splice(index, 1);
     return true;
   }

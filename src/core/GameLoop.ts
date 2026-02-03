@@ -1,6 +1,6 @@
 /**
  * Game Loop
- * 
+ *
  * Fixed timestep game loop with accumulator pattern.
  * Based on the frame_dt pattern from the original C source.
  */

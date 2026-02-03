@@ -177,14 +177,14 @@ export function getCreaturesForWave(wave: number): CreatureTypeId[] {
 export function getSpawnWeightsForWave(wave: number): Map<CreatureTypeId, number> {
   const available = getCreaturesForWave(wave);
   const weights = new Map<CreatureTypeId, number>();
-  
+
   for (const id of available) {
     // Increase weight of higher-tier enemies as waves progress
     const data = CREATURE_DATA[id];
     const waveBonus = Math.max(0, wave - data.minWave) * 2;
     weights.set(id, data.spawnWeight + waveBonus);
   }
-  
+
   return weights;
 }
 
@@ -193,13 +193,13 @@ export function selectRandomCreatureForWave(wave: number): CreatureTypeId {
   const weights = getSpawnWeightsForWave(wave);
   const totalWeight = Array.from(weights.values()).reduce((a, b) => a + b, 0);
   let random = Math.random() * totalWeight;
-  
+
   for (const [id, weight] of weights) {
     random -= weight;
     if (random <= 0) {
       return id;
     }
   }
-  
+
   return CreatureTypeId.ZOMBIE;
 }

@@ -5,7 +5,6 @@
  * Priority: 10
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import { type InputManager, KeyCode } from '../../engine';
@@ -74,7 +73,8 @@ export class InputSystem extends System {
 
       // Handle firing
       const fireDown = this.input.isMouseButtonDown('left');
-      (player as unknown as Record<string, boolean>).fireJustPressed = fireDown && !this.firePressed;
+      (player as unknown as Record<string, boolean>).fireJustPressed =
+        fireDown && !this.firePressed;
       (player as unknown as Record<string, boolean>).fireHeld = fireDown;
       this.firePressed = fireDown;
 

@@ -154,7 +154,10 @@ describe('AudioManager', () => {
       const ctx = new MockAudioContext();
       ctx.state = 'suspended';
 
-      vi.stubGlobal('AudioContext', vi.fn(() => ctx));
+      vi.stubGlobal(
+        'AudioContext',
+        vi.fn(() => ctx)
+      );
 
       const resumeSpy = vi.spyOn(ctx, 'resume');
       await audio.initialize();
@@ -180,10 +183,7 @@ describe('AudioManager', () => {
 
       await audio.loadSample('test', 'test.mp3');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to load sample: test',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to load sample: test', expect.any(Error));
 
       consoleSpy.mockRestore();
     });
@@ -305,7 +305,9 @@ describe('AudioManager', () => {
       const createBufferSourceSpy = vi.spyOn(ctx, 'createBufferSource');
       audio.playTune('bgm', true);
 
-      const source = createBufferSourceSpy.mock.results[0]?.value as MockAudioBufferSourceNode | undefined;
+      const source = createBufferSourceSpy.mock.results[0]?.value as
+        | MockAudioBufferSourceNode
+        | undefined;
       expect(source?.loop).toBe(true);
     });
 
@@ -313,7 +315,9 @@ describe('AudioManager', () => {
       audio.playTune('bgm');
       audio.muteTune('bgm');
 
-      const tracks = (audio as unknown as { tracks: Map<string, { gainNode: { gain: { value: number } } }> }).tracks;
+      const tracks = (
+        audio as unknown as { tracks: Map<string, { gainNode: { gain: { value: number } } }> }
+      ).tracks;
       const track = tracks.get('bgm');
       expect(track?.gainNode.gain.value).toBe(0);
     });
@@ -323,7 +327,9 @@ describe('AudioManager', () => {
       audio.muteTune('bgm');
       audio.unmuteTune('bgm');
 
-      const tracks = (audio as unknown as { tracks: Map<string, { gainNode: { gain: { value: number } } }> }).tracks;
+      const tracks = (
+        audio as unknown as { tracks: Map<string, { gainNode: { gain: { value: number } } }> }
+      ).tracks;
       const track = tracks.get('bgm');
       expect(track?.gainNode.gain.value).toBe(1.0);
     });

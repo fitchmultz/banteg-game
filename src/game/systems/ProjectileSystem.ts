@@ -5,7 +5,6 @@
  * Priority: 50
  */
 
-
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
 
@@ -24,7 +23,12 @@ export class ProjectileSystem extends System {
     const dt = context.dt;
 
     // Query all projectiles
-    const projectiles = this.entityManager.query(['projectile', 'transform', 'velocity', 'lifetime']);
+    const projectiles = this.entityManager.query([
+      'projectile',
+      'transform',
+      'velocity',
+      'lifetime',
+    ]);
 
     for (const entity of projectiles) {
       const projectile = entity.getComponent<'projectile'>('projectile');
