@@ -13,5 +13,34 @@ this is a serious peace offering and im genuinely interested.
 ## Project Structure
 
 - `decompile` contains the 2 aforementioned C files
+- `docs` contains comprehensive project documentation
+- `src` contains the TypeScript implementation
 
 Agent can determine everything else.
+
+## Project Status
+
+**Completed:** This project is a complete, playable browser-based remake of Crimsonland (2003).
+
+### Documentation
+
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture and design decisions
+- [LESSONS_LEARNED.md](docs/LESSONS_LEARNED.md) - Educational writeup of the decompilation-to-remake process
+- [MAPPING.md](docs/MAPPING.md) - C-to-TypeScript translation guide
+- [ENGINE_COMPARISON.md](docs/ENGINE_COMPARISON.md) - grim.dll vs modern web APIs
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guidelines
+- [LICENSE](LICENSE) - MIT License
+
+### Play Online
+
+🎮 **[Play the game here](https://mitchfultz.github.io/crimsonland-remake/)**
+
+### Key Achievements
+
+- Full rewrite from 3.5MB of decompiled C source
+- ECS architecture replacing global state tables
+- Fixed timestep game loop preserving original feel
+- 20+ weapons, 8 enemy types, 30+ perks
+- Survival and Quest game modes
+- Mobile touch controls
+- Automated GitHub Pages deployment
