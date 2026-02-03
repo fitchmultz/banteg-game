@@ -1,0 +1,33 @@
+{
+  "name": "crimsonland-remake",
+  "version": "0.1.0",
+  "description": "Browser-based remake of Crimsonland - a top-down shooter",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome lint --write .",
+    "lint:check": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "type-check": "tsc --noEmit",
+    "ci": "biome ci . && tsc --noEmit && vitest run && vite build"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "game",
+    "shooter",
+    "typescript",
+    "canvas"
+  ],
+  "license": "MIT"
+}
