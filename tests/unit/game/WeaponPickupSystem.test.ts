@@ -288,9 +288,9 @@ describe('WeaponPickupSystem', () => {
       expect(unlocked10000.length).toBeGreaterThan(5);
     });
 
-    it('should have all 30 weapons unlockable at high XP', () => {
+    it('should have all 40 weapons unlockable at high XP', () => {
       const unlockedMax = getUnlockedWeapons(99999);
-      expect(unlockedMax.length).toBe(30);
+      expect(unlockedMax.length).toBe(40);
     });
   });
 });

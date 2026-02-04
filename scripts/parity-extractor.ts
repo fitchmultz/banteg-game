@@ -81,9 +81,20 @@ function extractWeaponData(): CanonicalData['weapons'] {
     'Flameburst',
     'Splitter Gun',
     'Shrinkifier',
+    // Missing exotic weapons (30-39)
+    'Blade Gun',
+    'Plague Spreader Gun',
+    'Rainbow Gun',
+    'Grim Weapon',
+    'Bubblegun',
+    'Spider Plasma',
+    'Transmutator',
+    'Blaster R-300',
+    'Nuke Launcher',
+    'Lightning Rifle',
   ];
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 40; i++) {
     weapons.push({
       id: i,
       name: weaponIds[i] || `Weapon ${i}`,

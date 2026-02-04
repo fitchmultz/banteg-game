@@ -91,6 +91,14 @@ export enum ProjectileTypeId {
   FIRE_BULLETS = 15,
   PLAGUE_SPREADER = 16,
   RAINBOW_GUN = 17,
+  // New projectile types for missing weapons (IDs 30-39)
+  GRIM_WEAPON = 18,
+  BUBBLEGUN = 19,
+  SPIDER_PLASMA = 20,
+  TRANSMUTATOR = 21,
+  BLASTER_R_300 = 22,
+  NUKE_LAUNCHER = 23,
+  LIGHTING_RIFLE = 24,
   ROCKET = 100,
   SEEKER_ROCKET = 101,
   ROCKET_MINIGUN = 102,
@@ -140,6 +148,18 @@ export enum WeaponId {
   FLAMEBURST = 27,
   SPLITTER_GUN = 28,
   SHRINKIFIER = 29,
+
+  // Missing exotic weapons (30-39)
+  BLADE_GUN_WEAPON = 30,
+  PLAGUE_SPREADER_GUN = 31,
+  RAINBOW_GUN_WEAPON = 32,
+  GRIM_WEAPON = 33,
+  BUBBLEGUN = 34,
+  SPIDER_PLASMA = 35,
+  TRANSMUTATOR = 36,
+  BLASTER_R_300 = 37,
+  NUKE_LAUNCHER = 38,
+  LIGHTING_RIFLE = 39,
 }
 
 export enum PerkId {

@@ -41,8 +41,8 @@ describe('Weapon Data', () => {
       (id): id is WeaponId => typeof id === 'number'
     );
 
-    // Should have 30 weapons (0-29)
-    expect(weaponIds.length).toBe(30);
+    // Should have 40 weapons (0-39)
+    expect(weaponIds.length).toBe(40);
 
     // Every WeaponId should have a corresponding entry in WEAPON_DATA
     for (const id of weaponIds) {
@@ -226,7 +226,7 @@ describe('Projectile Data', () => {
   });
 
   it('should have PROJECTILE_DATA entries for all standard projectile types', () => {
-    // Check that all standard projectile types (0-17, 100-102) have entries
+    // Check that all standard projectile types (0-24, 100-102) have entries
     const standardTypes = [
       ProjectileTypeId.PISTOL,
       ProjectileTypeId.ASSAULT_RIFLE,
@@ -246,6 +246,14 @@ describe('Projectile Data', () => {
       ProjectileTypeId.FIRE_BULLETS,
       ProjectileTypeId.PLAGUE_SPREADER,
       ProjectileTypeId.RAINBOW_GUN,
+      // New projectile types for missing weapons (18-24)
+      ProjectileTypeId.GRIM_WEAPON,
+      ProjectileTypeId.BUBBLEGUN,
+      ProjectileTypeId.SPIDER_PLASMA,
+      ProjectileTypeId.TRANSMUTATOR,
+      ProjectileTypeId.BLASTER_R_300,
+      ProjectileTypeId.NUKE_LAUNCHER,
+      ProjectileTypeId.LIGHTING_RIFLE,
       ProjectileTypeId.ROCKET,
       ProjectileTypeId.SEEKER_ROCKET,
       ProjectileTypeId.ROCKET_MINIGUN,
