@@ -5,8 +5,8 @@
  * Priority: 100
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
+import { System, type UpdateContext } from '../../core/ecs/System';
 
 export class EffectSystem extends System {
   readonly name = 'EffectSystem';
@@ -20,7 +20,8 @@ export class EffectSystem extends System {
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
-    const dt = context.dt;
+    // Use real-time so slow-motion doesn't unintentionally extend timers.
+    const dt = context.unscaledDt;
 
     // Update player effect timers
     const players = this.entityManager.query(['player']);
@@ -29,29 +30,15 @@ export class EffectSystem extends System {
       const player = entity.getComponent<'player'>('player');
       if (!player) continue;
 
-      // Update shield timer
-      if (player.shieldTimer > 0) {
-        player.shieldTimer -= dt;
-        if (player.shieldTimer < 0) {
-          player.shieldTimer = 0;
-        }
-      }
+      const dec = (t: number): number => (t > 0 ? Math.max(0, t - dt) : 0);
 
-      // Update fire bullets timer
-      if (player.fireBulletsTimer > 0) {
-        player.fireBulletsTimer -= dt;
-        if (player.fireBulletsTimer < 0) {
-          player.fireBulletsTimer = 0;
-        }
-      }
+      player.shieldTimer = dec(player.shieldTimer);
+      player.fireBulletsTimer = dec(player.fireBulletsTimer);
+      player.speedBonusTimer = dec(player.speedBonusTimer);
 
-      // Update speed bonus timer
-      if (player.speedBonusTimer > 0) {
-        player.speedBonusTimer -= dt;
-        if (player.speedBonusTimer < 0) {
-          player.speedBonusTimer = 0;
-        }
-      }
+      player.freezeTimer = dec(player.freezeTimer);
+      player.energizerTimer = dec(player.energizerTimer);
+      player.reflexBoostTimer = dec(player.reflexBoostTimer);
     }
 
     // Update effect components on entities

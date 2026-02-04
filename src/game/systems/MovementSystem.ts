@@ -5,8 +5,8 @@
  * Priority: 20
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import { getWeaponData } from '../data';
 
 export class MovementSystem extends System {
@@ -18,6 +18,12 @@ export class MovementSystem extends System {
 
   update(entityManager: EntityManager, context: UpdateContext): void {
     const dt = context.dt;
+
+    // Check if reflex boost is active on any player
+    const reflexActive = entityManager.query(['player']).some((e) => {
+      const p = e.getComponent<'player'>('player');
+      return (p?.reflexBoostTimer ?? 0) > 0;
+    });
 
     // Process all entities with transform and velocity
     const entities = entityManager.query(['transform', 'velocity']);
@@ -64,9 +70,15 @@ export class MovementSystem extends System {
         }
       }
 
+      // Determine which dt to use for position update
+      // Reflex boost: players and projectiles move at normal speed while world slows
+      const isProjectile = !!entity.getComponent<'projectile'>('projectile');
+      const useUnscaled = reflexActive && (player !== undefined || isProjectile);
+      const stepDt = useUnscaled ? context.unscaledDt : dt;
+
       // Update position
-      transform.x += velocity.x * dt;
-      transform.y += velocity.y * dt;
+      transform.x += velocity.x * stepDt;
+      transform.y += velocity.y * stepDt;
     }
   }
 }

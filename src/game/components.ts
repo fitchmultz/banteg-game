@@ -80,6 +80,12 @@ export interface Player extends Component {
   shieldTimer: number;
   fireBulletsTimer: number;
   speedBonusTimer: number;
+
+  // New power-up timers (seconds, real-time)
+  freezeTimer: number; // Global enemy slow while > 0
+  energizerTimer: number; // Fire-rate boost while > 0
+  reflexBoostTimer: number; // Slow-motion while > 0
+
   // Input flags (set by InputSystem, read by WeaponSystem)
   fireHeld: boolean;
   fireJustPressed: boolean;
@@ -112,6 +118,11 @@ export function createPlayer(playerIndex = 0): Player {
     shieldTimer: 0,
     fireBulletsTimer: 0,
     speedBonusTimer: 0,
+
+    freezeTimer: 0,
+    energizerTimer: 0,
+    reflexBoostTimer: 0,
+
     fireHeld: false,
     fireJustPressed: false,
     reloadRequested: false,

@@ -37,6 +37,7 @@ import {
   type SpriteAtlas,
 } from '../../engine';
 import { TerrainGenerator, type TerrainTheme } from '../../engine/TerrainGenerator';
+import { BonusType } from '../components';
 import { getWeaponData } from '../data';
 
 // Camera constants for co-op mode
@@ -406,27 +407,38 @@ export class RenderSystem extends System {
       // Color based on bonus type
       let glowColor: { r: number; g: number; b: number };
       switch (bonus.bonusType) {
-        case 0: // HEALTH
+        case BonusType.HEALTH:
           glowColor = { r: 1, g: 0, b: 0 };
           break;
-        case 1: // AMMO
+        case BonusType.AMMO:
           glowColor = { r: 1, g: 1, b: 0 };
           break;
-        case 2: // WEAPON_POWER_UP
+        case BonusType.WEAPON_POWER_UP:
           glowColor = { r: 1, g: 0.5, b: 0 };
           break;
-        case 3: // SPEED_BOOST
+        case BonusType.SPEED_BOOST:
           glowColor = { r: 0, g: 1, b: 1 };
           break;
-        case 4: // SHIELD
+        case BonusType.SHIELD:
           glowColor = { r: 0, g: 0.5, b: 1 };
           break;
-        case 5: // FIRE_BULLETS
+        case BonusType.FIRE_BULLETS:
           glowColor = { r: 1, g: 0.3, b: 0 };
           break;
-        case 6: // EXP_MULTIPLIER
+        case BonusType.EXP_MULTIPLIER:
           glowColor = { r: 1, g: 0, b: 1 };
           break;
+
+        case BonusType.FREEZE:
+          glowColor = { r: 0, g: 0.666, b: 1 };
+          break; // #00aaff
+        case BonusType.ENERGIZER:
+          glowColor = { r: 1, g: 0.866, b: 0 };
+          break; // #ffdd00
+        case BonusType.REFLEX_BOOST:
+          glowColor = { r: 0.666, g: 0, b: 1 };
+          break; // #aa00ff
+
         default:
           glowColor = { r: 1, g: 1, b: 1 };
       }
@@ -612,6 +624,36 @@ export class RenderSystem extends System {
         xOffset + 35,
         yOffset
       );
+      yOffset += 25;
+    }
+    if (playerComp.freezeTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 0, g: 0.666, b: 1, a: 0.5 });
+      this.renderer.setColor(0, 0.666, 1, 1);
+      this.renderer.drawText(
+        `Freeze: ${playerComp.freezeTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
+      yOffset += 25;
+    }
+    if (playerComp.energizerTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 1, g: 0.866, b: 0, a: 0.5 });
+      this.renderer.setColor(1, 0.866, 0, 1);
+      this.renderer.drawText(
+        `Energizer: ${playerComp.energizerTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
+      yOffset += 25;
+    }
+    if (playerComp.reflexBoostTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 0.666, g: 0, b: 1, a: 0.5 });
+      this.renderer.setColor(0.666, 0, 1, 1);
+      this.renderer.drawText(
+        `Reflex: ${playerComp.reflexBoostTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
     }
   }
 
@@ -682,6 +724,25 @@ export class RenderSystem extends System {
     if (playerComp.speedBonusTimer > 0) {
       this.renderer.setColor(0, 1, 1, 1);
       this.renderer.drawText(`Speed: ${playerComp.speedBonusTimer.toFixed(0)}s`, xOffset, yOffset);
+      yOffset += 20;
+    }
+    if (playerComp.freezeTimer > 0) {
+      this.renderer.setColor(0, 0.666, 1, 1);
+      this.renderer.drawText(`Freeze: ${playerComp.freezeTimer.toFixed(0)}s`, xOffset, yOffset);
+      yOffset += 20;
+    }
+    if (playerComp.energizerTimer > 0) {
+      this.renderer.setColor(1, 0.866, 0, 1);
+      this.renderer.drawText(`Energ: ${playerComp.energizerTimer.toFixed(0)}s`, xOffset, yOffset);
+      yOffset += 20;
+    }
+    if (playerComp.reflexBoostTimer > 0) {
+      this.renderer.setColor(0.666, 0, 1, 1);
+      this.renderer.drawText(
+        `Reflex: ${playerComp.reflexBoostTimer.toFixed(0)}s`,
+        xOffset,
+        yOffset
+      );
     }
   }
 

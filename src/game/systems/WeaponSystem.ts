@@ -18,13 +18,13 @@
  * - Does NOT handle perk application (PerkSystem)
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
-import type { EntityId } from '../../types';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { AudioManager } from '../../engine';
-import { getWeaponData, type WeaponData } from '../data';
-import { ProjectileFactory } from '../entities';
+import type { EntityId } from '../../types';
 import { getWeaponFireSample, getWeaponReloadSample } from '../audio';
+import { type WeaponData, getWeaponData } from '../data';
+import { ProjectileFactory } from '../entities';
 import type { PerkSystem } from './PerkSystem';
 
 // Track cooldowns and reload timers per entity
@@ -69,7 +69,7 @@ export class WeaponSystem extends System {
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
-    const dt = context.dt;
+    const baseDt = context.dt;
     const gameTime = context.gameTime;
 
     // Query all player entities
@@ -79,6 +79,9 @@ export class WeaponSystem extends System {
       const player = entity.getComponent<'player'>('player');
       const transform = entity.getComponent<'transform'>('transform');
       if (!player || !transform) continue;
+
+      // Use unscaled dt when reflex boost is active (player acts at normal speed)
+      const dt = player.reflexBoostTimer > 0 ? context.unscaledDt : baseDt;
 
       // Get or create weapon state for this entity
       let state = weaponStates.get(entity.id);
@@ -97,13 +100,16 @@ export class WeaponSystem extends System {
       const weaponData = getWeaponData(player.currentWeapon.weaponId);
 
       // Get perk multipliers
-      const fireRateMultiplier = this.perkSystem?.getFireRateMultiplier(entity.id) ?? 1;
+      const perkFireRateMultiplier = this.perkSystem?.getFireRateMultiplier(entity.id) ?? 1;
+      const energizerMultiplier = player.energizerTimer > 0 ? 2.5 : 1.0;
+      const fireRateMultiplier = perkFireRateMultiplier * energizerMultiplier;
       const reloadSpeedMultiplier = this.perkSystem?.getReloadSpeedMultiplier(entity.id) ?? 1;
       const clipSizeBonus = this.perkSystem?.getClipSizeBonus(entity.id) ?? 0;
       const effectiveClipSize = weaponData.clipSize + clipSizeBonus;
 
       // Check for infinite ammo window
-      const infiniteAmmoActive = this.perkSystem?.isInfiniteAmmoActive(entity.id, gameTime) ?? false;
+      const infiniteAmmoActive =
+        this.perkSystem?.isInfiniteAmmoActive(entity.id, gameTime) ?? false;
 
       // Check if weapon changed (swap happened) - reset timers
       if (state.lastWeaponId !== player.currentWeapon.weaponId) {
@@ -153,7 +159,11 @@ export class WeaponSystem extends System {
       }
 
       // Handle reload request
-      if (player.reloadRequested && player.currentWeapon.clipSize < effectiveClipSize && player.currentWeapon.ammo > 0) {
+      if (
+        player.reloadRequested &&
+        player.currentWeapon.clipSize < effectiveClipSize &&
+        player.currentWeapon.ammo > 0
+      ) {
         state.reloadTimer = weaponData.reloadTime / reloadSpeedMultiplier;
         player.reloadRequested = false;
         // Play reload sound
@@ -163,7 +173,12 @@ export class WeaponSystem extends System {
       }
 
       // Auto-reload when empty (only if not in infinite ammo window)
-      if (!infiniteAmmoActive && player.currentWeapon.clipSize <= 0 && player.currentWeapon.ammo > 0 && state.reloadTimer <= 0) {
+      if (
+        !infiniteAmmoActive &&
+        player.currentWeapon.clipSize <= 0 &&
+        player.currentWeapon.ammo > 0 &&
+        state.reloadTimer <= 0
+      ) {
         state.reloadTimer = weaponData.reloadTime / reloadSpeedMultiplier;
         // Play reload sound on auto-reload
         this.audio.playSample(getWeaponReloadSample(player.currentWeapon.weaponId));

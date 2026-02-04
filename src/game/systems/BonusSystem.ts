@@ -6,11 +6,11 @@
  * Priority: 90
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import { BonusType, PerkId } from '../../types';
-import { collectEvents } from './CollisionSystem';
 import { getWeaponData } from '../data';
+import { collectEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
 
 export class BonusSystem extends System {
@@ -41,7 +41,9 @@ export class BonusSystem extends System {
     this.perkSystem = perkSystem;
   }
 
-  update(_entityManager: EntityManager, _context: UpdateContext): void {
+  private readonly reflexTimeScale = 0.4;
+
+  update(_entityManager: EntityManager, context: UpdateContext): void {
     // Process collect events from CollisionSystem
     for (const event of collectEvents) {
       const playerEntity = this.entityManager.getEntity(event.playerId);
@@ -50,7 +52,7 @@ export class BonusSystem extends System {
       const player = playerEntity.getComponent<'player'>('player');
       if (!player) continue;
 
-      this.applyBonusEffect(event.playerId, player, event.bonusType, event.value);
+      this.applyBonusEffect(event.playerId, player, event.bonusType, event.value, context);
     }
 
     // Update existing bonuses (remove expired)
@@ -75,10 +77,17 @@ export class BonusSystem extends System {
       shieldTimer: number;
       fireBulletsTimer: number;
       speedBonusTimer: number;
+
+      // New timers
+      freezeTimer: number;
+      energizerTimer: number;
+      reflexBoostTimer: number;
+
       perkCounts: Map<PerkId, number>;
     },
     bonusType: number,
-    value: number
+    value: number,
+    context: UpdateContext
   ): void {
     // Get bonus duration multiplier from perks
     const durationMultiplier = this.perkSystem?.getBonusDurationMultiplier(playerId) ?? 1;
@@ -100,7 +109,9 @@ export class BonusSystem extends System {
 
         // Apply Ammo Maniac clip refill if perk is active
         if (this.perkSystem?.hasAmmoRefillOnPickup(playerId)) {
-          this.perkSystem.refillWeaponClips(player as Parameters<PerkSystem['refillWeaponClips']>[0]);
+          this.perkSystem.refillWeaponClips(
+            player as Parameters<PerkSystem['refillWeaponClips']>[0]
+          );
         }
         break;
       }
@@ -122,10 +133,7 @@ export class BonusSystem extends System {
         break;
 
       case BonusType.SHIELD:
-        player.shieldTimer = Math.max(
-          player.shieldTimer,
-          this.shieldDuration * durationMultiplier
-        );
+        player.shieldTimer = Math.max(player.shieldTimer, this.shieldDuration * durationMultiplier);
         break;
 
       case BonusType.FIRE_BULLETS:
@@ -141,6 +149,27 @@ export class BonusSystem extends System {
         // For now, just grant immediate XP
         // (XP is tracked in HealthSystem)
         break;
+
+      case BonusType.FREEZE: {
+        const durationSeconds = value * durationMultiplier;
+        player.freezeTimer = Math.max(player.freezeTimer, durationSeconds);
+        break;
+      }
+
+      case BonusType.ENERGIZER: {
+        const durationSeconds = value * durationMultiplier;
+        player.energizerTimer = Math.max(player.energizerTimer, durationSeconds);
+        break;
+      }
+
+      case BonusType.REFLEX_BOOST: {
+        const durationSeconds = value * durationMultiplier;
+        player.reflexBoostTimer = Math.max(player.reflexBoostTimer, durationSeconds);
+
+        // Ensure the time-scale effect is never shortened by a smaller pickup.
+        context.setTimeScale(this.reflexTimeScale, player.reflexBoostTimer);
+        break;
+      }
     }
   }
 }

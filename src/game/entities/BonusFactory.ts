@@ -8,13 +8,13 @@ import type { EntityManager } from '../../core/ecs';
 import type { Entity } from '../../core/ecs';
 import { BonusType, type WeaponId } from '../../types';
 import {
-  createTransform,
-  createBonus,
-  createSprite,
-  createCollider,
-  createWeaponPickup,
-  createLifetime,
   CollisionLayer,
+  createBonus,
+  createCollider,
+  createLifetime,
+  createSprite,
+  createTransform,
+  createWeaponPickup,
 } from '../components';
 
 export interface BonusCreateOptions {
@@ -31,6 +31,11 @@ const BONUS_VISUALS: Record<BonusType, { color: string; size: number; label: str
   [BonusType.SHIELD]: { color: '#0088ff', size: 20, label: 'SH' },
   [BonusType.FIRE_BULLETS]: { color: '#ff4400', size: 18, label: 'FB' },
   [BonusType.EXP_MULTIPLIER]: { color: '#ff00ff', size: 16, label: 'XP' },
+
+  // New power-ups
+  [BonusType.FREEZE]: { color: '#00aaff', size: 18, label: 'FR' },
+  [BonusType.ENERGIZER]: { color: '#ffdd00', size: 18, label: 'EN' },
+  [BonusType.REFLEX_BOOST]: { color: '#aa00ff', size: 18, label: 'RB' },
 };
 
 // Default bonus values
@@ -42,6 +47,11 @@ const BONUS_VALUES: Record<BonusType, number> = {
   [BonusType.SHIELD]: 15, // seconds
   [BonusType.FIRE_BULLETS]: 20, // seconds
   [BonusType.EXP_MULTIPLIER]: 2, // multiplier
+
+  // New power-ups (durations in seconds)
+  [BonusType.FREEZE]: 8,
+  [BonusType.ENERGIZER]: 8,
+  [BonusType.REFLEX_BOOST]: 5,
 };
 
 /**
@@ -141,6 +151,11 @@ export function createRandomBonus(entityManager: EntityManager, x: number, y: nu
     { type: BonusType.SHIELD, weight: 10 },
     { type: BonusType.FIRE_BULLETS, weight: 8 },
     { type: BonusType.EXP_MULTIPLIER, weight: 12 },
+
+    // New power-ups
+    { type: BonusType.FREEZE, weight: 10 },
+    { type: BonusType.ENERGIZER, weight: 8 },
+    { type: BonusType.REFLEX_BOOST, weight: 8 },
   ];
 
   const totalWeight = types.reduce((sum, t) => sum + t.weight, 0);

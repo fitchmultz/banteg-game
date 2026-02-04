@@ -6,9 +6,9 @@
  * Priority: 40
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
-import { AiMode } from '../../types';
+import { System, type UpdateContext } from '../../core/ecs/System';
+import { AiMode, CreatureFlags } from '../../types';
 
 // AI update interval (seconds) - approx 70 ticks at 60 FPS
 const AI_UPDATE_INTERVAL = 70 / 60;
@@ -32,6 +32,7 @@ export class AiSystem extends System {
   readonly priority = 40;
 
   private entityManager: EntityManager;
+  private readonly freezeSpeedMultiplier = 0.4;
 
   constructor(entityManager: EntityManager) {
     super();
@@ -47,6 +48,13 @@ export class AiSystem extends System {
     const players = this.entityManager.query(['player', 'transform']);
 
     if (players.length === 0) return;
+
+    // Check if freeze is active on any player
+    const freezeActive = players.some((p) => {
+      const pl = p.getComponent<'player'>('player');
+      return (pl?.freezeTimer ?? 0) > 0;
+    });
+    const freezeMultiplier = freezeActive ? this.freezeSpeedMultiplier : 1.0;
 
     for (const creatureEntity of creatures) {
       const creature = creatureEntity.getComponent<'creature'>('creature');
@@ -79,6 +87,15 @@ export class AiSystem extends System {
 
       // Execute behavior based on current mode
       this.executeBehavior(creature, transform, velocity, players, state, context.dt);
+
+      // Apply freeze effect to creature velocity
+      if (freezeMultiplier !== 1.0) {
+        creature.flags |= CreatureFlags.FROZEN;
+        velocity.x *= freezeMultiplier;
+        velocity.y *= freezeMultiplier;
+      } else {
+        creature.flags &= ~CreatureFlags.FROZEN;
+      }
     }
   }
 

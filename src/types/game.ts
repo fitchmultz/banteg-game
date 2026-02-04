@@ -247,6 +247,11 @@ export enum BonusType {
   SHIELD = 4,
   FIRE_BULLETS = 5,
   EXP_MULTIPLIER = 6,
+
+  // New power-ups
+  FREEZE = 7,
+  ENERGIZER = 8,
+  REFLEX_BOOST = 9,
 }
 
 // ============================================================================
