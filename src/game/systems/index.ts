@@ -18,6 +18,7 @@ export { LifetimeSystem } from './LifetimeSystem';
 export { RenderSystem } from './RenderSystem';
 export { PerkSystem } from './PerkSystem';
 export { QuestSpawnSystem } from './QuestSpawnSystem';
+export { WeaponPickupSystem } from './WeaponPickupSystem';
 
 // System priorities (lower = earlier)
 export const SYSTEM_PRIORITIES = {
@@ -30,6 +31,7 @@ export const SYSTEM_PRIORITIES = {
   HealthSystem: 70,
   SpawnSystem: 80,
   QuestSpawnSystem: 85,
+  WeaponPickupSystem: 87,
   BonusSystem: 90,
   EffectSystem: 100,
   LifetimeSystem: 150,

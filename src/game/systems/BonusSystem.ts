@@ -56,12 +56,10 @@ export class BonusSystem extends System {
     player: {
       health: number;
       maxHealth: number;
-      ammo: number;
-      clipSize: number;
+      currentWeapon: { weaponId: number; clipSize: number; ammo: number };
       shieldTimer: number;
       fireBulletsTimer: number;
       speedBonusTimer: number;
-      weaponId: number;
     },
     bonusType: number,
     value: number
@@ -73,9 +71,9 @@ export class BonusSystem extends System {
 
       case BonusType.AMMO: {
         // Add ammo to current weapon
-        const weaponData = getWeaponData(player.weaponId);
+        const weaponData = getWeaponData(player.currentWeapon.weaponId);
         const ammoToAdd = Math.floor(weaponData.clipSize * 0.5);
-        player.ammo += ammoToAdd;
+        player.currentWeapon.ammo += ammoToAdd;
         break;
       }
 

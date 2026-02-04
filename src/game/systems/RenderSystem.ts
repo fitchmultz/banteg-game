@@ -229,6 +229,34 @@ export class RenderSystem extends System {
       this.renderer.setColor(glowColor.r, glowColor.g, glowColor.b, 0.5);
       this.renderer.drawCircleOutline(transform.x, transform.y, 12 * pulse, 2);
     }
+
+    // Render weapon pickups
+    const weaponPickups = this.entityManager.query(['weaponPickup', 'transform']);
+    for (const entity of weaponPickups) {
+      const transform = entity.getComponent<'transform'>('transform');
+      const pickup = entity.getComponent<'weaponPickup'>('weaponPickup');
+      if (!transform || !pickup) continue;
+
+      const weaponData = getWeaponData(pickup.weaponId);
+
+      // Draw weapon pickup glow (orange for weapons)
+      this.renderer.drawGlow(transform.x, transform.y, 25, { r: 1, g: 0.6, b: 0, a: 0.5 });
+
+      // Draw weapon pickup base
+      this.renderer.setColor(1, 0.6, 0, 1);
+      this.renderer.drawRect(transform.x - 12, transform.y - 8, 24, 16);
+
+      // Draw pulsing ring
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.2;
+      this.renderer.setColor(1, 0.8, 0, 0.5);
+      this.renderer.drawCircleOutline(transform.x, transform.y, 16 * pulse, 2);
+
+      // Draw ammo indicator
+      this.renderer.setColor(1, 1, 1, 0.8);
+      this.renderer.drawText(`${pickup.ammo}`, transform.x - 10, transform.y + 4);
+      // Avoid unused variable warning by referencing weaponData
+      void weaponData;
+    }
   }
 
   private renderUI(): void {
@@ -239,7 +267,9 @@ export class RenderSystem extends System {
     if (!player) return;
     const playerComp = player.getComponent<'player'>('player');
     if (!playerComp) return;
-    const weaponData = getWeaponData(playerComp.weaponId);
+
+    const currentWeaponData = getWeaponData(playerComp.currentWeapon.weaponId);
+    const altWeaponData = getWeaponData(playerComp.alternateWeapon.weaponId);
 
     const canvas = this.renderer.getCanvas();
     const rightEdge = canvas.width;
@@ -263,19 +293,27 @@ export class RenderSystem extends System {
     this.renderer.setColor(0.2, 0.6, 1, 1);
     this.renderer.drawRect(12, 92, Math.min(200, 200 * xpPercent), 4);
 
-    // Ammo
+    // Current weapon info
     this.renderer.setColor(1, 1, 1, 1);
     this.renderer.drawText(
-      `Ammo: ${playerComp.clipSize}/${weaponData.clipSize} (${playerComp.ammo})`,
+      `Ammo: ${playerComp.currentWeapon.clipSize}/${currentWeaponData.clipSize} (${playerComp.currentWeapon.ammo})`,
       10,
       120
     );
+    this.renderer.drawText(`Weapon: ${currentWeaponData.name}`, 10, 140);
 
-    // Weapon name
-    this.renderer.drawText(`Weapon: ${weaponData.name}`, 10, 140);
+    // Alternate weapon info
+    this.renderer.setColor(0.7, 0.7, 0.7, 1);
+    this.renderer.drawText(
+      `Alt: ${altWeaponData.name} (${playerComp.alternateWeapon.clipSize}/${playerComp.alternateWeapon.ammo})`,
+      10,
+      160
+    );
+    this.renderer.setColor(0.5, 0.5, 0.5, 1);
+    this.renderer.drawText('[Q] Swap Weapon', 10, 175);
 
     // Active effects (with icons)
-    let yOffset = 170;
+    let yOffset = 205;
     if (playerComp.shieldTimer > 0) {
       this.renderer.drawGlow(25, yOffset - 5, 20, { r: 0, g: 0.5, b: 1, a: 0.5 });
       this.renderer.setColor(0, 0.5, 1, 1);

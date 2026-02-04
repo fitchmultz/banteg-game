@@ -22,10 +22,12 @@ import {
   LifetimeSystem,
   RenderSystem,
   PerkSystem,
+  WeaponPickupSystem,
 } from './game/systems';
 import { GameModeManager, SurvivalMode, QuestMode } from './game/modes';
-import { PlayerFactory } from './game/entities';
+import { PlayerFactory, BonusFactory } from './game/entities';
 import { ProgressionManager } from './game/progression';
+import { getUnlockedWeapons } from './game/data';
 import { PerkSelectUI, QuestMenuUI, MainMenuUI, PauseMenuUI, GameOverUI } from './game/ui';
 import { type GameState, type GameMode, PerkId } from './types';
 
@@ -372,6 +374,31 @@ function startGame(mode: GameMode): void {
         // Particle effects
         const particleSystem = gameState.renderSystem.getParticleSystem();
         particleSystem.emitBloodSplatter(position.x, position.y, Math.random() * Math.PI * 2, 5);
+
+        // Chance to spawn weapon pickup (10% chance)
+        if (Math.random() < 0.1 && gameState.playerEntityId !== null) {
+          const player = entityManager.getEntity(gameState.playerEntityId);
+          if (player) {
+            const playerComp = player.getComponent<'player'>('player');
+            if (playerComp) {
+              // Get unlocked weapons based on player XP
+              const unlockedWeapons = getUnlockedWeapons(playerComp.experience);
+              // Filter out current and alternate weapons
+              const availableWeapons = unlockedWeapons.filter(
+                id => id !== playerComp.currentWeapon.weaponId &&
+                      id !== playerComp.alternateWeapon.weaponId
+              );
+              if (availableWeapons.length > 0) {
+                // Pick random weapon
+                const randomIndex = Math.floor(Math.random() * availableWeapons.length);
+                const randomWeapon = availableWeapons[randomIndex];
+                if (randomWeapon !== undefined) {
+                  BonusFactory.createWeaponPickup(entityManager, randomWeapon, position.x, position.y);
+                }
+              }
+            }
+          }
+        }
       }
 
       new SpawnSystem(entityManager, {
@@ -447,6 +474,7 @@ function startGame(mode: GameMode): void {
     spawnMargin: 100,
   }));
   systemManager.addSystem(bonusSystem);
+  systemManager.addSystem(new WeaponPickupSystem(entityManager));
   systemManager.addSystem(effectSystem);
   systemManager.addSystem(perkSystem);
   systemManager.addSystem(lifetimeSystem);

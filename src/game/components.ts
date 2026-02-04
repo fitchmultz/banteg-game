@@ -55,6 +55,13 @@ export function createVelocity(x = 0, y = 0, maxSpeed = Number.POSITIVE_INFINITY
   };
 }
 
+// Weapon slot state for two-slot inventory
+export interface WeaponSlot {
+  weaponId: WeaponId;
+  clipSize: number;
+  ammo: number;
+}
+
 // Player Component
 export interface Player extends Component {
   type: 'player';
@@ -63,15 +70,20 @@ export interface Player extends Component {
   maxHealth: number;
   experience: number;
   level: number;
-  weaponId: WeaponId;
-  clipSize: number;
-  ammo: number;
+  // Two-slot weapon system
+  currentWeapon: WeaponSlot;
+  alternateWeapon: WeaponSlot;
   aimX: number;
   aimY: number;
   perkCounts: Map<PerkId, number>;
   shieldTimer: number;
   fireBulletsTimer: number;
   speedBonusTimer: number;
+  // Input flags (set by InputSystem, read by WeaponSystem)
+  fireHeld: boolean;
+  fireJustPressed: boolean;
+  reloadRequested: boolean;
+  swapWeaponRequested: boolean;
 }
 
 export function createPlayer(playerIndex = 0): Player {
@@ -82,15 +94,26 @@ export function createPlayer(playerIndex = 0): Player {
     maxHealth: 100,
     experience: 0,
     level: 1,
-    weaponId: WeaponId.PISTOL,
-    clipSize: 12,
-    ammo: 100,
+    currentWeapon: {
+      weaponId: WeaponId.PISTOL,
+      clipSize: 12,
+      ammo: 100,
+    },
+    alternateWeapon: {
+      weaponId: WeaponId.PISTOL,
+      clipSize: 12,
+      ammo: 0,
+    },
     aimX: 1,
     aimY: 0,
     perkCounts: new Map(),
     shieldTimer: 0,
     fireBulletsTimer: 0,
     speedBonusTimer: 0,
+    fireHeld: false,
+    fireJustPressed: false,
+    reloadRequested: false,
+    swapWeaponRequested: false,
   };
 }
 

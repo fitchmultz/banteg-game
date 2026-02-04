@@ -34,7 +34,7 @@ export class MovementSystem extends System {
         const moveIntentY = (player as unknown as Record<string, number>).moveIntentY ?? 0;
 
         // Apply weapon speed multiplier
-        const weaponData = getWeaponData(player.weaponId);
+        const weaponData = getWeaponData(player.currentWeapon.weaponId);
         const speedMultiplier = weaponData.moveSpeedMultiplier;
 
         // Calculate target velocity

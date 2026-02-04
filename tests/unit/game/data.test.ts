@@ -32,6 +32,36 @@ describe('Weapon Data', () => {
       expect(data.clipSize).toBeGreaterThan(0);
       expect(data.reloadTime).toBeGreaterThan(0);
       expect(data.pelletCount).toBeGreaterThan(0);
+      expect(data.moveSpeedMultiplier).toBeGreaterThan(0);
+    }
+  });
+
+  it('should have WEAPON_DATA entries for every WeaponId', () => {
+    const weaponIds = Object.values(WeaponId).filter(
+      (id): id is WeaponId => typeof id === 'number'
+    );
+
+    // Should have 30 weapons (0-29)
+    expect(weaponIds.length).toBe(30);
+
+    // Every WeaponId should have a corresponding entry in WEAPON_DATA
+    for (const id of weaponIds) {
+      expect(WEAPON_DATA[id]).toBeDefined();
+      expect(WEAPON_DATA[id].name).toBeTruthy();
+    }
+  });
+
+  it('should have valid projectile type for every weapon', () => {
+    const weaponIds = Object.values(WeaponId).filter(
+      (id): id is WeaponId => typeof id === 'number'
+    );
+
+    for (const id of weaponIds) {
+      const weaponData = getWeaponData(id);
+      expect(weaponData.projectileType).toBeDefined();
+      // Verify the projectile type exists in PROJECTILE_DATA
+      const projectileData = getProjectileData(weaponData.projectileType);
+      expect(projectileData).toBeDefined();
     }
   });
 
@@ -55,6 +85,29 @@ describe('Weapon Data', () => {
     const unlockedAt500 = getUnlockedWeapons(500);
     expect(unlockedAt500).toContain(WeaponId.PISTOL);
     expect(unlockedAt500).toContain(WeaponId.ASSAULT_RIFLE);
+  });
+
+  it('should have progression of unlock XP values', () => {
+    // Early weapons should have lower unlock XP
+    expect(WEAPON_DATA[WeaponId.PISTOL].unlockXp).toBe(0);
+    expect(WEAPON_DATA[WeaponId.ASSAULT_RIFLE].unlockXp).toBeGreaterThan(0);
+    expect(WEAPON_DATA[WeaponId.SHOTGUN].unlockXp).toBeGreaterThan(
+      WEAPON_DATA[WeaponId.ASSAULT_RIFLE].unlockXp
+    );
+
+    // Late/exotic weapons should have high unlock XP
+    expect(WEAPON_DATA[WeaponId.ION_CANNON].unlockXp).toBeGreaterThan(10000);
+  });
+
+  it('should have multi-pellet weapons with pelletCount > 1', () => {
+    const shotgun = getWeaponData(WeaponId.SHOTGUN);
+    expect(shotgun.pelletCount).toBeGreaterThan(1);
+
+    const sawedOff = getWeaponData(WeaponId.SAWED_OFF_SHOTGUN);
+    expect(sawedOff.pelletCount).toBeGreaterThan(1);
+
+    const gaussShotgun = getWeaponData(WeaponId.GAUSS_SHOTGUN);
+    expect(gaussShotgun.pelletCount).toBeGreaterThan(1);
   });
 });
 
@@ -147,5 +200,51 @@ describe('Projectile Data', () => {
     expect(rocket.fireDamage).toBe(true);
     expect(fireBullet.fireDamage).toBe(true);
     expect(pistol.fireDamage).toBe(false);
+  });
+
+  it('should identify homing projectiles', () => {
+    const seekerRocket = getProjectileData(ProjectileTypeId.SEEKER_ROCKET);
+    const plasmaCannon = getProjectileData(ProjectileTypeId.PLASMA_CANNON);
+    const bladeGun = getProjectileData(ProjectileTypeId.BLADE_GUN);
+    const rainbowGun = getProjectileData(ProjectileTypeId.RAINBOW_GUN);
+    const pistol = getProjectileData(ProjectileTypeId.PISTOL);
+
+    expect(seekerRocket.homing).toBe(true);
+    expect(plasmaCannon.homing).toBe(true);
+    expect(bladeGun.homing).toBe(true);
+    expect(rainbowGun.homing).toBe(true);
+    expect(pistol.homing).toBe(false);
+  });
+
+  it('should have PROJECTILE_DATA entries for all standard projectile types', () => {
+    // Check that all standard projectile types (0-17, 100-102) have entries
+    const standardTypes = [
+      ProjectileTypeId.PISTOL,
+      ProjectileTypeId.ASSAULT_RIFLE,
+      ProjectileTypeId.SUBMACHINE_GUN,
+      ProjectileTypeId.SHOTGUN,
+      ProjectileTypeId.PLASMA_RIFLE,
+      ProjectileTypeId.PLASMA_MINIGUN,
+      ProjectileTypeId.ION_RIFLE,
+      ProjectileTypeId.ION_MINIGUN,
+      ProjectileTypeId.ION_CANNON,
+      ProjectileTypeId.PLASMA_CANNON,
+      ProjectileTypeId.GAUSS_GUN,
+      ProjectileTypeId.PULSE_GUN,
+      ProjectileTypeId.BLADE_GUN,
+      ProjectileTypeId.SPLITTER_GUN,
+      ProjectileTypeId.SHRINKIFIER,
+      ProjectileTypeId.FIRE_BULLETS,
+      ProjectileTypeId.PLAGUE_SPREADER,
+      ProjectileTypeId.RAINBOW_GUN,
+      ProjectileTypeId.ROCKET,
+      ProjectileTypeId.SEEKER_ROCKET,
+      ProjectileTypeId.ROCKET_MINIGUN,
+    ];
+
+    for (const type of standardTypes) {
+      expect(PROJECTILE_DATA[type]).toBeDefined();
+      expect(PROJECTILE_DATA[type].name).toBeTruthy();
+    }
   });
 });

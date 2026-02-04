@@ -2,6 +2,7 @@
  * Player Factory
  *
  * Creates player entities with proper component composition.
+ * Uses two-slot weapon system (current + alternate).
  */
 
 import type { EntityManager } from '../../core/ecs';
@@ -50,9 +51,19 @@ export function createPlayerEntity(
   const player = createPlayer(playerIndex);
   player.health = options.health ?? 100;
   player.maxHealth = 100;
-  player.weaponId = weaponId;
-  player.clipSize = weaponData.clipSize;
-  player.ammo = options.ammo ?? weaponData.clipSize * 3;
+
+  // Set up two-slot weapon system
+  player.currentWeapon = {
+    weaponId,
+    clipSize: weaponData.clipSize,
+    ammo: options.ammo ?? weaponData.clipSize * 3,
+  };
+  player.alternateWeapon = {
+    weaponId: WeaponId.PISTOL,
+    clipSize: 12,
+    ammo: 0,
+  };
+
   entity.addComponent(player);
 
   // Sprite - visual representation

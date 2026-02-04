@@ -93,10 +93,49 @@ export enum ProjectileTypeId {
 }
 
 export enum WeaponId {
+  // Basic weapons (0-3)
   PISTOL = 0,
   ASSAULT_RIFLE = 1,
   SHOTGUN = 2,
   SUBMACHINE_GUN = 3,
+
+  // Shotgun variants (4-6)
+  SAWED_OFF_SHOTGUN = 4,
+  JACKHAMMER = 5,
+  GAUSS_SHOTGUN = 6,
+
+  // Energy weapons (7-13)
+  FLAMETHROWER = 7,
+  PLASMA_RIFLE = 8,
+  MULTI_PLASMA = 9,
+  PLASMA_MINIGUN = 10,
+  GAUSS_GUN = 11,
+  PULSE_GUN = 12,
+  PLASMA_CANNON = 13,
+
+  // Rocket launchers (14-16)
+  ROCKET_LAUNCHER = 14,
+  SEEKER_ROCKETS = 15,
+  MEAN_MINIGUN = 16,
+
+  // Special weapons (17-22)
+  PLASMA_SHOTGUN = 17,
+  BLOW_TORCH = 18,
+  HR_FLAMER = 19,
+  MINI_ROCKET_SWARMERS = 20,
+  ROCKET_MINIGUN = 21,
+  ION_RIFLE = 22,
+
+  // Advanced ion weapons (23-26)
+  ION_MINIGUN = 23,
+  ION_CANNON = 24,
+  ION_SHOTGUN = 25,
+  EVIL_SCYTHE = 26,
+
+  // Exotic weapons (27-29)
+  FLAMEBURST = 27,
+  SPLITTER_GUN = 28,
+  SHRINKIFIER = 29,
 }
 
 export enum PerkId {

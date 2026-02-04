@@ -18,6 +18,7 @@ export class InputSystem extends System {
   // Track continuous fire state
   private firePressed = false;
   private reloadPressed = false;
+  private swapPressed = false;
 
   constructor(input: InputManager) {
     super();
@@ -71,19 +72,25 @@ export class InputSystem extends System {
       // Update player rotation to face aim direction
       transform.rotation = aimAngle;
 
-      // Handle firing
+      // Handle firing - now directly on player component
       const fireDown = this.input.isMouseButtonDown('left');
-      (player as unknown as Record<string, boolean>).fireJustPressed =
-        fireDown && !this.firePressed;
-      (player as unknown as Record<string, boolean>).fireHeld = fireDown;
+      player.fireJustPressed = fireDown && !this.firePressed;
+      player.fireHeld = fireDown;
       this.firePressed = fireDown;
 
-      // Handle reloading
+      // Handle reloading - now directly on player component
       const reloadKey = this.input.wasKeyPressed(KeyCode.R);
       if (reloadKey && !this.reloadPressed) {
-        (player as unknown as Record<string, boolean>).reloadRequested = true;
+        player.reloadRequested = true;
       }
       this.reloadPressed = this.input.isKeyDown(KeyCode.R);
+
+      // Handle weapon swapping (Q key)
+      const swapKey = this.input.wasKeyPressed(KeyCode.Q);
+      if (swapKey && !this.swapPressed) {
+        player.swapWeaponRequested = true;
+      }
+      this.swapPressed = this.input.isKeyDown(KeyCode.Q);
     }
 
     // Update input manager to clear justPressed/justReleased states

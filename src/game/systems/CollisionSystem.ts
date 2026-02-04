@@ -1,7 +1,7 @@
 /**
  * Collision System
  *
- * Handles collisions between entities: projectile-enemy, player-enemy, player-bonus.
+ * Handles collisions between entities: projectile-enemy, player-enemy, player-bonus, player-weaponPickup.
  * Uses circle-based collision detection.
  * Priority: 60
  */
@@ -10,6 +10,7 @@ import { System } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
 import { CollisionLayer } from '../components';
+import { getProjectileData } from '../data';
 
 export interface DamageEvent {
   targetId: EntityId;
@@ -25,9 +26,17 @@ export interface CollectEvent {
   value: number;
 }
 
+export interface WeaponCollectEvent {
+  playerId: EntityId;
+  pickupId: EntityId;
+  weaponId: number;
+  ammo: number;
+}
+
 // Event queues processed by other systems
 export const damageEvents: DamageEvent[] = [];
 export const collectEvents: CollectEvent[] = [];
+export const weaponCollectEvents: WeaponCollectEvent[] = [];
 
 export class CollisionSystem extends System {
   readonly name = 'CollisionSystem';
@@ -44,12 +53,14 @@ export class CollisionSystem extends System {
     // Clear previous frame's events
     damageEvents.length = 0;
     collectEvents.length = 0;
+    weaponCollectEvents.length = 0;
 
     // Get entities by layer
     const projectiles = this.entityManager.query(['projectile', 'transform', 'collider']);
     const enemies = this.entityManager.query(['creature', 'transform', 'collider']);
     const players = this.entityManager.query(['player', 'transform', 'collider']);
     const bonuses = this.entityManager.query(['bonus', 'transform', 'collider']);
+    const weaponPickups = this.entityManager.query(['weaponPickup', 'transform', 'collider']);
 
     // Projectile vs Enemy collisions
     for (const projectile of projectiles) {
@@ -63,18 +74,21 @@ export class CollisionSystem extends System {
       const pData = projectile.getComponent<'projectile'>('projectile');
       if (!pTransform || !pData) continue;
 
+      // Get projectile type data for fire damage flag
+      const projectileTypeData = getProjectileData(pData.projectileTypeId);
+
       for (const enemy of enemies) {
         const eCollider = enemy.getComponent<'collider'>('collider');
         const eTransform = enemy.getComponent<'transform'>('transform');
         if (!eCollider || !eTransform) continue;
 
         if (this.checkCollision(pTransform, pCollider.radius, eTransform, eCollider.radius)) {
-          // Queue damage event
+          // Queue damage event with fire damage from projectile data
           damageEvents.push({
             targetId: enemy.id,
             sourceId: pData.ownerId,
             damage: pData.damage,
-            isFireDamage: false, // TODO: Check projectile type
+            isFireDamage: projectileTypeData.fireDamage,
           });
 
           // Handle piercing
@@ -137,6 +151,33 @@ export class CollisionSystem extends System {
 
           // Destroy bonus entity
           this.entityManager.destroyEntity(bonus.id);
+        }
+      }
+    }
+
+    // Player vs Weapon Pickup collisions
+    for (const player of players) {
+      const pTransform = player.getComponent<'transform'>('transform');
+      const pCollider = player.getComponent<'collider'>('collider');
+      if (!pTransform || !pCollider) continue;
+
+      for (const pickup of weaponPickups) {
+        const wTransform = pickup.getComponent<'transform'>('transform');
+        const wCollider = pickup.getComponent<'collider'>('collider');
+        const wData = pickup.getComponent<'weaponPickup'>('weaponPickup');
+        if (!wTransform || !wCollider || !wData) continue;
+
+        if (this.checkCollision(pTransform, pCollider.radius, wTransform, wCollider.radius)) {
+          // Queue weapon collect event
+          weaponCollectEvents.push({
+            playerId: player.id,
+            pickupId: pickup.id,
+            weaponId: wData.weaponId,
+            ammo: wData.ammo,
+          });
+
+          // Destroy pickup entity
+          this.entityManager.destroyEntity(pickup.id);
         }
       }
     }

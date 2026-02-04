@@ -2,6 +2,7 @@
  * Weapon System
  *
  * Handles weapon firing mechanics, ammo tracking, reloading, and recoil.
+ * Supports two-slot weapon switching.
  * Priority: 30
  */
 
@@ -9,7 +10,7 @@ import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
 import type { AudioManager } from '../../engine';
-import { getWeaponData } from '../data';
+import { getWeaponData, type WeaponData } from '../data';
 import { ProjectileFactory } from '../entities';
 
 // Track cooldowns and reload timers per entity
@@ -17,6 +18,7 @@ interface WeaponState {
   shotCooldown: number;
   reloadTimer: number;
   spreadHeat: number;
+  lastWeaponId: number; // Track weapon changes for state reset
 }
 
 const weaponStates = new Map<EntityId, WeaponState>();
@@ -25,8 +27,6 @@ export class WeaponSystem extends System {
   readonly name = 'WeaponSystem';
   readonly priority = 30;
 
-  // Audio manager for sound effects (unused currently but will be needed)
-  // private _audio: AudioManager;
   private entityManager: EntityManager;
 
   // Spread decay per second
@@ -37,7 +37,6 @@ export class WeaponSystem extends System {
   constructor(entityManager: EntityManager, _audio: AudioManager) {
     super();
     this.entityManager = entityManager;
-    // this._audio = audio;  // Audio will be used for shooting sounds
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
@@ -54,11 +53,26 @@ export class WeaponSystem extends System {
       // Get or create weapon state for this entity
       let state = weaponStates.get(entity.id);
       if (!state) {
-        state = { shotCooldown: 0, reloadTimer: 0, spreadHeat: 0 };
+        state = { shotCooldown: 0, reloadTimer: 0, spreadHeat: 0, lastWeaponId: -1 };
         weaponStates.set(entity.id, state);
       }
 
-      const weaponData = getWeaponData(player.weaponId);
+      const weaponData = getWeaponData(player.currentWeapon.weaponId);
+
+      // Check if weapon changed (swap happened) - reset timers
+      if (state.lastWeaponId !== player.currentWeapon.weaponId) {
+        state.shotCooldown = 0;
+        state.reloadTimer = 0;
+        state.spreadHeat = 0;
+        state.lastWeaponId = player.currentWeapon.weaponId;
+      }
+
+      // Handle swap weapon request
+      if (player.swapWeaponRequested) {
+        this.swapWeapons(player);
+        player.swapWeaponRequested = false;
+        continue; // Skip firing this frame after swap
+      }
 
       // Handle reload timer
       if (state.reloadTimer > 0) {
@@ -66,38 +80,37 @@ export class WeaponSystem extends System {
         if (state.reloadTimer <= 0) {
           // Reload complete
           state.reloadTimer = 0;
-          const reloadAmount = Math.min(weaponData.clipSize - player.clipSize, player.ammo);
-          player.clipSize += reloadAmount;
-          player.ammo -= reloadAmount;
+          const reloadAmount = Math.min(
+            weaponData.clipSize - player.currentWeapon.clipSize,
+            player.currentWeapon.ammo
+          );
+          player.currentWeapon.clipSize += reloadAmount;
+          player.currentWeapon.ammo -= reloadAmount;
         }
         continue; // Can't fire while reloading
       }
 
       // Handle reload request
-      const reloadRequested = (player as unknown as Record<string, boolean>).reloadRequested;
-      if (reloadRequested && player.clipSize < weaponData.clipSize && player.ammo > 0) {
+      if (player.reloadRequested && player.currentWeapon.clipSize < weaponData.clipSize && player.currentWeapon.ammo > 0) {
         state.reloadTimer = weaponData.reloadTime;
-        (player as unknown as Record<string, boolean>).reloadRequested = false;
+        player.reloadRequested = false;
         continue;
       }
 
       // Auto-reload when empty
-      if (player.clipSize <= 0 && player.ammo > 0 && state.reloadTimer <= 0) {
+      if (player.currentWeapon.clipSize <= 0 && player.currentWeapon.ammo > 0 && state.reloadTimer <= 0) {
         state.reloadTimer = weaponData.reloadTime;
         continue;
       }
 
       // Handle firing
-      const fireHeld = (player as unknown as Record<string, boolean>).fireHeld;
-      const fireJustPressed = (player as unknown as Record<string, boolean>).fireJustPressed;
-
       const canFire =
         state.shotCooldown <= 0 &&
-        player.clipSize > 0 &&
-        (weaponData.automatic ? fireHeld : fireJustPressed);
+        player.currentWeapon.clipSize > 0 &&
+        (weaponData.automatic ? player.fireHeld : player.fireJustPressed);
 
       if (canFire) {
-        this.fireWeapon(entity.id, player, transform, state, weaponData);
+        this.fireWeapon(entity.id, player.currentWeapon, transform, state, weaponData);
       }
 
       // Update cooldown
@@ -111,22 +124,33 @@ export class WeaponSystem extends System {
       }
 
       // Clear input flags
-      (player as unknown as Record<string, boolean>).reloadRequested = false;
+      player.reloadRequested = false;
+      player.fireJustPressed = false;
     }
+  }
+
+  private swapWeapons(player: {
+    currentWeapon: { weaponId: number; clipSize: number; ammo: number };
+    alternateWeapon: { weaponId: number; clipSize: number; ammo: number };
+  }): void {
+    // Swap current and alternate weapons
+    const temp = { ...player.currentWeapon };
+    player.currentWeapon = { ...player.alternateWeapon };
+    player.alternateWeapon = temp;
   }
 
   private fireWeapon(
     ownerId: EntityId,
-    player: { weaponId: number; clipSize: number },
+    weaponSlot: { weaponId: number; clipSize: number },
     transform: { x: number; y: number; rotation: number },
     state: WeaponState,
-    weaponData: ReturnType<typeof getWeaponData>
+    weaponData: WeaponData
   ): void {
     // Set cooldown
     state.shotCooldown = weaponData.fireRate;
 
     // Decrement ammo
-    player.clipSize--;
+    weaponSlot.clipSize--;
 
     // Calculate spawn position (at player position)
     const spawnX = transform.x;
