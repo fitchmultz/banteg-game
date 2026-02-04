@@ -45,6 +45,15 @@ export interface JinxState {
   interval: number;
 }
 
+export interface DotEffect {
+  creatureId: EntityId;
+  damagePerTick: number;
+  remainingDuration: number;
+  tickInterval: number;
+  timeUntilNextTick: number;
+  type: 'uranium' | 'poison';
+}
+
 export class PerkSystem {
   readonly name = 'PerkSystem';
   enabled = true;
@@ -61,6 +70,15 @@ export class PerkSystem {
 
   // Track jinxed state per entity
   private jinxStates: Map<EntityId, JinxState> = new Map();
+
+  // Track Evil Eyes target creature per entity (from decompiled: evil_eyes_target_creature)
+  private evilEyesTargetCreature: Map<EntityId, EntityId | null> = new Map();
+
+  // Track active DoT effects per entity
+  private dotEffects: Map<EntityId, DotEffect[]> = new Map();
+
+  // Radioactive aura radius (in world units)
+  private readonly RADIOACTIVE_AURA_RADIUS = 150;
 
   constructor(entityManager: EntityManager, callbacks: PerkSystemCallbacks = {}) {
     this.entityManager = entityManager;
@@ -343,7 +361,7 @@ export class PerkSystem {
   }
 
   /**
-   * Update perk effects (regeneration, death clock, jinxed, etc.)
+   * Update perk effects (regeneration, death clock, jinxed, radioactive aura, DoT, etc.)
    */
   update(_entityManager: EntityManager, context: UpdateContext): void {
     const dt = context.dt;
@@ -375,12 +393,23 @@ export class PerkSystem {
         }
       }
 
+      // Handle radioactive aura damage
+      if (this.hasPerk(entityId, PerkId.RADIOACTIVE)) {
+        this.applyRadioactiveAura(entityId, dt);
+      }
+
+      // Update Evil Eyes targeting (from decompiled: creature_find_in_radius)
+      this.updateEvilEyesTarget(entityId, player);
+
       // Handle jinxed perk
       this.updateJinxed(entityId, player, gameTime, dt);
 
       // Update active effects (clean up expired)
       this.updateActiveEffects(entityId, gameTime);
     }
+
+    // Update DoT effects globally
+    this.updateDotEffects(dt);
   }
 
   /**
@@ -431,6 +460,230 @@ export class PerkSystem {
         targetCreature.health = 0;
       }
     }
+  }
+
+  // ============================================================================
+  // Radioactive Aura (RADIOACTIVE perk)
+  // ============================================================================
+
+  /**
+   * Apply radioactive aura damage to nearby creatures
+   * From decompiled: radiation damage aura around player
+   */
+  private applyRadioactiveAura(playerEntityId: EntityId, dt: number): void {
+    const player = this.entityManager.getComponent<'player'>(playerEntityId, 'player');
+    if (!player) return;
+
+    // Get player position from transform component
+    const playerEntity = this.entityManager.getEntity(playerEntityId);
+    if (!playerEntity) return;
+
+    const playerTransform = playerEntity.getComponent<'transform'>('transform');
+    if (!playerTransform) return;
+
+    const creatures = this.entityManager.query(['creature', 'transform']);
+
+    for (const creatureEntity of creatures) {
+      const creature = creatureEntity.getComponent<'creature'>('creature');
+      const creatureTransform = creatureEntity.getComponent<'transform'>('transform');
+      if (!creature || !creatureTransform || creature.health <= 0) continue;
+
+      // Check distance
+      const dx = playerTransform.x - creatureTransform.x;
+      const dy = playerTransform.y - creatureTransform.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= this.RADIOACTIVE_AURA_RADIUS) {
+        // Apply radiation damage per second (10 damage/sec from perk data)
+        creature.health -= 10 * dt;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Evil Eyes Targeting
+  // ============================================================================
+
+  /**
+   * Update Evil Eyes target creature
+   * From decompiled: creature_find_in_radius(&player_state_table.aim_x, 12.0, 0)
+   * Finds creature within 12 units of aim direction
+   */
+  private updateEvilEyesTarget(entityId: EntityId, _player: Player): void {
+    if (!this.hasPerk(entityId, PerkId.EVIL_EYES)) {
+      this.evilEyesTargetCreature.delete(entityId);
+      return;
+    }
+
+    // Get player position and aim direction
+    const playerEntity = this.entityManager.getEntity(entityId);
+    if (!playerEntity) {
+      this.evilEyesTargetCreature.delete(entityId);
+      return;
+    }
+
+    const playerTransform = playerEntity.getComponent<'transform'>('transform');
+    if (!playerTransform) {
+      this.evilEyesTargetCreature.delete(entityId);
+      return;
+    }
+
+    // Find creature in aim direction within 12 units (from decompiled code)
+    const targetCreature = this.findCreatureInAimDirection(playerTransform, 12);
+    this.evilEyesTargetCreature.set(entityId, targetCreature);
+  }
+
+  /**
+   * Find a creature in the player's aim direction within specified radius
+   * Simplified: finds nearest creature to aim direction
+   */
+  private findCreatureInAimDirection(
+    playerTransform: { x: number; y: number; rotation?: number },
+    radius: number
+  ): EntityId | null {
+    const creatures = this.entityManager.query(['creature', 'transform']);
+    let nearestCreature: EntityId | null = null;
+    let nearestDistance = radius;
+
+    for (const creatureEntity of creatures) {
+      const creature = creatureEntity.getComponent<'creature'>('creature');
+      const creatureTransform = creatureEntity.getComponent<'transform'>('transform');
+      if (!creature || !creatureTransform || creature.health <= 0) continue;
+
+      // Calculate distance to creature
+      const dx = creatureTransform.x - playerTransform.x;
+      const dy = creatureTransform.y - playerTransform.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestCreature = creatureEntity.id;
+      }
+    }
+
+    return nearestCreature;
+  }
+
+  /**
+   * Check if Evil Eyes damage bonus should apply
+   */
+  hasEvilEyesBonus(entityId: EntityId): boolean {
+    const target = this.evilEyesTargetCreature.get(entityId);
+    return target !== null && target !== undefined;
+  }
+
+  /**
+   * Get damage multiplier including Evil Eyes if applicable
+   * From decompiled: 25% bonus when targeting enemy
+   */
+  getDamageMultiplierWithEvilEyes(entityId: EntityId): number {
+    const baseMultiplier = this.getDamageMultiplier(entityId);
+
+    if (this.hasEvilEyesBonus(entityId)) {
+      return baseMultiplier * 1.25; // 25% bonus from decompiled
+    }
+
+    return baseMultiplier;
+  }
+
+  // ============================================================================
+  // Damage over Time (DoT) Effects
+  // ============================================================================
+
+  /**
+   * Apply a DoT effect to a creature
+   * Called by CollisionSystem when bullets with uranium/poison hit
+   */
+  applyDotEffect(
+    playerEntityId: EntityId,
+    creatureId: EntityId,
+    type: 'uranium' | 'poison',
+    damagePerTick: number,
+    duration: number
+  ): void {
+    const effects = this.dotEffects.get(playerEntityId) ?? [];
+
+    // Check if creature already has this type of DoT
+    const existingIndex = effects.findIndex(
+      (e) => e.creatureId === creatureId && e.type === type
+    );
+
+    if (existingIndex >= 0) {
+      // Refresh duration (stacking behavior)
+      const existingEffect = effects[existingIndex];
+      if (existingEffect) {
+        existingEffect.remainingDuration = duration;
+      }
+    } else {
+      // Add new DoT
+      effects.push({
+        creatureId,
+        damagePerTick,
+        remainingDuration: duration,
+        tickInterval: 0.5, // Tick every 0.5 seconds
+        timeUntilNextTick: 0,
+        type,
+      });
+    }
+
+    this.dotEffects.set(playerEntityId, effects);
+  }
+
+  /**
+   * Update all active DoT effects
+   */
+  private updateDotEffects(dt: number): void {
+    for (const [playerId, effects] of this.dotEffects) {
+      const remainingEffects: DotEffect[] = [];
+
+      for (const effect of effects) {
+        effect.timeUntilNextTick -= dt;
+        effect.remainingDuration -= dt;
+
+        if (effect.timeUntilNextTick <= 0) {
+          // Apply damage tick
+          const creatureEntity = this.entityManager.getEntity(effect.creatureId);
+          if (creatureEntity) {
+            const creature = creatureEntity.getComponent<'creature'>('creature');
+            if (creature && creature.health > 0) {
+              creature.health -= effect.damagePerTick;
+            }
+          }
+          effect.timeUntilNextTick = effect.tickInterval;
+        }
+
+        // Keep effect if duration remains and creature is alive
+        if (effect.remainingDuration > 0) {
+          const creatureEntity = this.entityManager.getEntity(effect.creatureId);
+          if (creatureEntity) {
+            const creature = creatureEntity.getComponent<'creature'>('creature');
+            if (creature && creature.health > 0) {
+              remainingEffects.push(effect);
+            }
+          }
+        }
+      }
+
+      if (remainingEffects.length === 0) {
+        this.dotEffects.delete(playerId);
+      } else {
+        this.dotEffects.set(playerId, remainingEffects);
+      }
+    }
+  }
+
+  /**
+   * Check if player has uranium bullets perk
+   */
+  hasUraniumBullets(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.URANIUM_FILLED_BULLETS);
+  }
+
+  /**
+   * Check if player has poison bullets perk
+   */
+  hasPoisonBullets(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.POISON_BULLETS);
   }
 
   /**
@@ -780,5 +1033,7 @@ export class PerkSystem {
     this.activeEffects.delete(entityId);
     this.deathClockTimers.delete(entityId);
     this.jinxStates.delete(entityId);
+    this.evilEyesTargetCreature.delete(entityId);
+    this.dotEffects.delete(entityId);
   }
 }

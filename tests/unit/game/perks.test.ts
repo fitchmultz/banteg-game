@@ -176,9 +176,11 @@ describe('Perk Stat Calculations', () => {
       expect(calculateDamageMultiplier(perkCounts)).toBe(1.3); // 1 + 2 * 0.15
     });
 
-    it('should apply evil eyes bonus', () => {
+    it('should not apply evil eyes bonus in base calculation (handled by PerkSystem)', () => {
+      // Evil Eyes bonus is now calculated separately by PerkSystem.getDamageMultiplierWithEvilEyes()
+      // which checks if player is actually targeting an enemy
       const perkCounts = new Map<PerkId, number>([[PerkId.EVIL_EYES, 1]]);
-      expect(calculateDamageMultiplier(perkCounts)).toBe(1.1);
+      expect(calculateDamageMultiplier(perkCounts)).toBe(1);
     });
   });
 
@@ -429,6 +431,120 @@ describe('Special Perk Effects', () => {
       expect(perk).toBeDefined();
       expect(perk?.effects.some((e) => e.type === 'special_fire_bullets')).toBe(true);
       expect(perk?.effects.find((e) => e.type === 'special_fire_bullets')?.value).toBe(1.25);
+    });
+  });
+
+  describe('Radioactive Aura (Radioactive)', () => {
+    it('should define special_radioactive_aura for Radioactive', () => {
+      const perk = getPerkData(PerkId.RADIOACTIVE);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_radioactive_aura')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_radioactive_aura')?.value).toBe(10);
+    });
+
+    it('should not use generic damage_multiplier for Radioactive', () => {
+      const perk = getPerkData(PerkId.RADIOACTIVE);
+      expect(perk?.effects.some((e) => e.type === 'damage_multiplier')).toBe(false);
+    });
+  });
+
+  describe('Evil Eyes', () => {
+    it('should define special_evil_eyes for Evil Eyes', () => {
+      const perk = getPerkData(PerkId.EVIL_EYES);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_evil_eyes')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_evil_eyes')?.value).toBe(0.25);
+    });
+
+    it('should not use generic damage_multiplier for Evil Eyes', () => {
+      const perk = getPerkData(PerkId.EVIL_EYES);
+      expect(perk?.effects.some((e) => e.type === 'damage_multiplier')).toBe(false);
+    });
+  });
+
+  describe('Uranium Filled Bullets', () => {
+    it('should define special_uranium_dot for Uranium Filled Bullets', () => {
+      const perk = getPerkData(PerkId.URANIUM_FILLED_BULLETS);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_uranium_dot')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_uranium_dot')?.value).toBe(5);
+    });
+
+    it('should not use generic damage_multiplier for Uranium Filled Bullets', () => {
+      const perk = getPerkData(PerkId.URANIUM_FILLED_BULLETS);
+      expect(perk?.effects.some((e) => e.type === 'damage_multiplier')).toBe(false);
+    });
+  });
+
+  describe('Poison Bullets', () => {
+    it('should define special_poison_dot for Poison Bullets', () => {
+      const perk = getPerkData(PerkId.POISON_BULLETS);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_poison_dot')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_poison_dot')?.value).toBe(3);
+    });
+
+    it('should not use generic damage_multiplier for Poison Bullets', () => {
+      const perk = getPerkData(PerkId.POISON_BULLETS);
+      expect(perk?.effects.some((e) => e.type === 'damage_multiplier')).toBe(false);
+    });
+  });
+
+  describe('Missing Perks Added', () => {
+    it('should have Dodger perk (ID 18)', () => {
+      const perk = getPerkData(PerkId.DODGER);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(18);
+      expect(perk?.name).toBe('Dodger');
+      expect(perk?.effects.some((e) => e.type === 'special_dodger')).toBe(true);
+    });
+
+    it('should have Final Revenge perk (ID 19)', () => {
+      const perk = getPerkData(PerkId.FINAL_REVENGE);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(19);
+      expect(perk?.name).toBe('Final Revenge');
+      expect(perk?.effects.some((e) => e.type === 'special_final_revenge')).toBe(true);
+    });
+
+    it('should have Veins of Poison perk (ID 25)', () => {
+      const perk = getPerkData(PerkId.VEINS_OF_POISON);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(25);
+      expect(perk?.name).toBe('Veins of Poison');
+      expect(perk?.effects.some((e) => e.type === 'special_veins_of_poison')).toBe(true);
+    });
+
+    it('should have Toxic Avenger perk (ID 26)', () => {
+      const perk = getPerkData(PerkId.TOXIC_AVENGER);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(26);
+      expect(perk?.name).toBe('Toxic Avenger');
+      expect(perk?.effects.some((e) => e.type === 'special_toxic_avenger')).toBe(true);
+    });
+
+    it('should have Ninja perk (ID 27)', () => {
+      const perk = getPerkData(PerkId.NINJA);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(27);
+      expect(perk?.name).toBe('Ninja');
+      expect(perk?.effects.some((e) => e.type === 'special_ninja')).toBe(true);
+    });
+
+    it('should have Ion Gun Master perk (ID 28)', () => {
+      const perk = getPerkData(PerkId.ION_GUN_MASTER);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(28);
+      expect(perk?.name).toBe('Ion Gun Master');
+      expect(perk?.effects.some((e) => e.type === 'special_ion_gun_master')).toBe(true);
+    });
+
+    it('should have Angry Reloader perk (ID 29)', () => {
+      const perk = getPerkData(PerkId.ANGRY_RELOADER);
+      expect(perk).toBeDefined();
+      expect(perk?.id).toBe(29);
+      expect(perk?.name).toBe('Angry Reloader');
+      expect(perk?.effects.some((e) => e.type === 'special_angry_reloader')).toBe(true);
     });
   });
 

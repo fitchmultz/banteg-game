@@ -194,6 +194,8 @@ function extractPerkData(): CanonicalData['perks'] {
       category: 'special',
     },
     { id: 17, name: 'Poison Bullets', description: 'Poison enemies', category: 'special' },
+    { id: 18, name: 'Dodger', description: 'Enhanced dodge ability', category: 'special' },
+    { id: 19, name: 'Final Revenge', description: 'Revenge damage on death', category: 'special' },
     {
       id: 20,
       name: 'Ammunition Within',
@@ -224,6 +226,11 @@ function extractPerkData(): CanonicalData['perks'] {
       description: 'Get random weapon with bonus stats',
       category: 'combat',
     },
+    { id: 25, name: 'Veins of Poison', description: 'Poison damage synergy', category: 'special' },
+    { id: 26, name: 'Toxic Avenger', description: 'Advanced poison effects', category: 'special' },
+    { id: 27, name: 'Ninja', description: 'Enhanced dodging and movement', category: 'special' },
+    { id: 28, name: 'Ion Gun Master', description: 'Ion weapon specialist', category: 'special' },
+    { id: 29, name: 'Angry Reloader', description: 'Reload-based damage boost', category: 'special' },
     { id: 30, name: 'Instant Winner', description: '+2500 XP immediately', category: 'gamble' },
     {
       id: 31,

@@ -47,7 +47,19 @@ export interface PerkEffect {
     | 'special_plaguebearer'
     | 'special_bonus_magnet'
     | 'special_bandage'
-    | 'special_gore_intensity';
+    | 'special_gore_intensity'
+    // New effect types for proper perk behaviors:
+    | 'special_radioactive_aura' // Radiation damage aura around player
+    | 'special_evil_eyes' // Damage bonus only when targeting enemy
+    | 'special_uranium_dot' // Radiation damage over time on hit
+    | 'special_poison_dot' // Poison damage over time on hit
+    | 'special_dodger' // Enhanced dodge ability
+    | 'special_final_revenge' // Revenge damage on death
+    | 'special_veins_of_poison' // Poison damage synergy
+    | 'special_toxic_avenger' // Advanced poison effects
+    | 'special_ninja' // Enhanced dodging and movement
+    | 'special_ion_gun_master' // Ion weapon specialist
+    | 'special_angry_reloader'; // Reload-based damage boost
   value: number;
 }
 
@@ -104,10 +116,10 @@ const COMBAT_PERKS: PerkData[] = [
   {
     id: PerkId.RADIOACTIVE,
     name: 'Radioactive',
-    description: 'Radiation damage aura',
+    description: 'Radiation damage aura around player',
     category: 'combat',
     maxRank: 1,
-    effects: [{ type: 'damage_multiplier', value: 0.1 }], // Simplified
+    effects: [{ type: 'special_radioactive_aura', value: 10 }], // 10 damage per second to nearby enemies
   },
   {
     id: PerkId.EVIL_EYES,
@@ -115,7 +127,7 @@ const COMBAT_PERKS: PerkData[] = [
     description: 'Damage bonus when looking at enemy',
     category: 'combat',
     maxRank: 1,
-    effects: [{ type: 'damage_multiplier', value: 0.1 }],
+    effects: [{ type: 'special_evil_eyes', value: 0.25 }], // 25% bonus when targeting enemy
   },
   {
     id: PerkId.AMMUNITION_WITHIN,
@@ -307,7 +319,7 @@ const SPECIAL_PERKS: PerkData[] = [
     description: 'Radiation damage over time',
     category: 'special',
     maxRank: 1,
-    effects: [{ type: 'damage_multiplier', value: 0.05 }],
+    effects: [{ type: 'special_uranium_dot', value: 5 }], // 5 radiation damage per tick
   },
   {
     id: PerkId.POISON_BULLETS,
@@ -315,7 +327,64 @@ const SPECIAL_PERKS: PerkData[] = [
     description: 'Poison enemies',
     category: 'special',
     maxRank: 1,
-    effects: [{ type: 'damage_multiplier', value: 0.1 }],
+    effects: [{ type: 'special_poison_dot', value: 3 }], // 3 poison damage per tick
+  },
+  // Missing perks from canonical data
+  {
+    id: PerkId.DODGER,
+    name: 'Dodger',
+    description: 'Enhanced dodge ability',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_dodger', value: 1 }],
+  },
+  {
+    id: PerkId.FINAL_REVENGE,
+    name: 'Final Revenge',
+    description: 'Revenge damage on death',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_final_revenge', value: 1 }],
+  },
+  {
+    id: PerkId.VEINS_OF_POISON,
+    name: 'Veins of Poison',
+    description: 'Poison damage synergy',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_veins_of_poison', value: 1 }],
+  },
+  {
+    id: PerkId.TOXIC_AVENGER,
+    name: 'Toxic Avenger',
+    description: 'Advanced poison effects',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_toxic_avenger', value: 1 }],
+  },
+  {
+    id: PerkId.NINJA,
+    name: 'Ninja',
+    description: 'Enhanced dodging and movement',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_ninja', value: 1 }],
+  },
+  {
+    id: PerkId.ION_GUN_MASTER,
+    name: 'Ion Gun Master',
+    description: 'Ion weapon specialist',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_ion_gun_master', value: 1 }],
+  },
+  {
+    id: PerkId.ANGRY_RELOADER,
+    name: 'Angry Reloader',
+    description: 'Reload-based damage boost',
+    category: 'special',
+    maxRank: 1,
+    effects: [{ type: 'special_angry_reloader', value: 1 }],
   },
 ];
 
@@ -596,6 +665,7 @@ export function generatePerkChoices(
 
 /**
  * Calculate damage multiplier from perks
+ * Note: Evil Eyes bonus is calculated separately by PerkSystem based on targeting
  */
 export function calculateDamageMultiplier(perkCounts: Map<PerkId, number>): number {
   let multiplier = 1;
@@ -603,11 +673,8 @@ export function calculateDamageMultiplier(perkCounts: Map<PerkId, number>): numb
   const sharpshooterCount = perkCounts.get(PerkId.SHARPSHOOTER) ?? 0;
   multiplier += sharpshooterCount * 0.15;
 
-  // Evil Eyes is situational, simplified here
-  const evilEyesCount = perkCounts.get(PerkId.EVIL_EYES) ?? 0;
-  if (evilEyesCount > 0) {
-    multiplier += 0.1; // Assuming player is looking at enemy
-  }
+  // Note: Evil Eyes (25% bonus when targeting enemy) is handled separately
+  // by PerkSystem.getDamageMultiplierWithEvilEyes() which checks evilEyesTargetCreature
 
   return multiplier;
 }

@@ -161,11 +161,25 @@ export enum PerkId {
   REGRESSION_BULLETS = 15,
   URANIUM_FILLED_BULLETS = 16,
   POISON_BULLETS = 17,
+  // ID 18: Dodger - enhances dodge ability
+  DODGER = 18,
+  // ID 19: Final Revenge - revenge damage on death
+  FINAL_REVENGE = 19,
   AMMUNITION_WITHIN = 20,
   ANXIOUS_LOADER = 21,
   AMMO_MANIAC = 22,
   MY_FAVOURITE_WEAPON = 23,
   RANDOM_WEAPON = 24,
+  // ID 25: Veins of Poison - poison damage synergy
+  VEINS_OF_POISON = 25,
+  // ID 26: Toxic Avenger - advanced poison perk
+  TOXIC_AVENGER = 26,
+  // ID 27: Ninja - enhanced dodging and movement
+  NINJA = 27,
+  // ID 28: Ion Gun Master - ion weapon specialist
+  ION_GUN_MASTER = 28,
+  // ID 29: Angry Reloader - reload-based damage boost
+  ANGRY_RELOADER = 29,
   INSTANT_WINNER = 30,
   FATAL_LOTTERY = 31,
   LIFELINE_50_50 = 32,

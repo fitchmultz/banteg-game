@@ -107,6 +107,28 @@ export class CollisionSystem extends System {
             isFireDamage: projectileTypeData.fireDamage,
           });
 
+          // Apply DoT effects if player has uranium/poison bullets
+          if (this.perkSystem) {
+            if (this.perkSystem.hasUraniumBullets(pData.ownerId)) {
+              this.perkSystem.applyDotEffect(
+                pData.ownerId,
+                enemy.id,
+                'uranium',
+                5, // damage per tick from perk data
+                5 // duration in seconds
+              );
+            }
+            if (this.perkSystem.hasPoisonBullets(pData.ownerId)) {
+              this.perkSystem.applyDotEffect(
+                pData.ownerId,
+                enemy.id,
+                'poison',
+                3, // damage per tick from perk data
+                4 // duration in seconds
+              );
+            }
+          }
+
           // Handle piercing
           if (pData.pierceCount > 0) {
             pData.pierceCount--;
