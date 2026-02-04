@@ -7,7 +7,7 @@
 
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
-import { type Renderer, ParticleSystem, type InputManager } from '../../engine';
+import { type Renderer, ParticleSystem, type InputManager, type AssetManager, type SpriteAtlas } from '../../engine';
 import { getWeaponData } from '../data';
 
 export class RenderSystem extends System {
@@ -18,6 +18,8 @@ export class RenderSystem extends System {
   private entityManager: EntityManager;
   private particleSystem: ParticleSystem;
   private inputManager: InputManager | null = null;
+  private assetManager: AssetManager | null = null;
+  private spriteAtlas: SpriteAtlas | null = null;
 
   // Camera follow settings
   private cameraSmoothing = 0.1;
@@ -30,10 +32,18 @@ export class RenderSystem extends System {
   private currentFps = 0;
   private showFps = false;
 
-  constructor(entityManager: EntityManager, renderer: Renderer, inputManager?: InputManager) {
+  constructor(
+    entityManager: EntityManager,
+    renderer: Renderer,
+    assetManager?: AssetManager,
+    spriteAtlas?: SpriteAtlas,
+    inputManager?: InputManager
+  ) {
     super();
     this.entityManager = entityManager;
     this.renderer = renderer;
+    this.assetManager = assetManager ?? null;
+    this.spriteAtlas = spriteAtlas ?? null;
     this.inputManager = inputManager ?? null;
     this.particleSystem = new ParticleSystem(1000);
   }
@@ -143,19 +153,34 @@ export class RenderSystem extends System {
       this.renderer.drawRect(transform.x - 2, transform.y - 2, 4, 4);
     }
 
-    // Render creatures
-    const creatures = this.entityManager.query(['creature', 'transform']);
+    // Render creatures with sprites
+    const creatures = this.entityManager.query(['creature', 'transform', 'sprite']);
     for (const entity of creatures) {
       const transform = entity.getComponent<'transform'>('transform');
       const creature = entity.getComponent<'creature'>('creature');
-      if (!transform || !creature) continue;
+      const sprite = entity.getComponent<'sprite'>('sprite');
+      if (!transform || !creature || !sprite) continue;
 
-      // Use creature tint for color
-      this.renderer.setColor(creature.tint.r, creature.tint.g, creature.tint.b, creature.tint.a);
+      const image = this.assetManager?.getImage('creatures');
+      if (image && this.spriteAtlas) {
+        // Build frame name: "{textureName}_{frame}"
+        const frameName = `${sprite.textureName}_${creature.frame}`;
+        const frame = this.spriteAtlas.getFrame(frameName);
 
-      // Draw creature as a circle
-      const size = 16 * creature.size;
-      this.renderer.drawCircle(transform.x, transform.y, size);
+        if (frame) {
+          this.renderer.drawSprite(image, frame, transform.x, transform.y, {
+            rotation: transform.rotation,
+            scale: creature.size,
+            opacity: creature.tint.a,
+          });
+        } else {
+          // Fallback to colored circle if frame not found
+          this.renderCreatureFallback(transform, creature);
+        }
+      } else {
+        // Fallback if image not loaded
+        this.renderCreatureFallback(transform, creature);
+      }
     }
 
     // Render players
@@ -257,6 +282,18 @@ export class RenderSystem extends System {
       // Avoid unused variable warning by referencing weaponData
       void weaponData;
     }
+  }
+
+  /**
+   * Fallback rendering for creatures when sprites are not available.
+   */
+  private renderCreatureFallback(
+    transform: { x: number; y: number; rotation?: number },
+    creature: { tint: { r: number; g: number; b: number; a: number }; size: number }
+  ): void {
+    this.renderer.setColor(creature.tint.r, creature.tint.g, creature.tint.b, creature.tint.a);
+    const size = 16 * creature.size;
+    this.renderer.drawCircle(transform.x, transform.y, size);
   }
 
   private renderUI(): void {

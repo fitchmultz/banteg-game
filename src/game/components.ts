@@ -133,6 +133,7 @@ export interface Creature extends Component {
   rewardValue: number;
   frame: number;
   frameTime: number;
+  animRate: number;
 }
 
 export function createCreature(
@@ -148,6 +149,7 @@ export function createCreature(
     flags: options.flags ?? CreatureFlags.NONE,
     tint: options.tint ?? { r: 1, g: 1, b: 1, a: 1 },
     size: options.size ?? 1,
+    animRate: options.animRate ?? 1.0,
     hitboxSize: options.hitboxSize ?? 16,
     moveSpeed: options.moveSpeed ?? 50,
     attackCooldown: options.attackCooldown ?? 0,

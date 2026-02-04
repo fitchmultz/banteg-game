@@ -8,7 +8,7 @@
 
 import { EntityManager, SystemManager } from './core/ecs';
 import { GameLoop } from './core/GameLoop';
-import { Renderer, InputManager, AudioManager } from './engine';
+import { Renderer, InputManager, AudioManager, AssetManager, SpriteAtlas, generateSpriteAtlas } from './engine';
 import {
   InputSystem,
   MovementSystem,
@@ -122,6 +122,8 @@ let systemManager: SystemManager;
 let renderer: Renderer;
 let input: InputManager;
 let audio: AudioManager;
+let assetManager: AssetManager;
+let spriteAtlas: SpriteAtlas;
 
 async function init(): Promise<void> {
   const container = document.getElementById('game-container');
@@ -159,6 +161,31 @@ async function init(): Promise<void> {
     sfxVolume: settings.sfxVolume,
     musicVolume: settings.musicVolume,
   });
+
+  // Initialize asset manager for sprite loading
+  assetManager = new AssetManager({
+    basePath: '',
+  });
+
+  // Initialize sprite atlas for creature animations
+  spriteAtlas = new SpriteAtlas();
+
+  // Generate and load creature sprites
+  const { image: spriteCanvas, data: atlasData } = generateSpriteAtlas();
+  spriteAtlas.loadFromData(atlasData);
+
+  // Convert canvas to blob and create object URL for AssetManager
+  const spriteBlob = await new Promise<Blob | null>((resolve) => {
+    spriteCanvas.toBlob(resolve, 'image/png');
+  });
+
+  if (spriteBlob) {
+    const spriteUrl = URL.createObjectURL(spriteBlob);
+    await assetManager.loadImage('creatures', spriteUrl);
+    console.log('Creature sprites loaded successfully');
+  } else {
+    console.warn('Failed to generate creature sprites, falling back to colored circles');
+  }
 
   // Initialize audio and load assets on first user gesture
   renderer.getCanvas().addEventListener(
@@ -709,7 +736,7 @@ function startGame(mode: GameMode): void {
   const weaponPickupSystem = new WeaponPickupSystem(entityManager);
   const effectSystem = new EffectSystem(entityManager);
   const lifetimeSystem = new LifetimeSystem(entityManager);
-  const renderSystem = new RenderSystem(entityManager, renderer, input);
+  const renderSystem = new RenderSystem(entityManager, renderer, assetManager, spriteAtlas, input);
   gameState.renderSystem = renderSystem;
 
   // Create perk system for this game session

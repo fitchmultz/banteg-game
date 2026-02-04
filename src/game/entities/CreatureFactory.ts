@@ -66,6 +66,7 @@ export function createCreatureEntity(
     size: data.size,
     rewardValue: data.rewardXP,
     tint: data.tint,
+    animRate: data.animRate,
   });
   entity.addComponent(creature);
 

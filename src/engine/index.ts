@@ -24,3 +24,11 @@ export {
   type SpriteAtlasAnimation,
 } from './SpriteAtlas';
 export { ParticleSystem, type Particle, type ParticleEmitterOptions } from './ParticleSystem';
+export {
+  generateSpriteAtlas,
+  generateSpriteAssets,
+  canvasToDataURL,
+  atlasDataToJSON,
+  saveGeneratedSprites,
+  type GeneratedSpriteAtlas,
+} from './SpriteGenerator';

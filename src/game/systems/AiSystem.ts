@@ -40,6 +40,7 @@ export class AiSystem extends System {
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
     const gameTime = context.gameTime;
+    const dt = context.dt;
 
     // Query all creatures
     const creatures = this.entityManager.query(['creature', 'transform', 'velocity']);
@@ -52,6 +53,9 @@ export class AiSystem extends System {
       const transform = creatureEntity.getComponent<'transform'>('transform');
       const velocity = creatureEntity.getComponent<'velocity'>('velocity');
       if (!creature || !transform || !velocity) continue;
+
+      // Update animation frame
+      this.updateAnimation(creature, dt);
 
       // Get or create AI state
       let state = aiStates.get(creatureEntity.id);
@@ -239,5 +243,30 @@ export class AiSystem extends System {
 
   destroy(): void {
     aiStates.clear();
+  }
+
+  /**
+   * Update creature animation frame based on movement and time.
+   */
+  private updateAnimation(
+    creature: { frameTime: number; frame: number; animRate?: number; moveSpeed: number },
+    dt: number
+  ): void {
+    // Only animate if creature is moving
+    const isMoving = creature.moveSpeed > 0;
+    if (!isMoving) return;
+
+    // Advance frame time
+    creature.frameTime += dt;
+
+    // Calculate frame duration based on animation rate (default to 1.0)
+    const animRate = creature.animRate ?? 1.0;
+    const frameDuration = 0.2 / animRate;
+
+    // Advance to next frame if duration elapsed
+    if (creature.frameTime >= frameDuration) {
+      creature.frameTime = 0;
+      creature.frame = (creature.frame + 1) % 4; // 4-frame animation cycle
+    }
   }
 }
