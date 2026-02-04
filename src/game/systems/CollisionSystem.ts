@@ -7,8 +7,8 @@
  * Priority: 60
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityId } from '../../types';
 import { CollisionLayer } from '../components';
 import { getProjectileData } from '../data';
@@ -81,7 +81,7 @@ export class CollisionSystem extends System {
     // Projectile vs Enemy collisions
     for (const projectile of projectiles) {
       const pCollider = projectile.getComponent<'collider'>('collider');
-      if (!pCollider) continue;
+      if (!pCollider || !pCollider.enabled) continue;
 
       // Only check player projectiles against enemies
       if (pCollider.layer !== CollisionLayer.PROJECTILE_PLAYER) continue;
@@ -96,7 +96,7 @@ export class CollisionSystem extends System {
       for (const enemy of enemies) {
         const eCollider = enemy.getComponent<'collider'>('collider');
         const eTransform = enemy.getComponent<'transform'>('transform');
-        if (!eCollider || !eTransform) continue;
+        if (!eCollider || !eCollider.enabled || !eTransform) continue;
 
         if (this.checkCollision(pTransform, pCollider.radius, eTransform, eCollider.radius)) {
           // Queue damage event with fire damage from projectile data
@@ -125,13 +125,13 @@ export class CollisionSystem extends System {
       const pTransform = player.getComponent<'transform'>('transform');
       const pCollider = player.getComponent<'collider'>('collider');
       const pData = player.getComponent<'player'>('player');
-      if (!pTransform || !pCollider || !pData) continue;
+      if (!pTransform || !pCollider || !pCollider.enabled || !pData) continue;
 
       for (const enemy of enemies) {
         const eTransform = enemy.getComponent<'transform'>('transform');
         const eCollider = enemy.getComponent<'collider'>('collider');
         const eData = enemy.getComponent<'creature'>('creature');
-        if (!eTransform || !eCollider || !eData) continue;
+        if (!eTransform || !eCollider || !eCollider.enabled || !eData) continue;
 
         if (this.checkCollision(pTransform, pCollider.radius, eTransform, eCollider.radius)) {
           // Queue contact damage event

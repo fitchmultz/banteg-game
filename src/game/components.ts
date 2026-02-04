@@ -4,15 +4,15 @@
  * ECS components representing game state.
  */
 
-import type { Component, Color } from '../types';
+import type { Color, Component } from '../types';
 import {
+  AiMode,
+  BonusType,
+  CreatureFlags,
   CreatureTypeId,
+  PerkId,
   ProjectileTypeId,
   WeaponId,
-  PerkId,
-  AiMode,
-  CreatureFlags,
-  BonusType,
 } from '../types';
 
 export { CreatureTypeId, ProjectileTypeId, WeaponId, PerkId, AiMode, CreatureFlags, BonusType };
@@ -68,6 +68,7 @@ export interface Player extends Component {
   playerIndex: number;
   health: number;
   maxHealth: number;
+  invulnerable: boolean;
   experience: number;
   level: number;
   // Two-slot weapon system
@@ -92,6 +93,7 @@ export function createPlayer(playerIndex = 0): Player {
     playerIndex,
     health: 100,
     maxHealth: 100,
+    invulnerable: false,
     experience: 0,
     level: 1,
     currentWeapon: {
@@ -237,6 +239,7 @@ export interface Collider extends Component {
   offsetY: number;
   isTrigger: boolean;
   layer: CollisionLayer;
+  enabled: boolean;
 }
 
 export function createCollider(
@@ -251,6 +254,7 @@ export function createCollider(
     offsetX: options.offsetX ?? 0,
     offsetY: options.offsetY ?? 0,
     isTrigger: options.isTrigger ?? false,
+    enabled: options.enabled ?? true,
   };
 }
 

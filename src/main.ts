@@ -92,6 +92,8 @@ interface GlobalGameState {
   rushSpawnSystem: RushSpawnSystem | null;
   // Audio loaded flag
   audioLoaded: boolean;
+  // Developer console
+  console: import('./console').Console | null;
 }
 
 const gameState: GlobalGameState = {
@@ -118,6 +120,7 @@ const gameState: GlobalGameState = {
   spawnSystem: null,
   rushSpawnSystem: null,
   audioLoaded: false,
+  console: null,
 };
 
 // Core engine instances
@@ -477,6 +480,138 @@ async function init(): Promise<void> {
       returnToMainMenu();
     },
   });
+
+  // Initialize console after renderer and input are ready
+  const { Console, cvarRegistry, commandRegistry } = await import('./console');
+
+  const consoleInstance = new Console({
+    renderer,
+    inputManager: input,
+  });
+
+  gameState.console = consoleInstance;
+
+  // Wire up CVAR onChange callbacks
+  const r_showfps = cvarRegistry.get('r_showfps');
+  if (r_showfps) {
+    r_showfps.onChange = (value) => {
+      if (gameState.renderSystem && typeof value === 'boolean') {
+        gameState.renderSystem.showFps = value;
+      }
+    };
+  }
+
+  // Wire up "quit" command
+  const quitCmd = commandRegistry.get('quit');
+  if (quitCmd) {
+    quitCmd.handler = () => {
+      returnToMainMenu();
+      return 'Returned to main menu';
+    };
+  }
+
+  // Wire up "god" command
+  const godCmd = commandRegistry.get('god');
+  if (godCmd) {
+    godCmd.handler = () => {
+      // Toggle god mode on all players
+      for (const playerId of gameState.playerEntityIds) {
+        const entity = entityManager.getEntity(playerId);
+        if (entity) {
+          const player = entity.getComponent<'player'>('player');
+          if (player) {
+            // Toggle invulnerability
+            player.invulnerable = !player.invulnerable;
+          }
+        }
+      }
+      return 'God mode toggled';
+    };
+  }
+
+  // Wire up "give" command
+  const giveCmd = commandRegistry.get('give');
+  if (giveCmd) {
+    giveCmd.handler = (args) => {
+      if (args.length < 1) return 'Usage: give <weapon|ammo|health> [amount]';
+      const [type, amountStr] = args;
+      const amount = amountStr ? Number.parseInt(amountStr, 10) : 1;
+
+      const primaryPlayerId = gameState.playerEntityIds[0];
+      if (primaryPlayerId === undefined) return 'No player found';
+
+      const entity = entityManager.getEntity(primaryPlayerId);
+      if (!entity) return 'Player entity not found';
+
+      switch (type?.toLowerCase()) {
+        case 'health': {
+          const player = entity.getComponent<'player'>('player');
+          if (player) {
+            player.health = Math.min(player.maxHealth, player.health + amount);
+            return `Gave ${amount} health`;
+          }
+          break;
+        }
+        case 'ammo': {
+          const player = entity.getComponent<'player'>('player');
+          if (player) {
+            player.currentWeapon.ammo += amount;
+            return `Gave ${amount} ammo`;
+          }
+          break;
+        }
+        default:
+          return `Unknown item: ${type}`;
+      }
+
+      return 'Failed to give item';
+    };
+  }
+
+  // Wire up "killall" command
+  const killallCmd = commandRegistry.get('killall');
+  if (killallCmd) {
+    killallCmd.handler = () => {
+      const entities = entityManager.getAllEntities();
+      let count = 0;
+      for (const entity of entities) {
+        if (entity.hasComponent('creature')) {
+          const creature = entity.getComponent<'creature'>('creature');
+          if (creature) {
+            creature.health = 0;
+            count++;
+          }
+        }
+      }
+      return `Killed ${count} enemies`;
+    };
+  }
+
+  // Wire up "noclip" command
+  const noclipCmd = commandRegistry.get('noclip');
+  if (noclipCmd) {
+    noclipCmd.handler = () => {
+      // Toggle collision for player
+      for (const playerId of gameState.playerEntityIds) {
+        const entity = entityManager.getEntity(playerId);
+        if (entity) {
+          const collider = entity.getComponent<'collider'>('collider');
+          if (collider) {
+            collider.enabled = !collider.enabled;
+          }
+        }
+      }
+      return 'Noclip toggled';
+    };
+  }
+
+  // Update ent_count CVAR periodically
+  setInterval(() => {
+    const entCount = cvarRegistry.get('ent_count');
+    if (entCount) {
+      entCount.value = entityManager.getAllEntities().length;
+    }
+  }, 1000);
 
   // Show main menu
   showMainMenu();
@@ -956,6 +1091,10 @@ function startGame(mode: GameMode): void {
         gameState.tutorialUI?.update(1 / 60); // Approximate dt for UI
         gameState.tutorialUI?.render();
       }
+      // Render console on top of everything
+      if (gameState.console?.isOpen()) {
+        gameState.console.render();
+      }
     },
     {
       targetUps: TARGET_UPS,
@@ -1092,6 +1231,7 @@ function cleanup(): void {
   gameState.gameOverUI?.destroy();
   gameState.tutorialUI?.destroy();
   gameState.optionsMenuUI?.destroy();
+  gameState.console?.destroy();
   systemManager.clear();
   entityManager.clear();
 }
@@ -1134,6 +1274,21 @@ function startPauseLoop(): void {
 
 // Handle keyboard input
 document.addEventListener('keydown', (e) => {
+  // Toggle console with backtick/tilde
+  if (e.code === 'Backquote') {
+    gameState.console?.toggle();
+    return;
+  }
+
+  // If console is open, let it handle the key
+  if (gameState.console?.isOpen()) {
+    const consumed = gameState.console.handleKeyDown(e);
+    if (consumed) {
+      e.preventDefault();
+      return;
+    }
+  }
+
   // Toggle FPS counter with F3
   if (e.code === 'F3') {
     gameState.renderSystem?.toggleFps();
@@ -1164,6 +1319,16 @@ document.addEventListener('keydown', (e) => {
     } else {
       gameState.mainMenuUI?.hide();
       gameState.questMenuUI?.show();
+    }
+  }
+});
+
+// Handle character input for console
+document.addEventListener('keypress', (e) => {
+  if (gameState.console?.isOpen()) {
+    const consumed = gameState.console.handleInput(e.key);
+    if (consumed) {
+      e.preventDefault();
     }
   }
 });

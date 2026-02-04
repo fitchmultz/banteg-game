@@ -68,7 +68,7 @@ export class RenderSystem extends System {
   private frameCount = 0;
   private lastFpsTime = 0;
   private currentFps = 0;
-  private showFps = false;
+  showFps = false;
 
   constructor(
     entityManager: EntityManager,

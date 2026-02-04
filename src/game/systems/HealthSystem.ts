@@ -8,16 +8,16 @@
 
 import type { EntityManager } from '../../core/ecs';
 import { System, type UpdateContext } from '../../core/ecs/System';
+import type { ParticleSystem } from '../../engine/ParticleSystem';
 import type { EntityId } from '../../types';
 import { AiMode, type CreatureTypeId } from '../../types';
+import { createCorpse, createLifetime, createSprite, createTransform } from '../components';
 import { getCreatureData, getWeaponData } from '../data';
 import { BonusFactory } from '../entities';
+import { CREATURE_TEXTURES } from '../entities/CreatureFactory';
+import type { SettingsManager } from '../settings/SettingsManager';
 import { damageEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
-import type { ParticleSystem } from '../../engine/ParticleSystem';
-import type { SettingsManager } from '../settings/SettingsManager';
-import { createCorpse, createLifetime, createSprite, createTransform } from '../components';
-import { CREATURE_TEXTURES } from '../entities/CreatureFactory';
 
 // Track entity health states
 interface HealthState {
@@ -190,6 +190,11 @@ export class HealthSystem extends System {
       return;
     }
 
+    // Check for invulnerability (god mode)
+    if (player?.invulnerable) {
+      return;
+    }
+
     // Apply damage
     if (player) {
       player.health -= finalDamage;
@@ -249,7 +254,12 @@ export class HealthSystem extends System {
 
   private handleCreatureDeath(
     entityId: EntityId,
-    creature: { creatureTypeId: CreatureTypeId; rewardValue: number; tint: { r: number; g: number; b: number; a: number }; size: number },
+    creature: {
+      creatureTypeId: CreatureTypeId;
+      rewardValue: number;
+      tint: { r: number; g: number; b: number; a: number };
+      size: number;
+    },
     transform: { x: number; y: number },
     killerId: EntityId | null = null
   ): void {
@@ -269,9 +279,8 @@ export class HealthSystem extends System {
     // Get gore intensity from settings and Bloody Mess perk
     const goreSetting = this.settingsManager?.getConfig().goreIntensity ?? 1;
     // Use killer's Bloody Mess perk if available, otherwise default to 1x
-    const bloodyMessRank = killerId !== null
-      ? this.perkSystem?.getGoreIntensity(killerId) ?? 1
-      : 1;
+    const bloodyMessRank =
+      killerId !== null ? (this.perkSystem?.getGoreIntensity(killerId) ?? 1) : 1;
     const intensityMultiplier = bloodyMessRank; // 1x, 2x, 3x, 4x based on rank
     const totalIntensity = goreSetting * intensityMultiplier;
 
@@ -283,14 +292,18 @@ export class HealthSystem extends System {
     // Create corpse entity with the creature's original texture
     const corpseEntity = this.entityManager.createEntity();
     const textureName = CREATURE_TEXTURES[creature.creatureTypeId] ?? 'zombie';
-    corpseEntity.addComponent(createTransform(transform.x, transform.y, Math.random() * Math.PI * 2));
+    corpseEntity.addComponent(
+      createTransform(transform.x, transform.y, Math.random() * Math.PI * 2)
+    );
     corpseEntity.addComponent(createSprite(textureName, 32, 32));
-    corpseEntity.addComponent(createCorpse(
-      creature.creatureTypeId,
-      creature.tint,
-      creature.size,
-      Math.random() * Math.PI * 2
-    ));
+    corpseEntity.addComponent(
+      createCorpse(
+        creature.creatureTypeId,
+        creature.tint,
+        creature.size,
+        Math.random() * Math.PI * 2
+      )
+    );
     corpseEntity.addComponent(createLifetime(30)); // 30 second lifetime
 
     // Notify callback
@@ -303,7 +316,12 @@ export class HealthSystem extends System {
   private getOrCreateHealthState(entityId: EntityId): HealthState {
     let state = healthStates.get(entityId);
     if (!state) {
-      state = { hitFlashTimer: 0, isDead: false, lastTimeSlowTrigger: -999, lastDamageSourceId: null };
+      state = {
+        hitFlashTimer: 0,
+        isDead: false,
+        lastTimeSlowTrigger: -999,
+        lastDamageSourceId: null,
+      };
       healthStates.set(entityId, state);
     }
     return state;
