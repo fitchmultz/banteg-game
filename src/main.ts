@@ -44,6 +44,7 @@ import {
   WeaponSystem,
 } from './game/systems';
 import {
+  CreditsUI,
   GameOverUI,
   HighScoresUI,
   MainMenuUI,
@@ -84,6 +85,7 @@ interface GlobalGameState {
   tutorialUI: TutorialUI | null;
   optionsMenuUI: OptionsMenuUI | null;
   highScoresUI: HighScoresUI | null;
+  creditsUI: CreditsUI | null;
   settingsManager: SettingsManager | null;
   currentGameState: GameState | null;
   playerEntityId: number | null; // P1 entity ID (for backward compatibility)
@@ -115,6 +117,7 @@ const gameState: GlobalGameState = {
   tutorialUI: null,
   optionsMenuUI: null,
   highScoresUI: null,
+  creditsUI: null,
   settingsManager: null,
   currentGameState: null,
   playerEntityId: null,
@@ -429,7 +432,8 @@ async function init(): Promise<void> {
       gameState.optionsMenuUI?.show('menu');
     },
     onShowCredits: () => {
-      console.log('Credits not implemented yet');
+      gameState.mainMenuUI?.hide();
+      gameState.creditsUI?.show();
     },
     onShowHighScores: () => {
       gameState.mainMenuUI?.hide();
@@ -442,6 +446,14 @@ async function init(): Promise<void> {
     progressionManager,
     onBack: () => {
       gameState.highScoresUI?.hide();
+      showMainMenu();
+    },
+  });
+
+  gameState.creditsUI = new CreditsUI({
+    canvas: renderer.getCanvas(),
+    onBack: () => {
+      gameState.creditsUI?.hide();
       showMainMenu();
     },
   });
@@ -707,6 +719,7 @@ function showMainMenu(): void {
   gameState.questMenuUI?.hide();
   gameState.tutorialUI?.hide();
   gameState.highScoresUI?.hide();
+  gameState.creditsUI?.hide();
 }
 
 function startMenuLoop(): void {
@@ -734,6 +747,12 @@ function startMenuLoop(): void {
     if (gameState.highScoresUI?.isShown()) {
       gameState.highScoresUI?.update(dt);
       gameState.highScoresUI?.render();
+    }
+
+    // Also render credits UI if visible
+    if (gameState.creditsUI?.isShown()) {
+      gameState.creditsUI?.update(dt);
+      gameState.creditsUI?.render();
     }
 
     requestAnimationFrame(menuLoop);
@@ -821,7 +840,7 @@ function startGame(mode: GameMode): void {
         gameState.gameModeManager?.gameOver();
       }
     },
-    onCreatureDeath: (creatureTypeId, position) => {
+    onCreatureDeath: (creatureTypeId, position, isBoss) => {
       // Play enemy death sound
       if (gameState.audioLoaded) {
         audio.playSample(getDeathSample({ isPlayer: false, creatureTypeId }));
@@ -891,7 +910,7 @@ function startGame(mode: GameMode): void {
               gameState.survivalMode?.recordKill(10);
               break;
             case 'QUEST':
-              gameState.questMode?.recordKill(creatureTypeId, 10);
+              gameState.questMode?.recordKill(creatureTypeId, 10, isBoss ?? false);
               break;
             case 'RUSH':
               gameState.rushMode?.recordKill(10);
@@ -1255,6 +1274,7 @@ function cleanup(): void {
   gameState.tutorialUI?.destroy();
   gameState.optionsMenuUI?.destroy();
   gameState.highScoresUI?.destroy();
+  gameState.creditsUI?.destroy();
   gameState.console?.destroy();
   systemManager.clear();
   entityManager.clear();

@@ -33,7 +33,11 @@ const healthStates = new Map<EntityId, HealthState>();
 
 export interface GameStateCallbacks {
   onPlayerDeath?: (entityId: EntityId) => void;
-  onCreatureDeath?: (creatureTypeId: number, position: { x: number; y: number }) => void;
+  onCreatureDeath?: (
+    creatureTypeId: number,
+    position: { x: number; y: number },
+    isBoss?: boolean
+  ) => void;
   onScoreChange?: (score: number) => void;
   onXPChange?: (xp: number) => void;
 }
@@ -259,6 +263,7 @@ export class HealthSystem extends System {
       rewardValue: number;
       tint: { r: number; g: number; b: number; a: number };
       size: number;
+      flags: number;
     },
     transform: { x: number; y: number },
     killerId: EntityId | null = null
@@ -306,8 +311,9 @@ export class HealthSystem extends System {
     );
     corpseEntity.addComponent(createLifetime(30)); // 30 second lifetime
 
-    // Notify callback
-    this.callbacks.onCreatureDeath?.(creature.creatureTypeId, transform);
+    // Notify callback - pass boss status
+    const isBoss = (creature.flags & 0x02) !== 0; // CreatureFlags.BOSS = 1 << 1 = 0x02
+    this.callbacks.onCreatureDeath?.(creature.creatureTypeId, transform, isBoss);
 
     // Destroy original creature entity
     this.entityManager.destroyEntity(entityId);

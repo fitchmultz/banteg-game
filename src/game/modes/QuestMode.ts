@@ -43,6 +43,11 @@ export class QuestMode {
   private survivalTime = 0;
   private killCountsByType = new Map<CreatureTypeId, number>();
   private score = 0;
+  private bossKillCount = 0;
+
+  // Player position tracking for reach_location objectives
+  private playerX = 0;
+  private playerY = 0;
 
   constructor(
     entityManager: EntityManager,
@@ -84,6 +89,9 @@ export class QuestMode {
     this.survivalTime = 0;
     this.killCountsByType.clear();
     this.score = 0;
+    this.bossKillCount = 0;
+    this.playerX = 0;
+    this.playerY = 0;
 
     // Start spawn timeline
     this.questSpawnSystem.startQuest(quest);
@@ -130,7 +138,7 @@ export class QuestMode {
   /**
    * Record a kill
    */
-  recordKill(creatureTypeId?: CreatureTypeId, rewardValue = 10): void {
+  recordKill(creatureTypeId?: CreatureTypeId, rewardValue = 10, isBoss = false): void {
     if (!this.isActive) return;
 
     this.killCount++;
@@ -139,6 +147,11 @@ export class QuestMode {
     if (creatureTypeId !== undefined) {
       const current = this.killCountsByType.get(creatureTypeId) ?? 0;
       this.killCountsByType.set(creatureTypeId, current + 1);
+    }
+
+    // Track boss kills separately
+    if (isBoss) {
+      this.bossKillCount++;
     }
 
     // Track kill in progression
@@ -156,6 +169,14 @@ export class QuestMode {
   addScore(points: number): void {
     if (!this.isActive) return;
     this.score += points;
+  }
+
+  /**
+   * Update player position for reach_location objectives
+   */
+  updatePlayerPosition(x: number, y: number): void {
+    this.playerX = x;
+    this.playerY = y;
   }
 
   /**
@@ -266,15 +287,27 @@ export class QuestMode {
           complete = this.survivalTime >= objective.target;
           break;
 
-        case 'reach_location':
-          // Would need player position check - not implemented
-          current = 0;
-          complete = false;
+        case 'reach_location': {
+          // Check if player is within target radius of objective location
+          // objective.target contains the radius
+          // objective.x and objective.y contain the target coordinates
+          if (objective.x !== undefined && objective.y !== undefined) {
+            const dx = this.playerX - objective.x;
+            const dy = this.playerY - objective.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const radius = objective.target;
+            current = distance <= radius ? radius : Math.max(0, radius - distance);
+            complete = distance <= radius;
+          } else {
+            current = 0;
+            complete = false;
+          }
           break;
+        }
 
         case 'kill_bosses':
-          // Similar to kill_count but for boss types
-          current = this.killCount; // Simplified
+          // Track kills of creatures with BOSS flag
+          current = this.bossKillCount;
           complete = current >= objective.target;
           break;
       }

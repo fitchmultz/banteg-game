@@ -30,6 +30,10 @@ export interface QuestObjective {
   description: string;
   /** Optional: specific creature type to kill */
   creatureTypeId?: CreatureTypeId;
+  /** Optional: target X coordinate for reach_location objectives */
+  x?: number;
+  /** Optional: target Y coordinate for reach_location objectives */
+  y?: number;
 }
 
 export interface QuestData {

@@ -40,7 +40,7 @@ export class GameModeSystem extends System {
     this.options = options;
   }
 
-  update(_entityManager: EntityManager, context: UpdateContext): void {
+  update(entityManager: EntityManager, context: UpdateContext): void {
     const { gameModeManager, survivalMode, questMode, rushMode, tutorialMode } = this.options;
 
     // Only update when playing
@@ -61,9 +61,18 @@ export class GameModeSystem extends System {
       case 'COOP_SURVIVAL':
         survivalMode?.update(dt);
         break;
-      case 'QUEST':
+      case 'QUEST': {
         questMode?.update(dt);
+        // Update player position for reach_location objectives
+        const playerEntity = this.getPlayerEntity(entityManager);
+        if (playerEntity) {
+          const transform = playerEntity.getComponent<'transform'>('transform');
+          if (transform) {
+            questMode?.updatePlayerPosition(transform.x, transform.y);
+          }
+        }
         break;
+      }
       case 'RUSH':
         rushMode?.update(dt);
         break;
@@ -71,5 +80,16 @@ export class GameModeSystem extends System {
         tutorialMode?.update(dt);
         break;
     }
+  }
+
+  private getPlayerEntity(entityManager: EntityManager) {
+    // Find the first player entity
+    const entities = entityManager.getAllEntities();
+    for (const entity of entities) {
+      if (entity.hasComponent('player')) {
+        return entity;
+      }
+    }
+    return null;
   }
 }
