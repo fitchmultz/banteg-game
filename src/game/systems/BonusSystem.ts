@@ -8,10 +8,14 @@
 
 import type { EntityManager } from '../../core/ecs/EntityManager';
 import { System, type UpdateContext } from '../../core/ecs/System';
-import { BonusType, PerkId } from '../../types';
+import { BonusType, PerkId, ProjectileTypeId } from '../../types';
 import { getWeaponData } from '../data';
 import { collectEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
+import { createProjectileEntity } from '../entities/ProjectileFactory';
+
+// Special owner ID for environmental/projectile damage (no XP/kill credit)
+const ENVIRONMENTAL_OWNER_ID = -100;
 
 export class BonusSystem extends System {
   readonly name = 'BonusSystem';
@@ -26,12 +30,22 @@ export class BonusSystem extends System {
   private readonly shieldDuration = 15;
   private readonly fireBulletsDuration = 20;
 
+  // Spawn guard - prevents certain bonuses from spawning during effects
+  private static spawnGuard = false;
+
   constructor(entityManager: EntityManager, perkSystem?: PerkSystem) {
     super();
     this.entityManager = entityManager;
     if (perkSystem) {
       this.perkSystem = perkSystem;
     }
+  }
+
+  /**
+   * Check if spawn guard is active (prevents certain bonus types from spawning)
+   */
+  static isSpawnGuardActive(): boolean {
+    return BonusSystem.spawnGuard;
   }
 
   /**
@@ -72,6 +86,7 @@ export class BonusSystem extends System {
     player: {
       health: number;
       maxHealth: number;
+      experience: number;
       currentWeapon: { weaponId: number; clipSize: number; ammo: number };
       alternateWeapon: { weaponId: number; clipSize: number; ammo: number };
       shieldTimer: number;
@@ -170,6 +185,219 @@ export class BonusSystem extends System {
         context.setTimeScale(this.reflexTimeScale, player.reflexBoostTimer);
         break;
       }
+
+      case BonusType.POINTS: {
+        // Grant immediate experience points
+        player.experience += value;
+        break;
+      }
+
+      case BonusType.ATOMIC: {
+        this.applyAtomicEffect(playerId);
+        break;
+      }
+
+      case BonusType.SHOCK_CHAIN: {
+        this.applyShockChainEffect(playerId);
+        break;
+      }
+
+      case BonusType.FIREBLAST: {
+        this.applyFireblastEffect(playerId);
+        break;
+      }
     }
+  }
+
+  /**
+   * ATOMIC (Nuke) bonus effect
+   * Spawns random projectiles + deals radial damage to all enemies within 256 units
+   * Based on decompiled bonus_apply lines 208-256
+   */
+  private applyAtomicEffect(playerId: number): void {
+    const playerEntity = this.entityManager.getEntity(playerId);
+    if (!playerEntity) return;
+
+    const transform = playerEntity.getComponent<'transform'>('transform');
+    if (!transform) return;
+
+    const x = transform.x;
+    const y = transform.y;
+
+    // Set spawn guard to prevent overlapping effects
+    BonusSystem.spawnGuard = true;
+
+    // Spawn 4-7 random pistol projectiles (decompiled: (rand & 3) + 4)
+    const pistolCount = 4 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < pistolCount; i++) {
+      // Random angle: decompiled uses (rand % 0x274) * 0.01 = 0-628 * 0.01 = 0-6.28 radians
+      const angle = (Math.random() * 628) * 0.01;
+      const projectile = createProjectileEntity(
+        this.entityManager,
+        ProjectileTypeId.PISTOL,
+        x,
+        y,
+        angle,
+        ENVIRONMENTAL_OWNER_ID,
+        { damage: 15 }
+      );
+      // Apply random speed variation: decompiled uses ((rand % 0x32) * 0.01 + 0.5) = 0.5-1.0x
+      const velocity = projectile.getComponent<'velocity'>('velocity');
+      if (velocity) {
+        const speedScale = 0.5 + Math.random() * 0.5;
+        velocity.x *= speedScale;
+        velocity.y *= speedScale;
+      }
+    }
+
+    // Spawn 2 gauss gun projectiles
+    for (let i = 0; i < 2; i++) {
+      const angle = (Math.random() * 628) * 0.01;
+      createProjectileEntity(
+        this.entityManager,
+        ProjectileTypeId.GAUSS_GUN,
+        x,
+        y,
+        angle,
+        ENVIRONMENTAL_OWNER_ID,
+        { damage: 150 }
+      );
+    }
+
+    // Deal radial damage to all enemies within 256 units
+    // Decompiled: damage = (256 - distance) * 5
+    const NUKE_RADIUS = 256;
+    const enemies = this.entityManager.query(['creature', 'transform']);
+    for (const enemy of enemies) {
+      const creature = enemy.getComponent<'creature'>('creature');
+      const enemyTransform = enemy.getComponent<'transform'>('transform');
+      if (!creature || !enemyTransform) continue;
+
+      const dx = enemyTransform.x - x;
+      const dy = enemyTransform.y - y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= NUKE_RADIUS) {
+        // Damage = (256 - distance) * 5, max 1280 at center
+        const damage = (NUKE_RADIUS - distance) * 5;
+        creature.health -= damage;
+      }
+    }
+
+    // TODO: Trigger camera shake (20 pulses, ~0.2s timer)
+    // TODO: Spawn explosion burst effect
+    // TODO: Play sfx_explosion_large and sfx_shockwave
+
+    // Release spawn guard after effect completes
+    BonusSystem.spawnGuard = false;
+  }
+
+  /**
+   * SHOCK_CHAIN bonus effect
+   * Finds nearest enemy and spawns ion rifle projectile toward them
+   * Based on decompiled bonus_apply lines 148-167
+   */
+  private applyShockChainEffect(playerId: number): void {
+    const playerEntity = this.entityManager.getEntity(playerId);
+    if (!playerEntity) return;
+
+    const transform = playerEntity.getComponent<'transform'>('transform');
+    if (!transform) return;
+
+    const x = transform.x;
+    const y = transform.y;
+
+    // Set spawn guard
+    BonusSystem.spawnGuard = true;
+
+    // Find nearest enemy
+    const enemies = this.entityManager.query(['creature', 'transform']);
+    let nearestEnemy: { x: number; y: number } | null = null;
+    let nearestDistSq = Number.POSITIVE_INFINITY;
+
+    for (const enemy of enemies) {
+      const enemyTransform = enemy.getComponent<'transform'>('transform');
+      if (!enemyTransform) continue;
+
+      const dx = enemyTransform.x - x;
+      const dy = enemyTransform.y - y;
+      const distSq = dx * dx + dy * dy;
+
+      if (distSq < nearestDistSq) {
+        nearestDistSq = distSq;
+        nearestEnemy = enemyTransform;
+      }
+    }
+
+    if (nearestEnemy) {
+      // Calculate angle to nearest enemy
+      const dx = nearestEnemy.x - x;
+      const dy = nearestEnemy.y - y;
+      const angle = Math.atan2(dy, dx);
+
+      // Spawn ion rifle projectile toward enemy
+      // Decompiled: angle - π/2 - π (coordinate system adjustment)
+      const adjustedAngle = angle - Math.PI / 2 - Math.PI;
+
+      createProjectileEntity(
+        this.entityManager,
+        ProjectileTypeId.ION_RIFLE,
+        x,
+        y,
+        adjustedAngle,
+        ENVIRONMENTAL_OWNER_ID,
+        { damage: 30 }
+      );
+
+      // TODO: Set shock_chain_links_left = 32 for chain continuation
+      // TODO: Track shock_chain_projectile_id for chain logic
+    }
+
+    // Release spawn guard
+    BonusSystem.spawnGuard = false;
+
+    // TODO: Play sfx_shock_hit_01
+  }
+
+  /**
+   * FIREBLAST bonus effect
+   * Spawns 16 plasma rifle projectiles in radial pattern (22.5 degree increments)
+   * Based on decompiled bonus_apply lines 168-184
+   */
+  private applyFireblastEffect(playerId: number): void {
+    const playerEntity = this.entityManager.getEntity(playerId);
+    if (!playerEntity) return;
+
+    const transform = playerEntity.getComponent<'transform'>('transform');
+    if (!transform) return;
+
+    const x = transform.x;
+    const y = transform.y;
+
+    // Set spawn guard
+    BonusSystem.spawnGuard = true;
+
+    // Spawn 16 plasma rifle projectiles in radial pattern
+    // 0.3926991 radians = 22.5 degrees (360/16)
+    const PROJECTILE_COUNT = 16;
+    const ANGLE_INCREMENT = (Math.PI * 2) / PROJECTILE_COUNT;
+
+    for (let i = 0; i < PROJECTILE_COUNT; i++) {
+      const angle = i * ANGLE_INCREMENT;
+      createProjectileEntity(
+        this.entityManager,
+        ProjectileTypeId.PLASMA_RIFLE,
+        x,
+        y,
+        angle,
+        ENVIRONMENTAL_OWNER_ID,
+        { damage: 25 }
+      );
+    }
+
+    // Release spawn guard
+    BonusSystem.spawnGuard = false;
+
+    // TODO: Play sfx_explosion_medium
   }
 }

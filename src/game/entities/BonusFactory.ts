@@ -16,6 +16,7 @@ import {
   createTransform,
   createWeaponPickup,
 } from '../components';
+import { BonusSystem } from '../systems/BonusSystem';
 
 export interface BonusCreateOptions {
   value?: number;
@@ -144,12 +145,16 @@ export function createWeaponPickupEntity(
 
 /**
  * Create a random bonus at the position.
+ * Respects spawn guard to prevent certain bonuses during active effects.
  */
 export function createRandomBonus(entityManager: EntityManager, x: number, y: number): Entity {
   // Weighted random selection
-  const types = [
+  let types = [
     { type: BonusType.POINTS, weight: 20 },
     { type: BonusType.WEAPON, weight: 25 },
+    { type: BonusType.ATOMIC, weight: 3 },
+    { type: BonusType.FIREBLAST, weight: 3 },
+    { type: BonusType.SHOCK_CHAIN, weight: 3 },
     { type: BonusType.WEAPON_POWER_UP, weight: 10 },
     { type: BonusType.SPEED, weight: 15 },
     { type: BonusType.SHIELD, weight: 10 },
@@ -160,6 +165,17 @@ export function createRandomBonus(entityManager: EntityManager, x: number, y: nu
     { type: BonusType.REFLEX_BOOST, weight: 8 },
     { type: BonusType.MEDIKIT, weight: 20 },
   ];
+
+  // Filter out ATOMIC, SHOCK_CHAIN, FIREBLAST if spawn guard is active
+  const spawnGuardActive = BonusSystem.isSpawnGuardActive();
+  if (spawnGuardActive) {
+    types = types.filter(
+      (t) =>
+        t.type !== BonusType.ATOMIC &&
+        t.type !== BonusType.SHOCK_CHAIN &&
+        t.type !== BonusType.FIREBLAST
+    );
+  }
 
   const totalWeight = types.reduce((sum, t) => sum + t.weight, 0);
   let random = Math.random() * totalWeight;
