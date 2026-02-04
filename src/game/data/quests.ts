@@ -5,7 +5,7 @@
  * Defines all 20 quests with objectives and time-based spawn patterns.
  */
 
-import { type QuestId, CreatureTypeId } from '../../types';
+import { CreatureTypeId, type QuestId } from '../../types';
 
 export interface QuestSpawnEntry {
   /** Creature type to spawn */
@@ -86,6 +86,49 @@ function createCornerSpawns(
     { creatureTypeId: creatureType, x: distance, y: -distance, triggerTimeMs: timeMs, count },
     { creatureTypeId: creatureType, x: -distance, y: -distance, triggerTimeMs: timeMs, count },
   ];
+}
+
+function createRepeatingSingleSpawns(
+  creatureType: CreatureTypeId,
+  positions: Array<{ x: number; y: number }>,
+  repeats: number,
+  startTimeMs: number,
+  intervalMs: number
+): QuestSpawnEntry[] {
+  const entries: QuestSpawnEntry[] = [];
+  for (let i = 0; i < repeats; i++) {
+    for (const pos of positions) {
+      entries.push({
+        creatureTypeId: creatureType,
+        x: pos.x,
+        y: pos.y,
+        triggerTimeMs: startTimeMs + i * intervalMs,
+        count: 1,
+      });
+    }
+  }
+  return entries;
+}
+
+function createCircleSpawns(
+  creatureType: CreatureTypeId,
+  center: { x: number; y: number },
+  radius: number,
+  count: number,
+  timeMs: number
+): QuestSpawnEntry[] {
+  const entries: QuestSpawnEntry[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2;
+    entries.push({
+      creatureTypeId: creatureType,
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+      triggerTimeMs: timeMs,
+      count: 1,
+    });
+  }
+  return entries;
 }
 
 // ============================================================================
@@ -417,6 +460,97 @@ const QUEST_GAUNTLET: QuestData = {
 };
 
 // ============================================================================
+// Lizard Quests (Tier 2-4, unlock after Gauntlet)
+// ============================================================================
+
+const QUEST_LAND_OF_LIZARDS: QuestData = {
+  id: 'land_of_lizards',
+  name: 'Land of Lizards',
+  description: 'Face 256 lizards spawning from 4 corner spawners. 180 second time limit.',
+  timeLimitMs: 180000,
+  objectives: [{ type: 'kill_count', target: 256, description: 'Kill 256 lizards' }],
+  spawnEntries: [
+    // 4 corner spawners, each spawning 64 lizards over time
+    ...createRepeatingSingleSpawns(
+      CreatureTypeId.LIZARD,
+      [
+        { x: 400, y: 400 },
+        { x: -400, y: 400 },
+        { x: 400, y: -400 },
+        { x: -400, y: -400 },
+      ],
+      64,
+      0,
+      2500
+    ),
+  ],
+  unlockRequirement: 'gauntlet',
+};
+
+const QUEST_LIZARD_KINGS: QuestData = {
+  id: 'lizard_kings',
+  name: 'Lizard Kings',
+  description: 'Defeat 3 Lizard King bosses, each spawning 8 minions in a circle pattern.',
+  timeLimitMs: 180000,
+  objectives: [{ type: 'kill_count', target: 3, description: 'Kill 3 Lizard Kings' }],
+  spawnEntries: [
+    // Lizard King 1 at t=1500ms with minions in circle pattern
+    { creatureTypeId: CreatureTypeId.LIZARD_KING, x: 300, y: 0, triggerTimeMs: 1500, count: 1 },
+    ...createCircleSpawns(CreatureTypeId.LIZARD_MINION, { x: 300, y: 0 }, 100, 8, 1500),
+    // Lizard King 2 at t=60000ms
+    { creatureTypeId: CreatureTypeId.LIZARD_KING, x: -300, y: 0, triggerTimeMs: 60000, count: 1 },
+    ...createCircleSpawns(CreatureTypeId.LIZARD_MINION, { x: -300, y: 0 }, 100, 8, 60000),
+    // Lizard King 3 at t=120000ms
+    { creatureTypeId: CreatureTypeId.LIZARD_KING, x: 0, y: 300, triggerTimeMs: 120000, count: 1 },
+    ...createCircleSpawns(CreatureTypeId.LIZARD_MINION, { x: 0, y: 300 }, 100, 8, 120000),
+  ],
+  unlockRequirement: 'land_of_lizards',
+};
+
+const QUEST_LIZARD_RAZE: QuestData = {
+  id: 'lizard_raze',
+  name: 'Lizard Raze',
+  description: 'Survive 300 seconds against lizard waves from edges plus zombie spawners.',
+  timeLimitMs: 300000,
+  objectives: [{ type: 'survive_time', target: 300, description: 'Survive for 300 seconds' }],
+  spawnEntries: [
+    // Lizard waves from edges (template 0x2e/46)
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 4, 15, 0, 5000),
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 6, 10, 60000, 4000),
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 8, 10, 120000, 3500),
+    // 3 zombie spawners at t=10000ms
+    { creatureTypeId: CreatureTypeId.ZOMBIE, x: 350, y: 350, triggerTimeMs: 10000, count: 5 },
+    { creatureTypeId: CreatureTypeId.ZOMBIE, x: -350, y: 350, triggerTimeMs: 10000, count: 5 },
+    { creatureTypeId: CreatureTypeId.ZOMBIE, x: 0, y: -350, triggerTimeMs: 10000, count: 5 },
+    // Additional zombie waves
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE_FAST, 3, 10, 30000, 6000),
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE_TANK, 2, 5, 60000, 15000),
+  ],
+  unlockRequirement: 'lizard_kings',
+};
+
+const QUEST_LIZARD_ZOMBIE_PACT: QuestData = {
+  id: 'lizard_zombie_pact',
+  name: 'Lizard Zombie Pact',
+  description: 'Face the unholy alliance. Lizard waves with zombie spawns every 5 waves.',
+  timeLimitMs: 300000,
+  objectives: [{ type: 'kill_count', target: 200, description: 'Kill 200 enemies' }],
+  spawnEntries: [
+    // Lizard waves from edges (template 0x41/65)
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 3, 20, 0, 4000),
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 5, 15, 60000, 3500),
+    // Zombie spawns every 5 waves (approx every 20000ms)
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE, 4, 4, 20000, 20000),
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE_FAST, 3, 4, 25000, 20000),
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE_TANK, 1, 4, 30000, 20000),
+    // Mixed spawns later
+    ...createWaveSpawns(CreatureTypeId.LIZARD, 4, 10, 120000, 3000),
+    ...createWaveSpawns(CreatureTypeId.ZOMBIE, 5, 5, 120000, 6000),
+  ],
+  unlockRequirement: 'lizard_raze',
+};
+
+// ============================================================================
 // Bonus Quests (Unlock after completing main quest line)
 // ============================================================================
 
@@ -433,7 +567,7 @@ const QUEST_SYNTAX_TERROR: QuestData = {
     ...createWaveSpawns(CreatureTypeId.ALIEN_TROOPER, 2, 10, 6000, 3000),
     ...createWaveSpawns(CreatureTypeId.GHOST, 2, 10, 8000, 3000),
   ],
-  unlockRequirement: 'gauntlet',
+  unlockRequirement: 'lizard_zombie_pact',
 };
 
 // ============================================================================
@@ -461,6 +595,10 @@ export const ALL_QUESTS: QuestData[] = [
   QUEST_ALIEN_DENS,
   QUEST_ARACHNOID_FARM,
   QUEST_GAUNTLET,
+  QUEST_LAND_OF_LIZARDS,
+  QUEST_LIZARD_KINGS,
+  QUEST_LIZARD_RAZE,
+  QUEST_LIZARD_ZOMBIE_PACT,
   QUEST_SYNTAX_TERROR,
 ];
 

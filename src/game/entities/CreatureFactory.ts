@@ -6,14 +6,14 @@
 
 import type { EntityManager } from '../../core/ecs';
 import type { Entity } from '../../core/ecs';
-import { CreatureTypeId, type AiMode } from '../../types';
+import { type AiMode, CreatureTypeId } from '../../types';
 import {
-  createTransform,
-  createVelocity,
+  CollisionLayer,
+  createCollider,
   createCreature,
   createSprite,
-  createCollider,
-  CollisionLayer,
+  createTransform,
+  createVelocity,
 } from '../components';
 import { getCreatureData } from '../data';
 
@@ -33,6 +33,9 @@ const CREATURE_TEXTURES: Record<CreatureTypeId, string> = {
   [CreatureTypeId.ALIEN_TROOPER]: 'alien_trooper',
   [CreatureTypeId.ALIEN_ELITE]: 'alien_elite',
   [CreatureTypeId.GHOST]: 'ghost',
+  [CreatureTypeId.LIZARD]: 'lizard',
+  [CreatureTypeId.LIZARD_KING]: 'lizard_king',
+  [CreatureTypeId.LIZARD_MINION]: 'lizard_minion',
 };
 
 /**
@@ -105,8 +108,13 @@ export function createCreatureFromTemplate(
     52: CreatureTypeId.ALIEN_TROOPER,
     53: CreatureTypeId.ALIEN_ELITE,
     56: CreatureTypeId.ZOMBIE,
-    65: CreatureTypeId.ZOMBIE_FAST,
+    65: CreatureTypeId.LIZARD, // Lizard template (overrides zombie_fast - lizards use this in quests)
     80: CreatureTypeId.GHOST,
+    // Lizard templates
+    14: CreatureTypeId.LIZARD, // 14 - Land of Lizards spawner
+    17: CreatureTypeId.LIZARD_KING, // 17 - Lizard King boss
+    46: CreatureTypeId.LIZARD, // 46 - Lizard template for raze quest
+    49: CreatureTypeId.LIZARD_MINION, // 49 - Lizard minion
   };
 
   const creatureTypeId = templateMap[templateId];

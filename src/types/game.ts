@@ -2,7 +2,7 @@
  * Game-specific type definitions
  */
 
-import type { Vector2, Rectangle, Color, EntityId, Component } from './index';
+import type { Color, Component, EntityId, Rectangle, Vector2 } from './index';
 
 // Re-export from index for convenience
 export type { Vector2, Rectangle, Color, EntityId, Component };
@@ -47,6 +47,9 @@ export enum CreatureTypeId {
   ALIEN_TROOPER = 5,
   ALIEN_ELITE = 6,
   GHOST = 7,
+  LIZARD = 8,
+  LIZARD_KING = 9,
+  LIZARD_MINION = 10,
 }
 
 export enum AiMode {
@@ -199,6 +202,10 @@ export type QuestId =
   | 'alien_dens'
   | 'arachnoid_farm'
   | 'gauntlet'
+  | 'land_of_lizards'
+  | 'lizard_kings'
+  | 'lizard_raze'
+  | 'lizard_zombie_pact'
   | 'syntax_terror';
 
 export enum BonusType {

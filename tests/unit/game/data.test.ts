@@ -2,20 +2,20 @@
  * Game Data Unit Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  WEAPON_DATA,
-  getWeaponData,
-  isWeaponUnlocked,
-  getUnlockedWeapons,
   CREATURE_DATA,
+  PROJECTILE_DATA,
+  WEAPON_DATA,
   getCreatureData,
   getCreaturesForWave,
-  selectRandomCreatureForWave,
-  PROJECTILE_DATA,
   getProjectileData,
+  getUnlockedWeapons,
+  getWeaponData,
+  isWeaponUnlocked,
+  selectRandomCreatureForWave,
 } from '../../../src/game/data';
-import { WeaponId, CreatureTypeId, ProjectileTypeId } from '../../../src/types';
+import { CreatureTypeId, ProjectileTypeId, WeaponId } from '../../../src/types';
 
 describe('Weapon Data', () => {
   it('should have valid weapon data for all weapon IDs', () => {
@@ -117,6 +117,12 @@ describe('Creature Data', () => {
       (id): id is CreatureTypeId => typeof id === 'number'
     );
 
+    // Boss/special creatures that don't spawn randomly (spawnWeight = 0)
+    const bossCreatures = new Set<CreatureTypeId>([
+      CreatureTypeId.LIZARD_KING,
+      CreatureTypeId.LIZARD_MINION,
+    ]);
+
     for (const id of creatureIds) {
       const data = getCreatureData(id);
       expect(data).toBeDefined();
@@ -125,7 +131,10 @@ describe('Creature Data', () => {
       expect(data.speed).toBeGreaterThan(0);
       expect(data.hitboxRadius).toBeGreaterThan(0);
       expect(data.rewardXP).toBeGreaterThan(0);
-      expect(data.spawnWeight).toBeGreaterThan(0);
+      // Boss creatures can have spawnWeight of 0 (quest-only spawns)
+      if (!bossCreatures.has(id)) {
+        expect(data.spawnWeight).toBeGreaterThan(0);
+      }
     }
   });
 

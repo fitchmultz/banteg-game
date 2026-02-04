@@ -5,7 +5,7 @@
  * Defines all enemy types with their stats and behaviors.
  */
 
-import { CreatureTypeId, AiMode } from '../../types';
+import { AiMode, CreatureTypeId } from '../../types';
 
 export interface CreatureData {
   /** Creature display name */
@@ -158,6 +158,51 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
     spawnWeight: 12,
     minWave: 4,
     tint: { r: 0.9, g: 0.9, b: 1.0, a: 0.8 },
+  },
+  [CreatureTypeId.LIZARD]: {
+    name: 'Lizard',
+    health: 83,
+    speed: 110,
+    size: 1.0,
+    hitboxRadius: 16,
+    contactDamage: 12,
+    rewardXP: 22,
+    defaultAiMode: AiMode.CHASE,
+    animRate: 1.3,
+    scoreValue: 220,
+    spawnWeight: 12,
+    minWave: 6,
+    tint: { r: 0.75, g: 0.75, b: 0.38, a: 1.0 },
+  },
+  [CreatureTypeId.LIZARD_KING]: {
+    name: 'Lizard King',
+    health: 1500,
+    speed: 126,
+    size: 1.6,
+    hitboxRadius: 26,
+    contactDamage: 35,
+    rewardXP: 500,
+    defaultAiMode: AiMode.CHASE,
+    animRate: 1.0,
+    scoreValue: 5000,
+    spawnWeight: 0,
+    minWave: 999,
+    tint: { r: 0.99, g: 0.99, b: 0.21, a: 1.0 },
+  },
+  [CreatureTypeId.LIZARD_MINION]: {
+    name: 'Lizard Minion',
+    health: 73,
+    speed: 110,
+    size: 0.95,
+    hitboxRadius: 15,
+    contactDamage: 10,
+    rewardXP: 18,
+    defaultAiMode: AiMode.CHASE,
+    animRate: 1.3,
+    scoreValue: 180,
+    spawnWeight: 0,
+    minWave: 999,
+    tint: { r: 0.72, g: 0.72, b: 0.38, a: 1.0 },
   },
 };
 
