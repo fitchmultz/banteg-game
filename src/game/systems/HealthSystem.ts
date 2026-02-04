@@ -6,13 +6,13 @@
  * Priority: 70
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityId } from '../../types';
-import { damageEvents } from './CollisionSystem';
-import { BonusFactory } from '../entities';
-import { getCreatureData, getWeaponData } from '../data';
 import { AiMode } from '../../types';
+import { getCreatureData, getWeaponData } from '../data';
+import { BonusFactory } from '../entities';
+import { damageEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
 
 // Track entity health states
@@ -26,7 +26,7 @@ interface HealthState {
 const healthStates = new Map<EntityId, HealthState>();
 
 export interface GameStateCallbacks {
-  onPlayerDeath?: () => void;
+  onPlayerDeath?: (entityId: EntityId) => void;
   onCreatureDeath?: (creatureTypeId: number, position: { x: number; y: number }) => void;
   onScoreChange?: (score: number) => void;
   onXPChange?: (xp: number) => void;
@@ -46,7 +46,11 @@ export class HealthSystem extends System {
   // Time slow cooldown (seconds)
   private readonly timeSlowCooldown = 2.0;
 
-  constructor(entityManager: EntityManager, callbacks: GameStateCallbacks = {}, perkSystem?: PerkSystem) {
+  constructor(
+    entityManager: EntityManager,
+    callbacks: GameStateCallbacks = {},
+    perkSystem?: PerkSystem
+  ) {
     super();
     this.entityManager = entityManager;
     this.callbacks = callbacks;
@@ -89,7 +93,7 @@ export class HealthSystem extends System {
       // Handle death
       if (player.health <= 0 && !state.isDead) {
         state.isDead = true;
-        this.callbacks.onPlayerDeath?.();
+        this.callbacks.onPlayerDeath?.(entity.id);
       }
 
       // Note: Health regeneration is handled by PerkSystem.update()

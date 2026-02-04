@@ -2,13 +2,43 @@
  * Render System
  *
  * Renders all visible entities and UI.
+ * Now supports co-op mode with shared camera and two-player HUD.
  * Priority: 200 (last to run)
+ *
+ * Responsibilities:
+ * - Render all game entities (players, creatures, projectiles, bonuses)
+ * - Manage camera position and zoom (shared camera for co-op)
+ * - Render UI elements including HUD for all players
+ * - Handle screen shake effects
+ * - Render particle effects
+ *
+ * Non-responsibilities:
+ * - Does not handle input processing
+ * - Does not manage game state
+ * - Does not handle touch controls rendering (handled by InputManager)
+ *
+ * Assumptions:
+ * - Renderer is initialized with valid canvas
+ * - EntityManager contains valid entities with required components
+ * - Camera smoothing and zoom limits are tuned for gameplay
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
-import { type Renderer, ParticleSystem, type InputManager, type AssetManager, type SpriteAtlas } from '../../engine';
+import { System, type UpdateContext } from '../../core/ecs/System';
+import {
+  type AssetManager,
+  type InputManager,
+  ParticleSystem,
+  type Renderer,
+  type SpriteAtlas,
+} from '../../engine';
 import { getWeaponData } from '../data';
+
+// Camera constants for co-op mode
+const COOP_CAMERA_PADDING = 200; // Padding around players in pixels
+const COOP_MIN_ZOOM = 0.6; // Minimum zoom level (don't zoom out too far)
+const COOP_MAX_ZOOM = 1.2; // Maximum zoom level
+const COOP_ZOOM_SMOOTHING = 0.05; // How quickly zoom changes
 
 export class RenderSystem extends System {
   readonly name = 'RenderSystem';
@@ -25,6 +55,7 @@ export class RenderSystem extends System {
   private cameraSmoothing = 0.1;
   private currentCameraX = 0;
   private currentCameraY = 0;
+  private currentCameraZoom = 1;
 
   // FPS counter
   private frameCount = 0;
@@ -82,12 +113,14 @@ export class RenderSystem extends System {
     // Clear screen
     this.renderer.clearBlack();
 
-    // Apply camera (with screen shake)
+    // Update camera (with screen shake)
     this.updateCamera();
     const shakeOffset = this.renderer.getShakeOffset();
     this.renderer.setCamera(
       this.currentCameraX + shakeOffset.x,
-      this.currentCameraY + shakeOffset.y
+      this.currentCameraY + shakeOffset.y,
+      this.currentCameraZoom,
+      0
     );
     this.renderer.applyCamera();
 
@@ -121,23 +154,74 @@ export class RenderSystem extends System {
   }
 
   private updateCamera(): void {
-    // Find player to follow
+    // Find all players
     const players = this.entityManager.query(['player', 'transform']);
-    if (players.length > 0) {
-      const player = players[0];
-      if (!player) return;
+    if (players.length === 0) return;
+
+    // Get player positions
+    const playerPositions: { x: number; y: number }[] = [];
+    for (const player of players) {
       const transform = player.getComponent<'transform'>('transform');
-      if (!transform) return;
-
-      // Smooth camera follow
-      const targetX = transform.x;
-      const targetY = transform.y;
-
-      this.currentCameraX += (targetX - this.currentCameraX) * this.cameraSmoothing;
-      this.currentCameraY += (targetY - this.currentCameraY) * this.cameraSmoothing;
-
-      this.renderer.setCamera(this.currentCameraX, this.currentCameraY, 1, 0);
+      if (transform) {
+        playerPositions.push({ x: transform.x, y: transform.y });
+      }
     }
+
+    if (playerPositions.length === 0) return;
+
+    // Compute camera target
+    const cameraTarget = this.computeCoopCameraTarget(playerPositions);
+
+    // Smooth camera position
+    this.currentCameraX += (cameraTarget.x - this.currentCameraX) * this.cameraSmoothing;
+    this.currentCameraY += (cameraTarget.y - this.currentCameraY) * this.cameraSmoothing;
+
+    // Smooth zoom
+    this.currentCameraZoom += (cameraTarget.zoom - this.currentCameraZoom) * COOP_ZOOM_SMOOTHING;
+  }
+
+  /**
+   * Compute camera target position and zoom for co-op mode.
+   * Centers on midpoint of all players with zoom to fit.
+   */
+  private computeCoopCameraTarget(players: { x: number; y: number }[]): {
+    x: number;
+    y: number;
+    zoom: number;
+  } {
+    if (players.length === 0) return { x: 0, y: 0, zoom: 1 };
+    if (players.length === 1) return { x: players[0]?.x ?? 0, y: players[0]?.y ?? 0, zoom: 1 };
+
+    // Find bounding box of all players
+    let minX = players[0]?.x ?? 0;
+    let maxX = players[0]?.x ?? 0;
+    let minY = players[0]?.y ?? 0;
+    let maxY = players[0]?.y ?? 0;
+
+    for (const player of players) {
+      minX = Math.min(minX, player.x);
+      maxX = Math.max(maxX, player.x);
+      minY = Math.min(minY, player.y);
+      maxY = Math.max(maxY, player.y);
+    }
+
+    // Center on midpoint
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    // Calculate required zoom to fit all players with padding
+    const canvas = this.renderer.getCanvas();
+    const boundsWidth = maxX - minX + COOP_CAMERA_PADDING * 2;
+    const boundsHeight = maxY - minY + COOP_CAMERA_PADDING * 2;
+
+    const zoomX = canvas.width / boundsWidth;
+    const zoomY = canvas.height / boundsHeight;
+    let targetZoom = Math.min(zoomX, zoomY);
+
+    // Clamp zoom to min/max
+    targetZoom = Math.max(COOP_MIN_ZOOM, Math.min(COOP_MAX_ZOOM, targetZoom));
+
+    return { x: centerX, y: centerY, zoom: targetZoom };
   }
 
   private renderEntities(): void {
@@ -190,8 +274,15 @@ export class RenderSystem extends System {
       const player = entity.getComponent<'player'>('player');
       if (!transform || !player) continue;
 
-      // Draw player
-      this.renderer.setColor(0, 1, 0, 1);
+      // Different colors for different players
+      const playerIndex = player.playerIndex ?? 0;
+      if (playerIndex === 0) {
+        // P1: Green
+        this.renderer.setColor(0, 1, 0, 1);
+      } else {
+        // P2: Blue
+        this.renderer.setColor(0, 0.5, 1, 1);
+      }
       this.renderer.drawCircle(transform.x, transform.y, 12);
 
       // Draw shield if active
@@ -300,85 +391,199 @@ export class RenderSystem extends System {
     const players = this.entityManager.query(['player']);
     if (players.length === 0) return;
 
-    const player = players[0];
-    if (!player) return;
-    const playerComp = player.getComponent<'player'>('player');
-    if (!playerComp) return;
-
-    const currentWeaponData = getWeaponData(playerComp.currentWeapon.weaponId);
-    const altWeaponData = getWeaponData(playerComp.alternateWeapon.weaponId);
-
     const canvas = this.renderer.getCanvas();
     const rightEdge = canvas.width;
 
-    // Set text color
-    this.renderer.setColor(1, 1, 1, 1);
+    // Sort players by playerIndex to ensure consistent ordering
+    const sortedPlayers = [...players].sort((a, b) => {
+      const playerA = a.getComponent<'player'>('player');
+      const playerB = b.getComponent<'player'>('player');
+      return (playerA?.playerIndex ?? 0) - (playerB?.playerIndex ?? 0);
+    });
 
-    // Health bar
-    const healthPercent = playerComp.health / playerComp.maxHealth;
-    this.renderer.drawText(`HP: ${Math.ceil(playerComp.health)}/${playerComp.maxHealth}`, 10, 40);
-    this.renderer.drawRectOutline(10, 50, 204, 14, 1);
-    // Health bar gradient
-    this.renderer.setColor(1 - healthPercent, healthPercent, 0, 1);
-    this.renderer.drawRect(12, 52, 200 * healthPercent, 10);
-
-    // XP bar (below health)
-    const xpPercent = playerComp.experience / (playerComp.level * 100); // Approximate
-    this.renderer.setColor(1, 1, 1, 1);
-    this.renderer.drawText(`Level ${playerComp.level}`, 10, 85);
-    this.renderer.drawRectOutline(10, 90, 204, 8, 1);
-    this.renderer.setColor(0.2, 0.6, 1, 1);
-    this.renderer.drawRect(12, 92, Math.min(200, 200 * xpPercent), 4);
-
-    // Current weapon info
-    this.renderer.setColor(1, 1, 1, 1);
-    this.renderer.drawText(
-      `Ammo: ${playerComp.currentWeapon.clipSize}/${currentWeaponData.clipSize} (${playerComp.currentWeapon.ammo})`,
-      10,
-      120
-    );
-    this.renderer.drawText(`Weapon: ${currentWeaponData.name}`, 10, 140);
-
-    // Alternate weapon info
-    this.renderer.setColor(0.7, 0.7, 0.7, 1);
-    this.renderer.drawText(
-      `Alt: ${altWeaponData.name} (${playerComp.alternateWeapon.clipSize}/${playerComp.alternateWeapon.ammo})`,
-      10,
-      160
-    );
-    // Show swap weapon key binding dynamically
-    const swapKeyLabel = this.getSwapKeyLabel();
-    this.renderer.setColor(0.5, 0.5, 0.5, 1);
-    this.renderer.drawText(`[${swapKeyLabel}] Swap Weapon`, 10, 175);
-
-    // Active effects (with icons)
-    let yOffset = 205;
-    if (playerComp.shieldTimer > 0) {
-      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 0, g: 0.5, b: 1, a: 0.5 });
-      this.renderer.setColor(0, 0.5, 1, 1);
-      this.renderer.drawText(`Shield: ${playerComp.shieldTimer.toFixed(1)}s`, 45, yOffset);
-      yOffset += 25;
-    }
-    if (playerComp.fireBulletsTimer > 0) {
-      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 1, g: 0.3, b: 0, a: 0.5 });
-      this.renderer.setColor(1, 0.3, 0, 1);
-      this.renderer.drawText(
-        `Fire: ${playerComp.fireBulletsTimer.toFixed(1)}s`,
-        45,
-        yOffset
-      );
-      yOffset += 25;
-    }
-    if (playerComp.speedBonusTimer > 0) {
-      this.renderer.drawGlow(25, yOffset - 5, 20, { r: 0, g: 1, b: 1, a: 0.5 });
-      this.renderer.setColor(0, 1, 1, 1);
-      this.renderer.drawText(`Speed: ${playerComp.speedBonusTimer.toFixed(1)}s`, 45, yOffset);
+    // Render HUD for each player
+    if (sortedPlayers.length === 1) {
+      // Single player HUD (original layout)
+      const player = sortedPlayers[0];
+      if (player) {
+        this.renderSinglePlayerHUD(player, 10);
+      }
+    } else {
+      // Two-player HUD (side by side)
+      const player1 = sortedPlayers[0];
+      const player2 = sortedPlayers[1];
+      if (player1) {
+        this.renderPlayerHUD(player1, 10, true); // P1 on left
+      }
+      if (player2) {
+        this.renderPlayerHUD(player2, rightEdge - 220, false); // P2 on right
+      }
     }
 
     // FPS counter (top-right, only if enabled)
     if (this.showFps) {
       this.renderer.setColor(0, 1, 0, 0.7);
       this.renderer.drawText(`FPS: ${this.currentFps}`, rightEdge - 80, 25);
+    }
+  }
+
+  /**
+   * Render HUD for a single player (original layout).
+   */
+  private renderSinglePlayerHUD(
+    playerEntity: ReturnType<EntityManager['query']>[number],
+    xOffset: number
+  ): void {
+    const playerComp = playerEntity.getComponent<'player'>('player');
+    if (!playerComp) return;
+
+    const currentWeaponData = getWeaponData(playerComp.currentWeapon.weaponId);
+    const altWeaponData = getWeaponData(playerComp.alternateWeapon.weaponId);
+
+    // Set text color
+    this.renderer.setColor(1, 1, 1, 1);
+
+    // Health bar
+    const healthPercent = playerComp.health / playerComp.maxHealth;
+    this.renderer.drawText(
+      `HP: ${Math.ceil(playerComp.health)}/${playerComp.maxHealth}`,
+      xOffset,
+      40
+    );
+    this.renderer.drawRectOutline(xOffset, 50, 204, 14, 1);
+    // Health bar gradient
+    this.renderer.setColor(1 - healthPercent, healthPercent, 0, 1);
+    this.renderer.drawRect(xOffset + 2, 52, 200 * healthPercent, 10);
+
+    // XP bar (below health)
+    const xpPercent = playerComp.experience / (playerComp.level * 100); // Approximate
+    this.renderer.setColor(1, 1, 1, 1);
+    this.renderer.drawText(`Level ${playerComp.level}`, xOffset, 85);
+    this.renderer.drawRectOutline(xOffset, 90, 204, 8, 1);
+    this.renderer.setColor(0.2, 0.6, 1, 1);
+    this.renderer.drawRect(xOffset + 2, 92, Math.min(200, 200 * xpPercent), 4);
+
+    // Current weapon info
+    this.renderer.setColor(1, 1, 1, 1);
+    this.renderer.drawText(
+      `Ammo: ${playerComp.currentWeapon.clipSize}/${currentWeaponData.clipSize} (${playerComp.currentWeapon.ammo})`,
+      xOffset,
+      120
+    );
+    this.renderer.drawText(`Weapon: ${currentWeaponData.name}`, xOffset, 140);
+
+    // Alternate weapon info
+    this.renderer.setColor(0.7, 0.7, 0.7, 1);
+    this.renderer.drawText(
+      `Alt: ${altWeaponData.name} (${playerComp.alternateWeapon.clipSize}/${playerComp.alternateWeapon.ammo})`,
+      xOffset,
+      160
+    );
+    // Show swap weapon key binding dynamically
+    const swapKeyLabel = this.getSwapKeyLabel();
+    this.renderer.setColor(0.5, 0.5, 0.5, 1);
+    this.renderer.drawText(`[${swapKeyLabel}] Swap Weapon`, xOffset, 175);
+
+    // Active effects (with icons)
+    let yOffset = 205;
+    if (playerComp.shieldTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 0, g: 0.5, b: 1, a: 0.5 });
+      this.renderer.setColor(0, 0.5, 1, 1);
+      this.renderer.drawText(
+        `Shield: ${playerComp.shieldTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
+      yOffset += 25;
+    }
+    if (playerComp.fireBulletsTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 1, g: 0.3, b: 0, a: 0.5 });
+      this.renderer.setColor(1, 0.3, 0, 1);
+      this.renderer.drawText(
+        `Fire: ${playerComp.fireBulletsTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
+      yOffset += 25;
+    }
+    if (playerComp.speedBonusTimer > 0) {
+      this.renderer.drawGlow(xOffset + 15, yOffset - 5, 20, { r: 0, g: 1, b: 1, a: 0.5 });
+      this.renderer.setColor(0, 1, 1, 1);
+      this.renderer.drawText(
+        `Speed: ${playerComp.speedBonusTimer.toFixed(1)}s`,
+        xOffset + 35,
+        yOffset
+      );
+    }
+  }
+
+  /**
+   * Render HUD for a player in co-op mode.
+   */
+  private renderPlayerHUD(
+    playerEntity: ReturnType<EntityManager['query']>[number],
+    xOffset: number,
+    _isLeft: boolean
+  ): void {
+    const playerComp = playerEntity.getComponent<'player'>('player');
+    if (!playerComp) return;
+
+    const playerIndex = playerComp.playerIndex ?? 0;
+    const currentWeaponData = getWeaponData(playerComp.currentWeapon.weaponId);
+
+    // Player label color
+    if (playerIndex === 0) {
+      this.renderer.setColor(0, 1, 0, 1); // P1: Green
+    } else {
+      this.renderer.setColor(0, 0.5, 1, 1); // P2: Blue
+    }
+
+    // Player label
+    const label = `P${playerIndex + 1}`;
+    this.renderer.drawText(label, xOffset, 25);
+
+    // Set text color
+    this.renderer.setColor(1, 1, 1, 1);
+
+    // Health bar
+    const healthPercent = playerComp.health / playerComp.maxHealth;
+    this.renderer.drawText(
+      `HP: ${Math.ceil(playerComp.health)}/${playerComp.maxHealth}`,
+      xOffset,
+      45
+    );
+    this.renderer.drawRectOutline(xOffset, 55, 204, 14, 1);
+    // Health bar gradient
+    this.renderer.setColor(1 - healthPercent, healthPercent, 0, 1);
+    this.renderer.drawRect(xOffset + 2, 57, 200 * healthPercent, 10);
+
+    // Ammo
+    this.renderer.setColor(1, 1, 1, 1);
+    this.renderer.drawText(
+      `Ammo: ${playerComp.currentWeapon.clipSize}/${currentWeaponData.clipSize}`,
+      xOffset,
+      85
+    );
+
+    // Weapon name
+    this.renderer.setColor(0.8, 0.8, 0.8, 1);
+    this.renderer.drawText(currentWeaponData.name, xOffset, 105);
+
+    // Active effects (compact)
+    let yOffset = 130;
+    if (playerComp.shieldTimer > 0) {
+      this.renderer.setColor(0, 0.5, 1, 1);
+      this.renderer.drawText(`Shield: ${playerComp.shieldTimer.toFixed(0)}s`, xOffset, yOffset);
+      yOffset += 20;
+    }
+    if (playerComp.fireBulletsTimer > 0) {
+      this.renderer.setColor(1, 0.3, 0, 1);
+      this.renderer.drawText(`Fire: ${playerComp.fireBulletsTimer.toFixed(0)}s`, xOffset, yOffset);
+      yOffset += 20;
+    }
+    if (playerComp.speedBonusTimer > 0) {
+      this.renderer.setColor(0, 1, 1, 1);
+      this.renderer.drawText(`Speed: ${playerComp.speedBonusTimer.toFixed(0)}s`, xOffset, yOffset);
     }
   }
 
@@ -394,7 +599,11 @@ export class RenderSystem extends System {
   private getSwapKeyLabel(): string {
     // Try to get from window.gameState for dynamic binding
     // This is a bit hacky but maintains compatibility with the existing architecture
-    const gameState = (window as unknown as { gameState?: { settingsManager?: { getKeyBindings: () => { swapWeapon: string } } } }).gameState;
+    const gameState = (
+      window as unknown as {
+        gameState?: { settingsManager?: { getKeyBindings: () => { swapWeapon: string } } };
+      }
+    ).gameState;
     if (gameState?.settingsManager?.getKeyBindings) {
       const binding = gameState.settingsManager.getKeyBindings().swapWeapon;
       return this.formatKeyCode(binding);

@@ -13,12 +13,12 @@
  * - Routes update to the correct mode based on GameModeManager state
  */
 
-import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs/EntityManager';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { GameModeManager } from '../modes/GameModeManager';
-import type { SurvivalMode } from '../modes/SurvivalMode';
 import type { QuestMode } from '../modes/QuestMode';
 import type { RushMode } from '../modes/RushMode';
+import type { SurvivalMode } from '../modes/SurvivalMode';
 import type { TutorialMode } from '../modes/TutorialMode';
 
 export interface GameModeSystemOptions {
@@ -58,6 +58,7 @@ export class GameModeSystem extends System {
     // Route update to the correct mode
     switch (state.mode.type) {
       case 'SURVIVAL':
+      case 'COOP_SURVIVAL':
         survivalMode?.update(dt);
         break;
       case 'QUEST':

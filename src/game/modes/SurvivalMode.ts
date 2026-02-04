@@ -3,13 +3,30 @@
  *
  * Infinite waves of enemies with escalating difficulty.
  * Perk selection on level up, high score tracking.
+ * Now supports co-op mode with multiple player entities.
+ *
+ * Responsibilities:
+ * - Manage survival game state (waves, XP, level ups)
+ * - Track multiple player entities for co-op
+ * - Apply perks to all players in co-op mode
+ * - Handle shared progression (score, kills, time)
+ *
+ * Non-responsibilities:
+ * - Does not handle input processing
+ * - Does not render UI
+ * - Does not handle individual player death (see HealthSystem)
+ *
+ * Assumptions:
+ * - Player entities have valid EntityIds
+ * - PerkSystem is available for perk application
+ * - In co-op, all players share the same XP/level progression
  */
 
-import type { GameStats, PerkId, EntityId } from '../../types';
 import type { EntityManager } from '../../core/ecs';
+import type { EntityId, GameStats, PerkId } from '../../types';
+import type { ProgressionManager } from '../progression/ProgressionManager';
 import type { SpawnSystem } from '../systems';
 import type { PerkSystem } from '../systems/PerkSystem';
-import type { ProgressionManager } from '../progression/ProgressionManager';
 
 export interface SurvivalModeCallbacks {
   onWaveStart?: (wave: number) => void;
@@ -34,7 +51,7 @@ export class SurvivalMode {
   private progressionManager: ProgressionManager | undefined;
 
   // Player progression
-  private playerEntityId: EntityId | null = null;
+  private playerEntityIds: EntityId[] = [];
   private playerXP = 0;
   private playerLevel = 1;
   private pendingLevelUps = 0;
@@ -42,7 +59,6 @@ export class SurvivalMode {
   // Game state
   private isActive = false;
   private wave = 1;
-  // private _startTime = 0; // TODO: Implement timing functionality
   private elapsedTime = 0;
 
   // Perk selection state
@@ -67,10 +83,33 @@ export class SurvivalMode {
   }
 
   /**
-   * Set the player entity for perk application
+   * Set the player entities for perk application.
+   * Use setPlayerEntity for single player, setPlayerEntities for co-op.
    */
   setPlayerEntity(entityId: EntityId): void {
-    this.playerEntityId = entityId;
+    this.playerEntityIds = [entityId];
+  }
+
+  /**
+   * Set multiple player entities for co-op mode.
+   */
+  setPlayerEntities(entityIds: EntityId[]): void {
+    this.playerEntityIds = [...entityIds];
+  }
+
+  /**
+   * Get the primary player entity ID (for determinism in co-op).
+   * Returns the first player entity, or null if none exist.
+   */
+  getPrimaryPlayerEntityId(): EntityId | null {
+    return this.playerEntityIds[0] ?? null;
+  }
+
+  /**
+   * Get all player entity IDs.
+   */
+  getPlayerEntityIds(): EntityId[] {
+    return [...this.playerEntityIds];
   }
 
   /**
@@ -82,7 +121,6 @@ export class SurvivalMode {
     this.playerLevel = 1;
     this.pendingLevelUps = 0;
     this.wave = 1;
-    // this._startTime = performance.now();
     this.elapsedTime = 0;
     this.kills = 0;
     this.score = 0;
@@ -111,14 +149,19 @@ export class SurvivalMode {
     this.elapsedTime += dt;
 
     // Update perk system (regeneration, etc.)
-    // Note: PerkSystem.update expects (entityManager, context), but we're calling it directly
-    // This is a simplified approach - in full implementation, PerkSystem should be added to SystemManager
     if (this.perkSystem) {
-      this.perkSystem.update({} as EntityManager, { dt, unscaledDt: dt, gameTime: performance.now() / 1000, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      this.perkSystem.update({} as EntityManager, {
+        dt,
+        unscaledDt: dt,
+        gameTime: performance.now() / 1000,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
     }
 
     // Check for pending level ups and trigger perk selection
-    if (this.hasPendingLevelUp() && !this.isInPerkSelection && this.playerEntityId !== null) {
+    if (this.hasPendingLevelUp() && !this.isInPerkSelection && this.playerEntityIds.length > 0) {
       this.startPerkSelection();
     }
 
@@ -134,10 +177,14 @@ export class SurvivalMode {
    * Start perk selection
    */
   private startPerkSelection(): void {
-    if (!this.perkSystem || this.playerEntityId === null) return;
+    if (!this.perkSystem || this.playerEntityIds.length === 0) return;
+
+    // Use primary player for determinism in perk generation
+    const primaryPlayerId = this.getPrimaryPlayerEntityId();
+    if (primaryPlayerId === null) return;
 
     this.isInPerkSelection = true;
-    this.currentPerkChoices = this.perkSystem.generatePerkChoices(this.playerEntityId, 3);
+    this.currentPerkChoices = this.perkSystem.generatePerkChoices(primaryPlayerId, 3);
 
     this.callbacks.onPerkSelectionStart?.(this.currentPerkChoices);
   }
@@ -157,8 +204,13 @@ export class SurvivalMode {
     const perkId = this.currentPerkChoices[choiceIndex];
     if (perkId === undefined) return false;
 
-    if (this.playerEntityId !== null && this.perkSystem) {
-      const success = this.perkSystem.applyPerk(this.playerEntityId, perkId);
+    if (this.playerEntityIds.length > 0 && this.perkSystem) {
+      // Apply perk to all player entities (co-op: shared perks)
+      let success = false;
+      for (const entityId of this.playerEntityIds) {
+        const result = this.perkSystem.applyPerk(entityId, perkId);
+        if (result) success = true;
+      }
 
       if (success) {
         // Consume the level up
@@ -202,16 +254,16 @@ export class SurvivalMode {
   }
 
   /**
-   * Add XP to the player
+   * Add XP to the player(s)
+   * XP Multiplier Policy: Use primary player's multiplier for consistency.
    */
   addXP(amount: number): void {
     if (!this.isActive) return;
 
-    // Apply XP multiplier from perks
+    // Apply XP multiplier from perks (use primary player for consistency)
+    const primaryPlayerId = this.getPrimaryPlayerEntityId();
     const multiplier =
-      this.playerEntityId !== null
-        ? (this.perkSystem?.getXpMultiplier(this.playerEntityId) ?? 1)
-        : 1;
+      primaryPlayerId !== null ? (this.perkSystem?.getXpMultiplier(primaryPlayerId) ?? 1) : 1;
 
     const adjustedAmount = Math.floor(amount * multiplier);
     this.playerXP += adjustedAmount;

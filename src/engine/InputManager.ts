@@ -2,6 +2,22 @@
  * Input Manager
  *
  * Replacement for grim.dll's DirectInput handling.
+ * Now supports multiple input devices including gamepads for co-op play.
+ *
+ * Responsibilities:
+ * - Track keyboard and mouse input state
+ * - Poll gamepad state via navigator.getGamepads()
+ * - Provide unified query methods for bindings (keyboard codes, mouse buttons, gamepad buttons)
+ * - Track input edges (justPressed/justReleased) per frame
+ *
+ * Non-responsibilities:
+ * - Does not assign input to specific players (see InputSystem)
+ * - Does not handle input remapping UI
+ * - Does not process touch controls for multiple players (touch is single-player only)
+ *
+ * Assumptions:
+ * - Gamepad API is available (gracefully degrades if not)
+ * - update() is called once per frame to clear edge states
  */
 
 import type { InputState, KeyState, MouseState } from '../types';
@@ -69,10 +85,43 @@ export type KeyCodeType = (typeof KeyCode)[keyof typeof KeyCode];
 
 export type MouseButton = 'left' | 'middle' | 'right';
 
+// Gamepad button indices (standard mapping)
+export const GamepadButton = {
+  A: 0,
+  B: 1,
+  X: 2,
+  Y: 3,
+  LB: 4,
+  RB: 5,
+  LT: 6,
+  RT: 7,
+  BACK: 8,
+  START: 9,
+  L3: 10,
+  R3: 11,
+  UP: 12,
+  DOWN: 13,
+  LEFT: 14,
+  RIGHT: 15,
+} as const;
+
+export type GamepadButtonType = (typeof GamepadButton)[keyof typeof GamepadButton];
+
+// Gamepad state tracking
+export interface GamepadState {
+  index: number;
+  connected: boolean;
+  buttons: KeyState[];
+  axes: number[];
+}
+
 export class InputManager {
   private keys: Map<string, KeyState> = new Map();
   private mouse: MouseState;
   private canvas: HTMLCanvasElement;
+
+  // Gamepad state
+  private gamepads: Map<number, GamepadState> = new Map();
 
   // Touch controls
   private touches: Map<number, TouchState> = new Map();
@@ -173,13 +222,6 @@ export class InputManager {
     if (!this.touchEnabled) return;
     this.touchEnabled = false;
     this.detachTouchListeners();
-  }
-
-  /**
-   * Check if touch controls are enabled
-   */
-  isTouchEnabled(): boolean {
-    return this.touchEnabled;
   }
 
   /**
@@ -419,7 +461,9 @@ export class InputManager {
     // Draw joystick stick
     const stickX = this.virtualJoystick.x + this.virtualJoystick.dx * 60;
     const stickY = this.virtualJoystick.y + this.virtualJoystick.dy * 60;
-    ctx.fillStyle = this.virtualJoystick.active ? 'rgba(200, 200, 200, 0.6)' : 'rgba(150, 150, 150, 0.4)';
+    ctx.fillStyle = this.virtualJoystick.active
+      ? 'rgba(200, 200, 200, 0.6)'
+      : 'rgba(150, 150, 150, 0.4)';
     ctx.beginPath();
     ctx.arc(stickX, stickY, 25, 0, Math.PI * 2);
     ctx.fill();
@@ -441,7 +485,9 @@ export class InputManager {
     ctx.fillText(this.fireButton.label, this.fireButton.x, this.fireButton.y);
 
     // Draw reload button
-    ctx.fillStyle = this.reloadButton.pressed ? 'rgba(100, 150, 255, 0.6)' : 'rgba(50, 80, 150, 0.4)';
+    ctx.fillStyle = this.reloadButton.pressed
+      ? 'rgba(100, 150, 255, 0.6)'
+      : 'rgba(50, 80, 150, 0.4)';
     ctx.beginPath();
     ctx.arc(this.reloadButton.x, this.reloadButton.y, this.reloadButton.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -472,6 +518,10 @@ export class InputManager {
 
   wasMouseButtonPressed(button: MouseButton): boolean {
     return this.mouse.buttons[button].justPressed;
+  }
+
+  wasMouseButtonReleased(button: MouseButton): boolean {
+    return this.mouse.buttons[button].justReleased;
   }
 
   getMousePos(): { x: number; y: number } {
@@ -506,15 +556,17 @@ export class InputManager {
     }
   }
 
-  setMousePos(_x: number, _y: number): void {
-    // Not supported in standard browser APIs
+  /**
+   * Check if touch controls are enabled.
+   */
+  isTouchEnabled(): boolean {
+    return this.touchEnabled;
   }
 
-  flushInput(): void {
-    this.keys.clear();
-    this.resetMouseState();
-  }
-
+  /**
+   * Update input manager to clear justPressed/justReleased states.
+   * Call once per frame after processing all input.
+   */
   update(): void {
     for (const state of this.keys.values()) {
       state.justPressed = false;
@@ -537,6 +589,219 @@ export class InputManager {
       this.reloadButton.justPressed = false;
       this.reloadButton.justReleased = false;
     }
+
+    // Poll gamepads and update their state
+    this.pollGamepads();
+  }
+
+  // ============================================================================
+  // Gamepad Support
+  // ============================================================================
+
+  /**
+   * Poll all connected gamepads and update their state.
+   */
+  private pollGamepads(): void {
+    if (!navigator.getGamepads) return;
+
+    const gamepads = navigator.getGamepads();
+    for (let i = 0; i < gamepads.length; i++) {
+      const gamepad = gamepads[i];
+      if (!gamepad) continue;
+
+      let state = this.gamepads.get(i);
+      if (!state) {
+        state = {
+          index: i,
+          connected: true,
+          buttons: [],
+          axes: [],
+        };
+        this.gamepads.set(i, state);
+      }
+
+      // Update button states
+      for (let b = 0; b < gamepad.buttons.length; b++) {
+        const btn = gamepad.buttons[b];
+        const pressed = typeof btn === 'object' ? btn.pressed : btn === 1.0;
+        const value = typeof btn === 'object' ? btn.value : btn;
+
+        let btnState = state.buttons[b];
+        if (!btnState) {
+          btnState = { pressed: false, justPressed: false, justReleased: false };
+          state.buttons[b] = btnState;
+        }
+
+        if (pressed && !btnState.pressed) {
+          btnState.justPressed = true;
+        } else if (!pressed && btnState.pressed) {
+          btnState.justReleased = true;
+        }
+        btnState.pressed = pressed;
+
+        // Store value for analog buttons (triggers)
+        if (value !== undefined) {
+          (btnState as unknown as { value: number }).value = value;
+        }
+      }
+
+      // Update axes
+      state.axes = [...gamepad.axes];
+      state.connected = true;
+    }
+
+    // Mark disconnected gamepads
+    for (const [index, state] of this.gamepads) {
+      const gamepad = gamepads[index];
+      if (!gamepad) {
+        state.connected = false;
+      }
+    }
+  }
+
+  /**
+   * Get the state of a specific gamepad.
+   */
+  getGamepad(index: number): GamepadState | undefined {
+    return this.gamepads.get(index);
+  }
+
+  /**
+   * Check if a gamepad button is currently pressed.
+   */
+  isGamepadButtonDown(gamepadIndex: number, button: number): boolean {
+    const gamepad = this.gamepads.get(gamepadIndex);
+    if (!gamepad || !gamepad.connected) return false;
+    return gamepad.buttons[button]?.pressed ?? false;
+  }
+
+  /**
+   * Check if a gamepad button was just pressed this frame.
+   */
+  wasGamepadButtonPressed(gamepadIndex: number, button: number): boolean {
+    const gamepad = this.gamepads.get(gamepadIndex);
+    if (!gamepad || !gamepad.connected) return false;
+    return gamepad.buttons[button]?.justPressed ?? false;
+  }
+
+  /**
+   * Check if a gamepad button was just released this frame.
+   */
+  wasGamepadButtonReleased(gamepadIndex: number, button: number): boolean {
+    const gamepad = this.gamepads.get(gamepadIndex);
+    if (!gamepad || !gamepad.connected) return false;
+    return gamepad.buttons[button]?.justReleased ?? false;
+  }
+
+  /**
+   * Get gamepad axis value (-1 to 1).
+   */
+  getGamepadAxis(gamepadIndex: number, axis: number): number {
+    const gamepad = this.gamepads.get(gamepadIndex);
+    if (!gamepad || !gamepad.connected) return 0;
+    return gamepad.axes[axis] ?? 0;
+  }
+
+  /**
+   * Check if any gamepad is connected.
+   */
+  hasGamepad(): boolean {
+    for (const state of this.gamepads.values()) {
+      if (state.connected) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get the first connected gamepad index, or -1 if none.
+   */
+  getFirstGamepadIndex(): number {
+    for (const [index, state] of this.gamepads) {
+      if (state.connected) return index;
+    }
+    return -1;
+  }
+
+  /**
+   * Unified binding check - works with keyboard codes, mouse buttons, and gamepad buttons.
+   * @param binding - The binding string (e.g., 'KeyW', 'MouseLeft', 'Gamepad0:0' for gamepad 0 button 0)
+   */
+  isDown(binding: string): boolean {
+    // Mouse buttons
+    if (binding === 'MouseLeft') return this.isMouseButtonDown('left');
+    if (binding === 'MouseMiddle') return this.isMouseButtonDown('middle');
+    if (binding === 'MouseRight') return this.isMouseButtonDown('right');
+
+    // Gamepad bindings: "Gamepad{index}:{button}"
+    if (binding.startsWith('Gamepad')) {
+      const match = binding.match(/Gamepad(\d+):(\d+)/);
+      if (match) {
+        const gpIndex = Number.parseInt(match[1] ?? '0', 10);
+        const btnIndex = Number.parseInt(match[2] ?? '0', 10);
+        return this.isGamepadButtonDown(gpIndex, btnIndex);
+      }
+      return false;
+    }
+
+    // Keyboard keys
+    return this.isKeyDown(binding);
+  }
+
+  /**
+   * Unified binding check for just pressed state.
+   */
+  wasPressed(binding: string): boolean {
+    // Mouse buttons
+    if (binding === 'MouseLeft') return this.wasMouseButtonPressed('left');
+    if (binding === 'MouseMiddle') return this.wasMouseButtonPressed('middle');
+    if (binding === 'MouseRight') return this.wasMouseButtonPressed('right');
+
+    // Gamepad bindings
+    if (binding.startsWith('Gamepad')) {
+      const match = binding.match(/Gamepad(\d+):(\d+)/);
+      if (match) {
+        const gpIndex = Number.parseInt(match[1] ?? '0', 10);
+        const btnIndex = Number.parseInt(match[2] ?? '0', 10);
+        return this.wasGamepadButtonPressed(gpIndex, btnIndex);
+      }
+      return false;
+    }
+
+    // Keyboard keys
+    return this.wasKeyPressed(binding);
+  }
+
+  /**
+   * Unified binding check for just released state.
+   */
+  wasReleased(binding: string): boolean {
+    // Mouse buttons
+    if (binding === 'MouseLeft') return this.wasMouseButtonReleased('left');
+    if (binding === 'MouseMiddle') return this.wasMouseButtonReleased('middle');
+    if (binding === 'MouseRight') return this.wasMouseButtonReleased('right');
+
+    // Gamepad bindings
+    if (binding.startsWith('Gamepad')) {
+      const match = binding.match(/Gamepad(\d+):(\d+)/);
+      if (match) {
+        const gpIndex = Number.parseInt(match[1] ?? '0', 10);
+        const btnIndex = Number.parseInt(match[2] ?? '0', 10);
+        return this.wasGamepadButtonReleased(gpIndex, btnIndex);
+      }
+      return false;
+    }
+
+    // Keyboard keys
+    return this.wasKeyReleased(binding);
+  }
+
+  setMousePos(_x: number, _y: number): void {
+    // Not supported in standard browser APIs
+  }
+
+  flushInput(): void {
+    this.keys.clear();
+    this.resetMouseState();
   }
 
   getState(): InputState {

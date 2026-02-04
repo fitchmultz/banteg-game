@@ -6,51 +6,52 @@
  * RUSH mode, and TUTORIAL mode.
  */
 
-import { EntityManager, SystemManager } from './core/ecs';
 import { GameLoop } from './core/GameLoop';
-import { Renderer, InputManager, AudioManager, AssetManager, SpriteAtlas, generateSpriteAtlas } from './engine';
+import { type Entity, EntityManager, SystemManager } from './core/ecs';
 import {
-  InputSystem,
-  MovementSystem,
-  WeaponSystem,
-  AiSystem,
-  ProjectileSystem,
-  CollisionSystem,
-  HealthSystem,
-  SpawnSystem,
-  BonusSystem,
-  EffectSystem,
-  LifetimeSystem,
-  RenderSystem,
-  PerkSystem,
-  WeaponPickupSystem,
-  RushSpawnSystem,
-  GameModeSystem,
-  GameAudioSystem,
-} from './game/systems';
-import {
-  GameModeManager,
-  SurvivalMode,
-  QuestMode,
-  RushMode,
-  TutorialMode,
-} from './game/modes';
-import { PlayerFactory, BonusFactory } from './game/entities';
+  AssetManager,
+  AudioManager,
+  InputManager,
+  Renderer,
+  SpriteAtlas,
+  generateSpriteAtlas,
+} from './engine';
+import { TUNES, getDeathSample, loadGameAudio } from './game/audio';
+import { getUnlockedWeapons } from './game/data';
+import { BonusFactory, PlayerFactory } from './game/entities';
 import { CreatureFactory } from './game/entities';
+import { GameModeManager, QuestMode, RushMode, SurvivalMode, TutorialMode } from './game/modes';
 import { ProgressionManager } from './game/progression';
 import { SettingsManager } from './game/settings/SettingsManager';
-import { getUnlockedWeapons } from './game/data';
-import { loadGameAudio, TUNES, getDeathSample } from './game/audio';
 import {
+  AiSystem,
+  BonusSystem,
+  CollisionSystem,
+  EffectSystem,
+  GameAudioSystem,
+  GameModeSystem,
+  HealthSystem,
+  InputSystem,
+  LifetimeSystem,
+  MovementSystem,
+  PerkSystem,
+  ProjectileSystem,
+  RenderSystem,
+  RushSpawnSystem,
+  SpawnSystem,
+  WeaponPickupSystem,
+  WeaponSystem,
+} from './game/systems';
+import {
+  GameOverUI,
+  MainMenuUI,
+  OptionsMenuUI,
+  PauseMenuUI,
   PerkSelectUI,
   QuestMenuUI,
-  MainMenuUI,
-  PauseMenuUI,
-  GameOverUI,
   TutorialUI,
-  OptionsMenuUI,
 } from './game/ui';
-import { type GameState, type GameMode, PerkId } from './types';
+import { type GameMode, type GameState, PerkId } from './types';
 
 // Default game dimensions (will be overridden by settings)
 let GAME_WIDTH = 1024;
@@ -82,7 +83,8 @@ interface GlobalGameState {
   optionsMenuUI: OptionsMenuUI | null;
   settingsManager: SettingsManager | null;
   currentGameState: GameState | null;
-  playerEntityId: number | null;
+  playerEntityId: number | null; // P1 entity ID (for backward compatibility)
+  playerEntityIds: number[]; // All player entity IDs (for co-op)
   renderSystem: RenderSystem | null;
   // Spawn systems (single source of truth)
   spawnSystem: SpawnSystem | null;
@@ -110,6 +112,7 @@ const gameState: GlobalGameState = {
   settingsManager: null,
   currentGameState: null,
   playerEntityId: null,
+  playerEntityIds: [],
   renderSystem: null,
   spawnSystem: null,
   rushSpawnSystem: null,
@@ -278,8 +281,24 @@ async function init(): Promise<void> {
       },
       onFatalLottery: (_entityId, survived, xpGained) => {
         console.log(`Fatal Lottery: survived=${survived}, xp=${xpGained}`);
-        if (!survived && gameState.playerEntityId !== null) {
-          gameModeManager.gameOver();
+        if (!survived) {
+          // In co-op, only game over when all players are dead
+          const currentMode = gameModeManager.getState();
+          const isCoopMode =
+            currentMode.type === 'PLAYING' && currentMode.mode.type === 'COOP_SURVIVAL';
+          if (isCoopMode) {
+            const alivePlayers = gameState.playerEntityIds.filter((id) => {
+              const entity = entityManager.getEntity(id);
+              if (!entity) return false;
+              const player = entity.getComponent<'player'>('player');
+              return player && player.health > 0;
+            });
+            if (alivePlayers.length === 0) {
+              gameModeManager.gameOver();
+            }
+          } else {
+            gameModeManager.gameOver();
+          }
         }
       },
       onInfernalContract: (_entityId, levelsGained) => {
@@ -346,10 +365,8 @@ async function init(): Promise<void> {
         handleGameOver(true, stats);
       },
       onRequestPerkSelection: () => {
-        const choices = gameState.perkSystem?.generatePerkChoices(
-          gameState.playerEntityId ?? 0,
-          3
-        ) ?? [];
+        const primaryPlayerId = gameState.playerEntityIds[0] ?? 0;
+        const choices = gameState.perkSystem?.generatePerkChoices(primaryPlayerId, 3) ?? [];
         gameState.perkSelectUI?.show(choices);
         gameModeManager.setState({ type: 'PERK_SELECT', choices });
       },
@@ -361,12 +378,7 @@ async function init(): Promise<void> {
       },
       onSpawnEnemies: (enemies) => {
         for (const enemy of enemies) {
-          CreatureFactory.create(
-            entityManager,
-            enemy.creatureTypeId,
-            enemy.x,
-            enemy.y
-          );
+          CreatureFactory.create(entityManager, enemy.creatureTypeId, enemy.x, enemy.y);
         }
       },
     },
@@ -503,19 +515,21 @@ function handlePerkSelection(perkId: PerkId): void {
 
   // Route perk selection to the correct mode
   switch (mode.type) {
-    case 'SURVIVAL': {
+    case 'SURVIVAL':
+    case 'COOP_SURVIVAL': {
       const choices = gameState.perkSelectUI?.getChoices() ?? [];
       const success = gameState.survivalMode?.selectPerk(choices.indexOf(perkId));
       if (success) {
         gameState.perkSelectUI?.hide();
-        gameState.gameModeManager?.setState({ type: 'PLAYING', mode: { type: 'SURVIVAL' } });
+        gameState.gameModeManager?.setState({ type: 'PLAYING', mode });
       }
       break;
     }
     case 'TUTORIAL': {
       // Apply perk directly via perk system
-      if (gameState.playerEntityId !== null && gameState.perkSystem) {
-        const success = gameState.perkSystem.applyPerk(gameState.playerEntityId, perkId);
+      const primaryPlayerId = gameState.playerEntityIds[0];
+      if (primaryPlayerId !== undefined && gameState.perkSystem) {
+        const success = gameState.perkSystem.applyPerk(primaryPlayerId, perkId);
         if (success) {
           gameState.tutorialMode?.onPerkSelected();
           gameState.perkSelectUI?.hide();
@@ -587,7 +601,17 @@ function startGame(mode: GameMode): void {
   // Initialize game systems
   const inputSystem = new InputSystem(
     input,
-    () => gameState.settingsManager?.getKeyBindings() ?? { moveUp: 'KeyW', moveDown: 'KeyS', moveLeft: 'KeyA', moveRight: 'KeyD', fire: 'MouseLeft', reload: 'KeyR', swapWeapon: 'KeyQ', pause: 'Escape' }
+    (playerIndex: number) =>
+      gameState.settingsManager?.getKeyBindingsForPlayer(playerIndex) ?? {
+        moveUp: 'KeyW',
+        moveDown: 'KeyS',
+        moveLeft: 'KeyA',
+        moveRight: 'KeyD',
+        fire: 'MouseLeft',
+        reload: 'KeyR',
+        swapWeapon: 'KeyQ',
+        pause: 'Escape',
+      }
   );
   const movementSystem = new MovementSystem();
   const weaponSystem = new WeaponSystem(entityManager, audio);
@@ -597,7 +621,8 @@ function startGame(mode: GameMode): void {
   const gameAudioSystem = new GameAudioSystem(entityManager, audio);
 
   // Determine which mode we're starting
-  const isSurvival = mode.type === 'SURVIVAL';
+  const isSurvival = mode.type === 'SURVIVAL' || mode.type === 'COOP_SURVIVAL';
+  const isCoop = mode.type === 'COOP_SURVIVAL';
   const isRush = mode.type === 'RUSH';
 
   // Create spawn systems based on mode
@@ -615,13 +640,27 @@ function startGame(mode: GameMode): void {
   }
 
   const healthSystem = new HealthSystem(entityManager, {
-    onPlayerDeath: () => {
+    onPlayerDeath: (_entityId: number) => {
       // Play player death sound
       if (gameState.audioLoaded) {
         audio.playSample(getDeathSample({ isPlayer: true }));
       }
       gameState.progressionManager?.recordDeath();
-      gameState.gameModeManager?.gameOver();
+
+      // In co-op mode, only game over when all players are dead
+      if (isCoop) {
+        const alivePlayers = gameState.playerEntityIds.filter((id) => {
+          const entity = entityManager.getEntity(id);
+          if (!entity) return false;
+          const player = entity.getComponent<'player'>('player');
+          return player && player.health > 0;
+        });
+        if (alivePlayers.length === 0) {
+          gameState.gameModeManager?.gameOver();
+        }
+      } else {
+        gameState.gameModeManager?.gameOver();
+      }
     },
     onCreatureDeath: (creatureTypeId, position) => {
       // Play enemy death sound
@@ -638,8 +677,15 @@ function startGame(mode: GameMode): void {
         particleSystem.emitBloodSplatter(position.x, position.y, Math.random() * Math.PI * 2, 5);
 
         // Chance to spawn weapon pickup (10% chance)
-        if (Math.random() < 0.1 && gameState.playerEntityId !== null) {
-          const player = entityManager.getEntity(gameState.playerEntityId);
+        // In co-op, use the first alive player for weapon unlocks
+        const alivePlayerId = gameState.playerEntityIds.find((id) => {
+          const entity = entityManager.getEntity(id);
+          if (!entity) return false;
+          const player = entity.getComponent<'player'>('player');
+          return player && player.health > 0;
+        });
+        if (Math.random() < 0.1 && alivePlayerId !== undefined) {
+          const player = entityManager.getEntity(alivePlayerId);
           if (player) {
             const playerComp = player.getComponent<'player'>('player');
             if (playerComp) {
@@ -682,6 +728,7 @@ function startGame(mode: GameMode): void {
         if (state.type === 'PLAYING') {
           switch (state.mode.type) {
             case 'SURVIVAL':
+            case 'COOP_SURVIVAL':
               gameState.survivalMode?.recordKill(10);
               break;
             case 'QUEST':
@@ -707,9 +754,16 @@ function startGame(mode: GameMode): void {
     },
     onXPChange: (xp) => {
       // Apply XP multiplier from perks
+      // Use first alive player for multiplier (in co-op, both share perks anyway)
+      const alivePlayerId = gameState.playerEntityIds.find((id) => {
+        const entity = entityManager.getEntity(id);
+        if (!entity) return false;
+        const player = entity.getComponent<'player'>('player');
+        return player && player.health > 0;
+      });
       const multiplier =
-        gameState.playerEntityId !== null && gameState.perkSystem
-          ? gameState.perkSystem.getXpMultiplier(gameState.playerEntityId)
+        alivePlayerId !== undefined && gameState.perkSystem
+          ? gameState.perkSystem.getXpMultiplier(alivePlayerId)
           : 1;
 
       const adjustedXP = Math.floor(xp * multiplier);
@@ -719,6 +773,7 @@ function startGame(mode: GameMode): void {
       if (state?.type === 'PLAYING') {
         switch (state.mode.type) {
           case 'SURVIVAL':
+          case 'COOP_SURVIVAL':
             gameState.survivalMode?.addXP(adjustedXP);
             break;
           case 'RUSH':
@@ -747,8 +802,24 @@ function startGame(mode: GameMode): void {
     },
     onFatalLottery: (_entityId, survived, xpGained) => {
       console.log(`Fatal Lottery: survived=${survived}, xp=${xpGained}`);
-      if (!survived && gameState.playerEntityId !== null) {
-        gameState.gameModeManager?.gameOver();
+      if (!survived) {
+        // In co-op, only game over when all players are dead
+        const currentMode = gameState.gameModeManager?.getState();
+        const isCoopMode =
+          currentMode?.type === 'PLAYING' && currentMode.mode.type === 'COOP_SURVIVAL';
+        if (isCoopMode) {
+          const alivePlayers = gameState.playerEntityIds.filter((id) => {
+            const entity = entityManager.getEntity(id);
+            if (!entity) return false;
+            const player = entity.getComponent<'player'>('player');
+            return player && player.health > 0;
+          });
+          if (alivePlayers.length === 0) {
+            gameState.gameModeManager?.gameOver();
+          }
+        } else {
+          gameState.gameModeManager?.gameOver();
+        }
       }
     },
     onInfernalContract: (_entityId, levelsGained) => {
@@ -802,24 +873,49 @@ function startGame(mode: GameMode): void {
   systemManager.addSystem(lifetimeSystem);
   systemManager.addSystem(renderSystem);
 
-  // Create player entity
-  const playerEntity = PlayerFactory.create(entityManager, 0, 0, {
-    playerIndex: 0,
-    weaponId: 0, // Pistol
-  });
-  gameState.playerEntityId = playerEntity.id;
+  // Create player entities
+  const playerEntities: Entity[] = [];
 
-  // Set player entity for modes that need it
-  gameState.survivalMode?.setPlayerEntity(playerEntity.id);
-  gameState.rushMode?.setPlayerEntity(playerEntity.id);
-  gameState.tutorialMode?.setPlayerEntity(playerEntity.id);
+  if (isCoop) {
+    // Create two players for co-op mode
+    const player1 = PlayerFactory.create(entityManager, -50, 0, {
+      playerIndex: 0,
+      weaponId: 0, // Pistol
+    });
+    const player2 = PlayerFactory.create(entityManager, 50, 0, {
+      playerIndex: 1,
+      weaponId: 0, // Pistol
+    });
+    playerEntities.push(player1, player2);
+    gameState.playerEntityId = player1.id;
+    gameState.playerEntityIds = [player1.id, player2.id];
+  } else {
+    // Single player
+    const playerEntity = PlayerFactory.create(entityManager, 0, 0, {
+      playerIndex: 0,
+      weaponId: 0, // Pistol
+    });
+    playerEntities.push(playerEntity);
+    gameState.playerEntityId = playerEntity.id;
+    gameState.playerEntityIds = [playerEntity.id];
+  }
 
-  // Set camera to player position
+  // Set player entity/entities for modes that need them
+  if (isCoop) {
+    gameState.survivalMode?.setPlayerEntities(gameState.playerEntityIds);
+  } else {
+    gameState.survivalMode?.setPlayerEntity(gameState.playerEntityIds[0] ?? 0);
+  }
+  gameState.rushMode?.setPlayerEntity(gameState.playerEntityIds[0] ?? 0);
+  gameState.tutorialMode?.setPlayerEntity(gameState.playerEntityIds[0] ?? 0);
+
+  // Set camera to player position (will be updated by RenderSystem for co-op)
   renderSystem.setCameraPosition(0, 0);
 
   // Start the appropriate mode
   switch (mode.type) {
     case 'SURVIVAL':
+    case 'COOP_SURVIVAL':
       gameState.survivalMode?.start();
       break;
     case 'QUEST':
@@ -960,7 +1056,8 @@ function handleGameOver(
 
   // Get best score for comparison
   const survivalRecord = gameState.progressionManager?.getSurvivalHighScore();
-  const bestScore = survivalRecord && survivalRecord.bestScore > 0 ? survivalRecord.bestScore : undefined;
+  const bestScore =
+    survivalRecord && survivalRecord.bestScore > 0 ? survivalRecord.bestScore : undefined;
 
   gameState.gameOverUI?.show({
     ...stats,

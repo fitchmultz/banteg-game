@@ -7,7 +7,14 @@
 
 import type { GameMode } from '../../types';
 
-export type MenuOption = 'TUTORIAL' | 'SURVIVAL' | 'RUSH' | 'QUEST' | 'OPTIONS' | 'CREDITS';
+export type MenuOption =
+  | 'TUTORIAL'
+  | 'SURVIVAL'
+  | 'COOP_SURVIVAL'
+  | 'RUSH'
+  | 'QUEST'
+  | 'OPTIONS'
+  | 'CREDITS';
 
 export interface MenuButton {
   id: MenuOption;
@@ -99,6 +106,7 @@ export class MainMenuUI {
     const buttonData: { id: MenuOption; label: string }[] = [
       { id: 'TUTORIAL', label: 'TUTORIAL' },
       { id: 'SURVIVAL', label: 'SURVIVAL MODE' },
+      { id: 'COOP_SURVIVAL', label: 'CO-OP SURVIVAL' },
       { id: 'RUSH', label: 'RUSH MODE' },
       { id: 'QUEST', label: 'QUEST MODE' },
       { id: 'OPTIONS', label: 'OPTIONS' },
@@ -400,6 +408,9 @@ export class MainMenuUI {
         break;
       case 'SURVIVAL':
         this.options.onSelectMode({ type: 'SURVIVAL' });
+        break;
+      case 'COOP_SURVIVAL':
+        this.options.onSelectMode({ type: 'COOP_SURVIVAL' });
         break;
       case 'RUSH':
         this.options.onSelectMode({ type: 'RUSH' });

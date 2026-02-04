@@ -24,6 +24,7 @@ export type MenuType = 'MAIN' | 'OPTIONS' | 'CREDITS';
 export type GameMode =
   | { type: 'QUEST'; questId: QuestId }
   | { type: 'SURVIVAL' }
+  | { type: 'COOP_SURVIVAL' }
   | { type: 'RUSH' }
   | { type: 'TUTORIAL' };
 
@@ -284,6 +285,7 @@ export interface GameConfig {
   resolution: { width: number; height: number };
   fullscreen: boolean;
   controls: KeyBindings;
+  controlsP2?: KeyBindings;
 }
 
 export interface KeyBindings {

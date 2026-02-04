@@ -19,9 +19,9 @@
  * - Settings are validated on load to prevent invalid states
  */
 
-import type { GameConfig, KeyBindings } from '../../types';
 import type { AudioManager } from '../../engine/AudioManager';
 import type { Renderer } from '../../engine/Renderer';
+import type { GameConfig, KeyBindings } from '../../types';
 
 // Storage key for localStorage
 export const SETTINGS_STORAGE_KEY = 'crimsonland_settings_v1';
@@ -51,6 +51,18 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   reload: 'KeyR',
   swapWeapon: 'KeyQ',
   pause: 'Escape',
+};
+
+// Default P2 key bindings (arrow keys + numpad)
+export const DEFAULT_KEY_BINDINGS_P2: KeyBindings = {
+  moveUp: 'ArrowUp',
+  moveDown: 'ArrowDown',
+  moveLeft: 'ArrowLeft',
+  moveRight: 'ArrowRight',
+  fire: 'Numpad0', // Numpad 0 for fire
+  reload: 'NumpadDecimal', // Numpad . for reload
+  swapWeapon: 'NumpadEnter', // Numpad Enter for swap
+  pause: 'Escape', // Shared pause key
 };
 
 // Default game configuration
@@ -149,6 +161,32 @@ export function validateGameConfig(candidate: unknown): GameConfig {
     result.controls = validatedControls;
   }
 
+  // Validate controlsP2 (optional)
+  if (typeof obj.controlsP2 === 'object' && obj.controlsP2 !== null) {
+    const controlsP2 = obj.controlsP2 as Record<string, unknown>;
+    const validatedControlsP2: KeyBindings = { ...DEFAULT_KEY_BINDINGS_P2 };
+
+    const bindingKeys: Array<keyof KeyBindings> = [
+      'moveUp',
+      'moveDown',
+      'moveLeft',
+      'moveRight',
+      'fire',
+      'reload',
+      'swapWeapon',
+      'pause',
+    ];
+
+    for (const key of bindingKeys) {
+      const value = controlsP2[key];
+      if (typeof value === 'string') {
+        validatedControlsP2[key] = value;
+      }
+    }
+
+    result.controlsP2 = validatedControlsP2;
+  }
+
   return result;
 }
 
@@ -166,8 +204,10 @@ export function applyAudioSettings(audio: AudioManager, cfg: GameConfig): void {
  */
 export function applyRendererSettings(renderer: Renderer, cfg: GameConfig): void {
   const currentDimensions = renderer.getDimensions();
-  if (currentDimensions.width !== cfg.resolution.width ||
-      currentDimensions.height !== cfg.resolution.height) {
+  if (
+    currentDimensions.width !== cfg.resolution.width ||
+    currentDimensions.height !== cfg.resolution.height
+  ) {
     renderer.resize(cfg.resolution.width, cfg.resolution.height);
   }
 }
@@ -195,6 +235,18 @@ export class SettingsManager {
    */
   getKeyBindings(): KeyBindings {
     return { ...this.config.controls };
+  }
+
+  /**
+   * Get key bindings for a specific player (P1 or P2).
+   * P1 uses controls, P2 uses controlsP2 with fallback to defaults.
+   */
+  getKeyBindingsForPlayer(playerIndex: number): KeyBindings {
+    if (playerIndex === 0) {
+      return { ...this.config.controls };
+    }
+    // P2 uses controlsP2 if set, otherwise defaults
+    return { ...(this.config.controlsP2 ?? DEFAULT_KEY_BINDINGS_P2) };
   }
 
   /**
