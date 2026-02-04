@@ -7,7 +7,7 @@
 
 import type { GameMode } from '../../types';
 
-export type MenuOption = 'SURVIVAL' | 'QUEST' | 'OPTIONS' | 'CREDITS';
+export type MenuOption = 'TUTORIAL' | 'SURVIVAL' | 'RUSH' | 'QUEST' | 'OPTIONS' | 'CREDITS';
 
 export interface MenuButton {
   id: MenuOption;
@@ -97,7 +97,9 @@ export class MainMenuUI {
     const startY = this.canvas.height / 2 - 40;
 
     const buttonData: { id: MenuOption; label: string }[] = [
+      { id: 'TUTORIAL', label: 'TUTORIAL' },
       { id: 'SURVIVAL', label: 'SURVIVAL MODE' },
+      { id: 'RUSH', label: 'RUSH MODE' },
       { id: 'QUEST', label: 'QUEST MODE' },
       { id: 'OPTIONS', label: 'OPTIONS' },
       { id: 'CREDITS', label: 'CREDITS' },
@@ -393,8 +395,14 @@ export class MainMenuUI {
 
   private selectOption(option: MenuOption): void {
     switch (option) {
+      case 'TUTORIAL':
+        this.options.onSelectMode({ type: 'TUTORIAL' });
+        break;
       case 'SURVIVAL':
         this.options.onSelectMode({ type: 'SURVIVAL' });
+        break;
+      case 'RUSH':
+        this.options.onSelectMode({ type: 'RUSH' });
         break;
       case 'QUEST':
         this.options.onSelectMode({ type: 'QUEST', questId: 'nagolipoli' }); // Default first quest

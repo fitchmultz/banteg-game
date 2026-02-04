@@ -2,7 +2,8 @@
  * Crimsonland Remake - Main Entry Point
  *
  * Initializes the game engine, ECS systems, and manages game state.
- * Now with main menu, quest system, perks, and progression tracking.
+ * Now with main menu, quest system, perks, progression tracking,
+ * RUSH mode, and TUTORIAL mode.
  */
 
 import { EntityManager, SystemManager } from './core/ecs';
@@ -23,12 +24,28 @@ import {
   RenderSystem,
   PerkSystem,
   WeaponPickupSystem,
+  RushSpawnSystem,
+  GameModeSystem,
 } from './game/systems';
-import { GameModeManager, SurvivalMode, QuestMode } from './game/modes';
+import {
+  GameModeManager,
+  SurvivalMode,
+  QuestMode,
+  RushMode,
+  TutorialMode,
+} from './game/modes';
 import { PlayerFactory, BonusFactory } from './game/entities';
+import { CreatureFactory } from './game/entities';
 import { ProgressionManager } from './game/progression';
 import { getUnlockedWeapons } from './game/data';
-import { PerkSelectUI, QuestMenuUI, MainMenuUI, PauseMenuUI, GameOverUI } from './game/ui';
+import {
+  PerkSelectUI,
+  QuestMenuUI,
+  MainMenuUI,
+  PauseMenuUI,
+  GameOverUI,
+  TutorialUI,
+} from './game/ui';
 import { type GameState, type GameMode, PerkId } from './types';
 
 const GAME_WIDTH = 1024;
@@ -47,6 +64,8 @@ interface GlobalGameState {
   gameModeManager: GameModeManager | null;
   survivalMode: SurvivalMode | null;
   questMode: QuestMode | null;
+  rushMode: RushMode | null;
+  tutorialMode: TutorialMode | null;
   perkSystem: PerkSystem | null;
   progressionManager: ProgressionManager | null;
   mainMenuUI: MainMenuUI | null;
@@ -54,9 +73,13 @@ interface GlobalGameState {
   questMenuUI: QuestMenuUI | null;
   pauseMenuUI: PauseMenuUI | null;
   gameOverUI: GameOverUI | null;
+  tutorialUI: TutorialUI | null;
   currentGameState: GameState | null;
   playerEntityId: number | null;
   renderSystem: RenderSystem | null;
+  // Spawn systems (single source of truth)
+  spawnSystem: SpawnSystem | null;
+  rushSpawnSystem: RushSpawnSystem | null;
 }
 
 const gameState: GlobalGameState = {
@@ -64,6 +87,8 @@ const gameState: GlobalGameState = {
   gameModeManager: null,
   survivalMode: null,
   questMode: null,
+  rushMode: null,
+  tutorialMode: null,
   perkSystem: null,
   progressionManager: null,
   mainMenuUI: null,
@@ -71,9 +96,12 @@ const gameState: GlobalGameState = {
   questMenuUI: null,
   pauseMenuUI: null,
   gameOverUI: null,
+  tutorialUI: null,
   currentGameState: null,
   playerEntityId: null,
   renderSystem: null,
+  spawnSystem: null,
+  rushSpawnSystem: null,
 };
 
 // Core engine instances
@@ -146,7 +174,7 @@ async function init(): Promise<void> {
 
       // Handle PERK_SELECT state
       if (newState.type === 'PERK_SELECT') {
-        // Perk selection UI will be triggered by SurvivalMode
+        // Perk selection UI will be triggered by the active mode
       } else if (newState.type === 'PLAYING') {
         // Hide perk selection UI if visible
         gameState.perkSelectUI?.hide();
@@ -157,6 +185,7 @@ async function init(): Promise<void> {
     onGameOver: (stats) => {
       console.log('Game Over!', stats);
       gameState.survivalMode?.endRun();
+      gameState.rushMode?.endRun();
     },
   });
   gameState.gameModeManager = gameModeManager;
@@ -205,8 +234,6 @@ async function init(): Promise<void> {
     progressionManager
   );
   gameState.survivalMode = survivalMode;
-  // PerkSystem is available through survivalMode's callbacks
-  // Access perk system through gameState - will be initialized on game start
 
   // Initialize quest mode with progression
   const questMode = new QuestMode(
@@ -231,6 +258,67 @@ async function init(): Promise<void> {
   );
   gameState.questMode = questMode;
 
+  // Initialize rush mode
+  const rushMode = new RushMode(
+    entityManager,
+    {
+      onStart: () => {
+        console.log('Rush mode started!');
+      },
+      onGameOver: (stats) => {
+        console.log('Rush mode ended!', stats);
+      },
+      onSpawn: (creatureTypeId, x, y) => {
+        gameState.rushSpawnSystem?.queueSpawn(creatureTypeId, x, y);
+      },
+    },
+    progressionManager
+  );
+  gameState.rushMode = rushMode;
+
+  // Initialize tutorial mode
+  const tutorialMode = new TutorialMode(
+    entityManager,
+    {
+      onStageChange: (stage, previousStage) => {
+        console.log(`Tutorial stage: ${previousStage} -> ${stage}`);
+        const prompt = tutorialMode.getStagePrompt(stage);
+        const name = tutorialMode.getStageName(stage);
+        gameState.tutorialUI?.setStage(stage, prompt, name);
+      },
+      onComplete: (stats) => {
+        console.log('Tutorial completed!', stats);
+        handleGameOver(true, stats);
+      },
+      onRequestPerkSelection: () => {
+        const choices = gameState.perkSystem?.generatePerkChoices(
+          gameState.playerEntityId ?? 0,
+          3
+        ) ?? [];
+        gameState.perkSelectUI?.show(choices);
+        gameModeManager.setState({ type: 'PERK_SELECT', choices });
+      },
+      onSpawnBonuses: (bonuses) => {
+        for (const bonus of bonuses) {
+          const options = bonus.value !== undefined ? { value: bonus.value } : undefined;
+          BonusFactory.create(entityManager, bonus.type, bonus.x, bonus.y, options);
+        }
+      },
+      onSpawnEnemies: (enemies) => {
+        for (const enemy of enemies) {
+          CreatureFactory.create(
+            entityManager,
+            enemy.creatureTypeId,
+            enemy.x,
+            enemy.y
+          );
+        }
+      },
+    },
+    progressionManager
+  );
+  gameState.tutorialMode = tutorialMode;
+
   // Initialize UI components
   gameState.mainMenuUI = new MainMenuUI({
     canvas: renderer.getCanvas(),
@@ -246,10 +334,7 @@ async function init(): Promise<void> {
   gameState.perkSelectUI = new PerkSelectUI({
     canvas: renderer.getCanvas(),
     onSelect: (perkId) => {
-      const choices = gameState.perkSelectUI?.getChoices() ?? [];
-      survivalMode.selectPerk(choices.indexOf(perkId));
-      gameState.perkSelectUI?.hide();
-      gameModeManager.setState({ type: 'PLAYING', mode: { type: 'SURVIVAL' } });
+      handlePerkSelection(perkId);
     },
   });
 
@@ -283,6 +368,19 @@ async function init(): Promise<void> {
     onMainMenu: returnToMainMenu,
   });
 
+  gameState.tutorialUI = new TutorialUI({
+    canvas: renderer.getCanvas(),
+    onRepeat: () => {
+      startGame({ type: 'TUTORIAL' });
+    },
+    onPlay: () => {
+      startGame({ type: 'SURVIVAL' });
+    },
+    onSkip: () => {
+      returnToMainMenu();
+    },
+  });
+
   // Show main menu
   showMainMenu();
 
@@ -307,6 +405,49 @@ async function init(): Promise<void> {
   };
 }
 
+function handlePerkSelection(perkId: PerkId): void {
+  const currentState = gameState.gameModeManager?.getState();
+  if (currentState?.type !== 'PERK_SELECT') return;
+
+  // Get the mode from the previous state (before PERK_SELECT)
+  const previousState = gameState.gameModeManager?.getPreviousState();
+  let mode: GameMode = { type: 'SURVIVAL' };
+
+  if (previousState?.type === 'PLAYING') {
+    mode = previousState.mode;
+  }
+
+  // Route perk selection to the correct mode
+  switch (mode.type) {
+    case 'SURVIVAL': {
+      const choices = gameState.perkSelectUI?.getChoices() ?? [];
+      const success = gameState.survivalMode?.selectPerk(choices.indexOf(perkId));
+      if (success) {
+        gameState.perkSelectUI?.hide();
+        gameState.gameModeManager?.setState({ type: 'PLAYING', mode: { type: 'SURVIVAL' } });
+      }
+      break;
+    }
+    case 'TUTORIAL': {
+      // Apply perk directly via perk system
+      if (gameState.playerEntityId !== null && gameState.perkSystem) {
+        const success = gameState.perkSystem.applyPerk(gameState.playerEntityId, perkId);
+        if (success) {
+          gameState.tutorialMode?.onPerkSelected();
+          gameState.perkSelectUI?.hide();
+          gameState.gameModeManager?.setState({ type: 'PLAYING', mode: { type: 'TUTORIAL' } });
+        }
+      }
+      break;
+    }
+    default:
+      // Other modes don't have perks
+      gameState.perkSelectUI?.hide();
+      gameState.gameModeManager?.setState({ type: 'PLAYING', mode });
+      break;
+  }
+}
+
 function showMainMenu(): void {
   gameState.appState = { type: 'MENU' };
   gameState.mainMenuUI?.show();
@@ -314,6 +455,7 @@ function showMainMenu(): void {
   gameState.gameOverUI?.hide();
   gameState.perkSelectUI?.hide();
   gameState.questMenuUI?.hide();
+  gameState.tutorialUI?.hide();
 }
 
 function startMenuLoop(): void {
@@ -348,10 +490,15 @@ function startGame(mode: GameMode): void {
   gameState.mainMenuUI?.hide();
   gameState.questMenuUI?.hide();
   gameState.gameOverUI?.hide();
+  gameState.tutorialUI?.hide();
 
   // Clear existing entities and systems
   systemManager.clear();
   entityManager.clear();
+
+  // Reset spawn system references
+  gameState.spawnSystem = null;
+  gameState.rushSpawnSystem = null;
 
   // Initialize game systems
   const inputSystem = new InputSystem(input);
@@ -360,6 +507,25 @@ function startGame(mode: GameMode): void {
   const aiSystem = new AiSystem(entityManager);
   const projectileSystem = new ProjectileSystem(entityManager);
   const collisionSystem = new CollisionSystem(entityManager);
+
+  // Determine which mode we're starting
+  const isSurvival = mode.type === 'SURVIVAL';
+  const isRush = mode.type === 'RUSH';
+
+  // Create spawn systems based on mode
+  if (isSurvival) {
+    gameState.spawnSystem = new SpawnSystem(entityManager, {
+      mapWidth: 2048,
+      mapHeight: 2048,
+      spawnMargin: 100,
+    });
+  } else if (isRush) {
+    gameState.rushSpawnSystem = new RushSpawnSystem(entityManager, {
+      mapWidth: 2048,
+      mapHeight: 2048,
+    });
+  }
+
   const healthSystem = new HealthSystem(entityManager, {
     onPlayerDeath: () => {
       gameState.progressionManager?.recordDeath();
@@ -385,15 +551,21 @@ function startGame(mode: GameMode): void {
               const unlockedWeapons = getUnlockedWeapons(playerComp.experience);
               // Filter out current and alternate weapons
               const availableWeapons = unlockedWeapons.filter(
-                id => id !== playerComp.currentWeapon.weaponId &&
-                      id !== playerComp.alternateWeapon.weaponId
+                (id) =>
+                  id !== playerComp.currentWeapon.weaponId &&
+                  id !== playerComp.alternateWeapon.weaponId
               );
               if (availableWeapons.length > 0) {
                 // Pick random weapon
                 const randomIndex = Math.floor(Math.random() * availableWeapons.length);
                 const randomWeapon = availableWeapons[randomIndex];
                 if (randomWeapon !== undefined) {
-                  BonusFactory.createWeaponPickup(entityManager, randomWeapon, position.x, position.y);
+                  BonusFactory.createWeaponPickup(
+                    entityManager,
+                    randomWeapon,
+                    position.x,
+                    position.y
+                  );
                 }
               }
             }
@@ -401,20 +573,30 @@ function startGame(mode: GameMode): void {
         }
       }
 
-      new SpawnSystem(entityManager, {
-        mapWidth: 2048,
-        mapHeight: 2048,
-        spawnMargin: 100,
-      }).onEnemyDefeated();
+      // Route onEnemyDefeated to the active spawn system
+      if (isSurvival) {
+        gameState.spawnSystem?.onEnemyDefeated();
+      } else if (isRush) {
+        gameState.rushSpawnSystem?.onEnemyDefeated();
+      }
 
       // Record kill in appropriate mode
       if (gameState.gameModeManager?.isPlaying()) {
         const state = gameState.gameModeManager.getState();
         if (state.type === 'PLAYING') {
-          if (state.mode.type === 'SURVIVAL') {
-            gameState.survivalMode?.recordKill(10);
-          } else if (state.mode.type === 'QUEST') {
-            gameState.questMode?.recordKill(creatureTypeId, 10);
+          switch (state.mode.type) {
+            case 'SURVIVAL':
+              gameState.survivalMode?.recordKill(10);
+              break;
+            case 'QUEST':
+              gameState.questMode?.recordKill(creatureTypeId, 10);
+              break;
+            case 'RUSH':
+              gameState.rushMode?.recordKill(10);
+              break;
+            case 'TUTORIAL':
+              gameState.tutorialMode?.recordKill();
+              break;
           }
         }
       }
@@ -433,9 +615,27 @@ function startGame(mode: GameMode): void {
         gameState.playerEntityId !== null && gameState.perkSystem
           ? gameState.perkSystem.getXpMultiplier(gameState.playerEntityId)
           : 1;
-      gameState.survivalMode?.addXP(Math.floor(xp * multiplier));
+
+      const adjustedXP = Math.floor(xp * multiplier);
+
+      // Route XP to the active mode
+      const state = gameState.gameModeManager?.getState();
+      if (state?.type === 'PLAYING') {
+        switch (state.mode.type) {
+          case 'SURVIVAL':
+            gameState.survivalMode?.addXP(adjustedXP);
+            break;
+          case 'RUSH':
+            gameState.rushMode?.addScore(adjustedXP);
+            break;
+          case 'TUTORIAL':
+            // Tutorial has its own XP management
+            break;
+        }
+      }
     },
   });
+
   const bonusSystem = new BonusSystem(entityManager);
   const effectSystem = new EffectSystem(entityManager);
   const lifetimeSystem = new LifetimeSystem(entityManager);
@@ -460,19 +660,36 @@ function startGame(mode: GameMode): void {
   });
   gameState.perkSystem = perkSystem;
 
+  // Create game mode system to update modes every tick
+  if (!gameState.gameModeManager) {
+    throw new Error('GameModeManager not initialized');
+  }
+  const gameModeSystem = new GameModeSystem({
+    gameModeManager: gameState.gameModeManager,
+    survivalMode: gameState.survivalMode,
+    questMode: gameState.questMode,
+    rushMode: gameState.rushMode,
+    tutorialMode: gameState.tutorialMode,
+  });
+
   // Add systems in priority order
   systemManager.addSystem(inputSystem);
+  systemManager.addSystem(gameModeSystem);
   systemManager.addSystem(movementSystem);
   systemManager.addSystem(weaponSystem);
   systemManager.addSystem(aiSystem);
   systemManager.addSystem(projectileSystem);
   systemManager.addSystem(collisionSystem);
   systemManager.addSystem(healthSystem);
-  systemManager.addSystem(new SpawnSystem(entityManager, {
-    mapWidth: 2048,
-    mapHeight: 2048,
-    spawnMargin: 100,
-  }));
+
+  // Add spawn systems only for modes that need them
+  if (gameState.spawnSystem) {
+    systemManager.addSystem(gameState.spawnSystem);
+  }
+  if (gameState.rushSpawnSystem) {
+    systemManager.addSystem(gameState.rushSpawnSystem);
+  }
+
   systemManager.addSystem(bonusSystem);
   systemManager.addSystem(new WeaponPickupSystem(entityManager));
   systemManager.addSystem(effectSystem);
@@ -486,16 +703,35 @@ function startGame(mode: GameMode): void {
     weaponId: 0, // Pistol
   });
   gameState.playerEntityId = playerEntity.id;
+
+  // Set player entity for modes that need it
   gameState.survivalMode?.setPlayerEntity(playerEntity.id);
+  gameState.rushMode?.setPlayerEntity(playerEntity.id);
+  gameState.tutorialMode?.setPlayerEntity(playerEntity.id);
 
   // Set camera to player position
   renderSystem.setCameraPosition(0, 0);
 
   // Start the appropriate mode
-  if (mode.type === 'SURVIVAL') {
-    gameState.survivalMode?.start();
-  } else if (mode.type === 'QUEST') {
-    gameState.questMode?.startQuest(mode.questId);
+  switch (mode.type) {
+    case 'SURVIVAL':
+      gameState.survivalMode?.start();
+      break;
+    case 'QUEST':
+      gameState.questMode?.startQuest(mode.questId);
+      break;
+    case 'RUSH':
+      gameState.rushMode?.start();
+      break;
+    case 'TUTORIAL':
+      gameState.tutorialMode?.start();
+      gameState.tutorialUI?.show();
+      gameState.tutorialUI?.setStage(
+        0,
+        gameState.tutorialMode?.getStagePrompt(0) ?? '',
+        gameState.tutorialMode?.getStageName(0) ?? ''
+      );
+      break;
   }
 
   gameState.gameModeManager?.startGame(mode);
@@ -508,6 +744,10 @@ function startGame(mode: GameMode): void {
       // Render UI overlays
       if (gameState.perkSelectUI?.isShown()) {
         gameState.perkSelectUI?.render();
+      }
+      if (gameState.tutorialUI?.isShown()) {
+        gameState.tutorialUI?.update(1 / 60); // Approximate dt for UI
+        gameState.tutorialUI?.render();
       }
     },
     {
@@ -552,6 +792,7 @@ function resumeGame(): void {
 function restartGame(): void {
   gameState.pauseMenuUI?.hide();
   gameState.gameOverUI?.hide();
+  gameState.tutorialUI?.hide();
 
   // Get current mode
   const currentState = gameState.gameModeManager?.getState();
@@ -571,13 +812,17 @@ function returnToMainMenu(): void {
 
   gameState.pauseMenuUI?.hide();
   gameState.gameOverUI?.hide();
+  gameState.tutorialUI?.hide();
   gameState.gameModeManager?.returnToMenu();
 
   showMainMenu();
   startMenuLoop();
 }
 
-function handleGameOver(isVictory: boolean, stats: { score: number; kills: number; timeElapsed: number; level: number }): void {
+function handleGameOver(
+  isVictory: boolean,
+  stats: { score: number; kills: number; timeElapsed: number; level: number }
+): void {
   if (gameState.appState.type === 'PLAYING') {
     gameState.appState.gameLoop.stop();
   }
@@ -611,6 +856,7 @@ function cleanup(): void {
   gameState.questMenuUI?.destroy();
   gameState.pauseMenuUI?.destroy();
   gameState.gameOverUI?.destroy();
+  gameState.tutorialUI?.destroy();
   systemManager.clear();
   entityManager.clear();
 }
