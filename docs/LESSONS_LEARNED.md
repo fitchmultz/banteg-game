@@ -12,8 +12,10 @@ The decompiled source consisted of two files totaling ~3.5MB:
 
 | File | Size | Contents |
 |------|------|----------|
-| `crimsonland.exe_decompiled.c` | ~2MB | Main game logic: player, creatures, weapons, perks, quests |
-| `grim.dll_decompiled.c` | ~1.5MB | Engine layer: Direct3D 8, DirectSound, DirectInput, file I/O |
+| `decompile/original/crimsonland.exe_decompiled.c` | ~2MB | Main game logic: player, creatures, weapons, perks, quests |
+| `decompile/original/grim.dll_decompiled.c` | ~1.5MB | Engine layer: Direct3D 8, DirectSound, DirectInput, file I/O |
+
+For easier reading, these files are also available as per-function splits in `decompile/split/`. See `decompile/README.md` for details on the split format and how to regenerate the splits.
 
 ### The Reverse Engineering Work
 
