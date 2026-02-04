@@ -1,8 +1,11 @@
 /**
  * Asset Manager
  *
- * Centralized loading and caching for images, audio, and JSON assets.
+ * Centralized loading and caching for images and JSON assets.
  * Handles async loading with progress tracking and error handling.
+ *
+ * Note: Audio assets are handled by AudioManager, not AssetManager.
+ * This separation allows AudioManager to use the Web Audio API directly.
  */
 
 export interface AssetManagerOptions {
@@ -12,7 +15,7 @@ export interface AssetManagerOptions {
   maxConcurrentLoads?: number;
 }
 
-export type AssetType = 'image' | 'audio' | 'json';
+export type AssetType = 'image' | 'json';
 
 export interface AssetLoadResult {
   name: string;
@@ -21,16 +24,11 @@ export interface AssetLoadResult {
   error?: Error;
 }
 
-type Asset = HTMLImageElement | AudioBuffer | unknown;
+type Asset = HTMLImageElement | unknown;
 
 // Type guard to check if asset is image-like
 function isImageLike(asset: unknown): asset is HTMLImageElement {
   return typeof asset === 'object' && asset !== null && 'src' in asset && 'naturalWidth' in asset;
-}
-
-// Type guard to check if asset is audio-like
-function isAudioLike(asset: unknown): asset is AudioBuffer {
-  return typeof asset === 'object' && asset !== null && 'duration' in asset;
 }
 
 export class AssetManager {
@@ -103,7 +101,7 @@ export class AssetManager {
 
     // Return cached asset if available
     const cached = this.assets.get(name);
-    if (cached !== undefined && !isImageLike(cached) && !isAudioLike(cached)) {
+    if (cached !== undefined && !isImageLike(cached)) {
       return cached;
     }
 
@@ -152,7 +150,7 @@ export class AssetManager {
    */
   getJSON<T = unknown>(name: string): T | undefined {
     const asset = this.assets.get(name);
-    if (asset !== undefined && !isImageLike(asset) && !isAudioLike(asset)) {
+    if (asset !== undefined && !isImageLike(asset)) {
       return asset as T;
     }
     return undefined;

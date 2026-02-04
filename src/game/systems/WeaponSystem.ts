@@ -4,6 +4,15 @@
  * Handles weapon firing mechanics, ammo tracking, reloading, and recoil.
  * Supports two-slot weapon switching.
  * Priority: 30
+ *
+ * Responsibilities:
+ * - Process weapon firing input
+ * - Handle reload timing and ammo management
+ * - Play appropriate SFX for fire and reload events
+ *
+ * Non-goals:
+ * - Does NOT handle projectile collision (CollisionSystem)
+ * - Does NOT handle damage application (HealthSystem)
  */
 
 import { System, type UpdateContext } from '../../core/ecs/System';
@@ -12,6 +21,7 @@ import type { EntityId } from '../../types';
 import type { AudioManager } from '../../engine';
 import { getWeaponData, type WeaponData } from '../data';
 import { ProjectileFactory } from '../entities';
+import { getWeaponFireSample, getWeaponReloadSample } from '../audio';
 
 // Track cooldowns and reload timers per entity
 interface WeaponState {
@@ -19,6 +29,7 @@ interface WeaponState {
   reloadTimer: number;
   spreadHeat: number;
   lastWeaponId: number; // Track weapon changes for state reset
+  wasReloading: boolean; // Track reload state transition for SFX
 }
 
 const weaponStates = new Map<EntityId, WeaponState>();
@@ -28,15 +39,17 @@ export class WeaponSystem extends System {
   readonly priority = 30;
 
   private entityManager: EntityManager;
+  private audio: AudioManager;
 
   // Spread decay per second
   private readonly spreadDecay = 0.5;
   // Maximum spread heat
   private readonly maxSpreadHeat = 2.0;
 
-  constructor(entityManager: EntityManager, _audio: AudioManager) {
+  constructor(entityManager: EntityManager, audio: AudioManager) {
     super();
     this.entityManager = entityManager;
+    this.audio = audio;
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
@@ -53,7 +66,7 @@ export class WeaponSystem extends System {
       // Get or create weapon state for this entity
       let state = weaponStates.get(entity.id);
       if (!state) {
-        state = { shotCooldown: 0, reloadTimer: 0, spreadHeat: 0, lastWeaponId: -1 };
+        state = { shotCooldown: 0, reloadTimer: 0, spreadHeat: 0, lastWeaponId: -1, wasReloading: false };
         weaponStates.set(entity.id, state);
       }
 
@@ -65,6 +78,7 @@ export class WeaponSystem extends System {
         state.reloadTimer = 0;
         state.spreadHeat = 0;
         state.lastWeaponId = player.currentWeapon.weaponId;
+        state.wasReloading = false;
       }
 
       // Handle swap weapon request
@@ -87,19 +101,31 @@ export class WeaponSystem extends System {
           player.currentWeapon.clipSize += reloadAmount;
           player.currentWeapon.ammo -= reloadAmount;
         }
+        state.wasReloading = true;
         continue; // Can't fire while reloading
+      }
+
+      // Detect reload end for SFX (transition from reloading to not reloading)
+      if (state.wasReloading && state.reloadTimer <= 0) {
+        state.wasReloading = false;
       }
 
       // Handle reload request
       if (player.reloadRequested && player.currentWeapon.clipSize < weaponData.clipSize && player.currentWeapon.ammo > 0) {
         state.reloadTimer = weaponData.reloadTime;
         player.reloadRequested = false;
+        // Play reload sound
+        this.audio.playSample(getWeaponReloadSample(player.currentWeapon.weaponId));
+        state.wasReloading = true;
         continue;
       }
 
       // Auto-reload when empty
       if (player.currentWeapon.clipSize <= 0 && player.currentWeapon.ammo > 0 && state.reloadTimer <= 0) {
         state.reloadTimer = weaponData.reloadTime;
+        // Play reload sound on auto-reload
+        this.audio.playSample(getWeaponReloadSample(player.currentWeapon.weaponId));
+        state.wasReloading = true;
         continue;
       }
 
@@ -189,8 +215,8 @@ export class WeaponSystem extends System {
       );
     }
 
-    // Play sound effect (placeholder)
-    // this.audio.playSample(weaponData.shotSound);
+    // Play fire sound
+    this.audio.playSample(getWeaponFireSample(weaponSlot.weaponId));
   }
 
   destroy(): void {

@@ -21,6 +21,7 @@ export { QuestSpawnSystem } from './QuestSpawnSystem';
 export { RushSpawnSystem } from './RushSpawnSystem';
 export { GameModeSystem } from './GameModeSystem';
 export { WeaponPickupSystem } from './WeaponPickupSystem';
+export { GameAudioSystem } from './GameAudioSystem';
 
 // System priorities (lower = earlier)
 export const SYSTEM_PRIORITIES = {
@@ -31,6 +32,7 @@ export const SYSTEM_PRIORITIES = {
   AiSystem: 40,
   ProjectileSystem: 50,
   CollisionSystem: 60,
+  GameAudioSystem: 65,
   HealthSystem: 70,
   SpawnSystem: 80,
   QuestSpawnSystem: 85,

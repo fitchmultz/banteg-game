@@ -177,15 +177,22 @@ describe('AudioManager', () => {
       expect(global.fetch).toHaveBeenCalledWith('test.mp3');
     });
 
-    it('should handle sample load errors', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('should throw on network errors when loading samples', async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      await audio.loadSample('test', 'test.mp3');
+      await expect(audio.loadSample('test', 'test.mp3')).rejects.toThrow('Network error');
+    });
 
-      expect(consoleSpy).toHaveBeenCalledWith('Failed to load sample: test', expect.any(Error));
+    it('should throw on HTTP error responses when loading samples', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      } as unknown as Response);
 
-      consoleSpy.mockRestore();
+      await expect(audio.loadSample('test', 'test.mp3')).rejects.toThrow(
+        'Failed to load sample "test": HTTP 404 Not Found (test.mp3)'
+      );
     });
 
     it('should initialize before loading if needed', async () => {
@@ -278,6 +285,18 @@ describe('AudioManager', () => {
       } as unknown as Response);
 
       await audio.loadTune('bgm', 'music.mp3');
+    });
+
+    it('should throw on HTTP error responses when loading tunes', async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+      } as unknown as Response);
+
+      await expect(audio.loadTune('bgm', 'music.mp3')).rejects.toThrow(
+        'Failed to load tune "bgm": HTTP 500 Internal Server Error (music.mp3)'
+      );
     });
 
     it('should load a tune', async () => {

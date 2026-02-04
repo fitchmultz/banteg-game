@@ -26,6 +26,7 @@ import {
   WeaponPickupSystem,
   RushSpawnSystem,
   GameModeSystem,
+  GameAudioSystem,
 } from './game/systems';
 import {
   GameModeManager,
@@ -38,6 +39,7 @@ import { PlayerFactory, BonusFactory } from './game/entities';
 import { CreatureFactory } from './game/entities';
 import { ProgressionManager } from './game/progression';
 import { getUnlockedWeapons } from './game/data';
+import { loadGameAudio, TUNES, getDeathSample } from './game/audio';
 import {
   PerkSelectUI,
   QuestMenuUI,
@@ -80,6 +82,8 @@ interface GlobalGameState {
   // Spawn systems (single source of truth)
   spawnSystem: SpawnSystem | null;
   rushSpawnSystem: RushSpawnSystem | null;
+  // Audio loaded flag
+  audioLoaded: boolean;
 }
 
 const gameState: GlobalGameState = {
@@ -102,6 +106,7 @@ const gameState: GlobalGameState = {
   renderSystem: null,
   spawnSystem: null,
   rushSpawnSystem: null,
+  audioLoaded: false,
 };
 
 // Core engine instances
@@ -139,11 +144,18 @@ async function init(): Promise<void> {
     musicVolume: 0.5,
   });
 
-  // Initialize audio on first click
+  // Initialize audio and load assets on first user gesture
   renderer.getCanvas().addEventListener(
     'click',
-    () => {
-      audio.initialize().catch(console.error);
+    async () => {
+      try {
+        await audio.initialize();
+        const result = await loadGameAudio(audio);
+        gameState.audioLoaded = result.success;
+      } catch (error) {
+        console.error('Failed to initialize audio:', error);
+        gameState.audioLoaded = false;
+      }
     },
     { once: true }
   );
@@ -507,6 +519,7 @@ function startGame(mode: GameMode): void {
   const aiSystem = new AiSystem(entityManager);
   const projectileSystem = new ProjectileSystem(entityManager);
   const collisionSystem = new CollisionSystem(entityManager);
+  const gameAudioSystem = new GameAudioSystem(entityManager, audio);
 
   // Determine which mode we're starting
   const isSurvival = mode.type === 'SURVIVAL';
@@ -528,10 +541,18 @@ function startGame(mode: GameMode): void {
 
   const healthSystem = new HealthSystem(entityManager, {
     onPlayerDeath: () => {
+      // Play player death sound
+      if (gameState.audioLoaded) {
+        audio.playSample(getDeathSample({ isPlayer: true }));
+      }
       gameState.progressionManager?.recordDeath();
       gameState.gameModeManager?.gameOver();
     },
     onCreatureDeath: (creatureTypeId, position) => {
+      // Play enemy death sound
+      if (gameState.audioLoaded) {
+        audio.playSample(getDeathSample({ isPlayer: false, creatureTypeId }));
+      }
       // Screen shake on enemy death
       if (position && gameState.renderSystem) {
         const shakeIntensity = 2 + Math.random() * 3;
@@ -680,6 +701,7 @@ function startGame(mode: GameMode): void {
   systemManager.addSystem(aiSystem);
   systemManager.addSystem(projectileSystem);
   systemManager.addSystem(collisionSystem);
+  systemManager.addSystem(gameAudioSystem);
   systemManager.addSystem(healthSystem);
 
   // Add spawn systems only for modes that need them
@@ -759,8 +781,10 @@ function startGame(mode: GameMode): void {
   gameState.appState = { type: 'PLAYING', gameLoop };
   gameLoop.start();
 
-  // Start game music
-  // audio.playTune('game', true);
+  // Start game music if audio is loaded
+  if (gameState.audioLoaded) {
+    audio.playTune(TUNES.GAME, true);
+  }
 }
 
 function pauseGame(): void {
@@ -768,6 +792,11 @@ function pauseGame(): void {
 
   const { gameLoop } = gameState.appState;
   gameLoop.stop();
+
+  // Pause music
+  if (gameState.audioLoaded) {
+    audio.stopTune(TUNES.GAME);
+  }
 
   const stats = gameState.gameModeManager?.getStats() ?? {
     score: 0,
@@ -787,6 +816,11 @@ function resumeGame(): void {
   gameState.pauseMenuUI?.hide();
   gameState.appState = { type: 'PLAYING', gameLoop };
   gameLoop.start();
+
+  // Resume music
+  if (gameState.audioLoaded) {
+    audio.playTune(TUNES.GAME, true);
+  }
 }
 
 function restartGame(): void {
@@ -810,6 +844,11 @@ function returnToMainMenu(): void {
     gameState.appState.gameLoop.destroy();
   }
 
+  // Stop music
+  if (gameState.audioLoaded) {
+    audio.stopTune(TUNES.GAME);
+  }
+
   gameState.pauseMenuUI?.hide();
   gameState.gameOverUI?.hide();
   gameState.tutorialUI?.hide();
@@ -825,6 +864,11 @@ function handleGameOver(
 ): void {
   if (gameState.appState.type === 'PLAYING') {
     gameState.appState.gameLoop.stop();
+  }
+
+  // Stop music
+  if (gameState.audioLoaded) {
+    audio.stopTune(TUNES.GAME);
   }
 
   // Get best score for comparison

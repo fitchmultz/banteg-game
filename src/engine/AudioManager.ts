@@ -56,15 +56,15 @@ export class AudioManager {
       throw new Error('Audio context not available');
     }
 
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-
-      this.samples.set(name, { name, buffer: audioBuffer });
-    } catch (error) {
-      console.error(`Failed to load sample: ${name}`, error);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to load sample "${name}": HTTP ${response.status} ${response.statusText} (${url})`);
     }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+
+    this.samples.set(name, { name, buffer: audioBuffer });
   }
 
   playSample(name: string, volume = 1.0, pan = 0): void {
@@ -119,26 +119,26 @@ export class AudioManager {
       throw new Error('Audio context not available');
     }
 
-    try {
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-
-      const gainNode = this.ctx.createGain();
-      gainNode.gain.value = this.musicVolume;
-      gainNode.connect(this.ctx.destination);
-
-      this.tracks.set(name, {
-        name,
-        source: null,
-        gainNode,
-        loop: false,
-      });
-
-      this.samples.set(name, { name, buffer: audioBuffer });
-    } catch (error) {
-      console.error(`Failed to load tune: ${name}`, error);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to load tune "${name}": HTTP ${response.status} ${response.statusText} (${url})`);
     }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+
+    const gainNode = this.ctx.createGain();
+    gainNode.gain.value = this.musicVolume;
+    gainNode.connect(this.ctx.destination);
+
+    this.tracks.set(name, {
+      name,
+      source: null,
+      gainNode,
+      loop: false,
+    });
+
+    this.samples.set(name, { name, buffer: audioBuffer });
   }
 
   playTune(name: string, loop = true): void {
