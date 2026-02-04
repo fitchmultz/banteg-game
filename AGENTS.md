@@ -43,4 +43,4 @@ Agent can determine everything else.
 - 20+ weapons, 8 enemy types, 30+ perks
 - Survival and Quest game modes
 - Mobile touch controls
-- Automated GitHub Pages deployment
+- Local GitHub Pages deployment (no CI)

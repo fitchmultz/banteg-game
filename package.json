@@ -7,19 +7,19 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "bash scripts/test.sh",
     "test:watch": "vitest",
     "lint": "biome lint --write .",
     "lint:check": "biome lint .",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "type-check": "tsc --noEmit",
-    "ci": "biome ci . && tsc --noEmit && vitest run && vite build"
+    "ci": "biome ci . && tsc --noEmit && bash scripts/test.sh && vite build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "jsdom": "^26.0.0",
-    "typescript": "^5.7.3",
+    "typescript": "5.7.3",
     "vite": "^6.0.7",
     "vitest": "^2.1.8"
   },

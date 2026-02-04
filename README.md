@@ -124,13 +124,22 @@ The decompiled C source reveals the following key systems:
 
 ## Deployment
 
-The project is configured for automatic deployment to GitHub Pages via GitHub Actions. 
-See `.github/workflows/deploy.yml` for the workflow configuration.
+The project is deployed to GitHub Pages using local deployment (no GitHub Actions).
 
-To deploy manually:
-1. Push to the `main` branch
-2. GitHub Actions will build and deploy automatically
-3. Ensure GitHub Pages is enabled in repository settings
+### Quick Deploy
+
+```bash
+make deploy
+```
+
+This builds the project and deploys to GitHub Pages using the `gh-pages` CLI.
+
+### Prerequisites
+
+- Node.js 20+ and pnpm
+- GitHub CLI authenticated with repo write access
+
+For detailed deployment instructions, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Mobile Support
 
