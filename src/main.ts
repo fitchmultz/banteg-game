@@ -706,6 +706,7 @@ function startGame(mode: GameMode): void {
   });
 
   const bonusSystem = new BonusSystem(entityManager);
+  const weaponPickupSystem = new WeaponPickupSystem(entityManager);
   const effectSystem = new EffectSystem(entityManager);
   const lifetimeSystem = new LifetimeSystem(entityManager);
   const renderSystem = new RenderSystem(entityManager, renderer, input);
@@ -728,6 +729,13 @@ function startGame(mode: GameMode): void {
     },
   });
   gameState.perkSystem = perkSystem;
+
+  // Wire up perk system to other systems that need it
+  weaponSystem.setPerkSystem(perkSystem);
+  collisionSystem.setPerkSystem(perkSystem);
+  healthSystem.setPerkSystem(perkSystem);
+  bonusSystem.setPerkSystem(perkSystem);
+  weaponPickupSystem.setPerkSystem(perkSystem);
 
   // Create game mode system to update modes every tick
   if (!gameState.gameModeManager) {
@@ -761,7 +769,7 @@ function startGame(mode: GameMode): void {
   }
 
   systemManager.addSystem(bonusSystem);
-  systemManager.addSystem(new WeaponPickupSystem(entityManager));
+  systemManager.addSystem(weaponPickupSystem);
   systemManager.addSystem(effectSystem);
   systemManager.addSystem(perkSystem);
   systemManager.addSystem(lifetimeSystem);

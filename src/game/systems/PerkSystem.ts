@@ -3,12 +3,13 @@
  *
  * Manages perk application, stat calculations, and special perk effects.
  * Integrates with the ECS to apply perks to player entities.
+ * Uses deterministic gameTime-based timing for all timed effects.
  */
 
 import type { EntityManager, UpdateContext } from '../../core/ecs';
 import type { EntityId } from '../../types';
-import { PerkId } from '../../types';
-import type { Player } from '../components';
+import { PerkId, WeaponId } from '../../types';
+import type { Player, WeaponSlot } from '../components';
 import {
   getPerkData,
   isPerkCompatible,
@@ -24,6 +25,7 @@ import {
   calculateClipSizeBonus,
   type PerkData,
 } from '../data/perks';
+import { getWeaponData } from '../data';
 
 export interface PerkSystemCallbacks {
   onPerkApplied?: (entityId: EntityId, perkId: PerkId, newRank: number) => void;
@@ -34,8 +36,13 @@ export interface PerkSystemCallbacks {
 
 export interface ActivePerkEffect {
   perkId: PerkId;
-  startedAt: number;
+  endsAtGameTime: number; // Deterministic: uses context.gameTime
   duration: number;
+}
+
+export interface JinxState {
+  nextTriggerTime: number;
+  interval: number;
 }
 
 export class PerkSystem {
@@ -46,11 +53,14 @@ export class PerkSystem {
   private entityManager: EntityManager;
   private callbacks: PerkSystemCallbacks;
 
-  // Track active timed effects per entity
+  // Track active timed effects per entity (deterministic gameTime-based)
   private activeEffects: Map<EntityId, ActivePerkEffect[]> = new Map();
 
   // Track death clock timer per entity
   private deathClockTimers: Map<EntityId, number> = new Map();
+
+  // Track jinxed state per entity
+  private jinxStates: Map<EntityId, JinxState> = new Map();
 
   constructor(entityManager: EntityManager, callbacks: PerkSystemCallbacks = {}) {
     this.entityManager = entityManager;
@@ -61,7 +71,7 @@ export class PerkSystem {
    * Apply a perk to an entity
    * Returns true if the perk was successfully applied
    */
-  applyPerk(entityId: EntityId, perkId: PerkId): boolean {
+  applyPerk(entityId: EntityId, perkId: PerkId, gameTime = 0): boolean {
     const player = this.entityManager.getComponent<'player'>(entityId, 'player');
     if (!player) return false;
 
@@ -74,7 +84,7 @@ export class PerkSystem {
     }
 
     // Handle special perks with immediate effects
-    const specialHandled = this.handleSpecialPerk(entityId, player, perk);
+    const specialHandled = this.handleSpecialPerk(entityId, player, perk, gameTime);
     if (!specialHandled) {
       return false;
     }
@@ -94,7 +104,12 @@ export class PerkSystem {
   /**
    * Handle special perks with unique mechanics
    */
-  private handleSpecialPerk(entityId: EntityId, player: Player, perk: PerkData): boolean {
+  private handleSpecialPerk(
+    entityId: EntityId,
+    player: Player,
+    perk: PerkData,
+    gameTime: number
+  ): boolean {
     for (const effect of perk.effects) {
       switch (effect.type) {
         case 'special_instant_xp': {
@@ -152,15 +167,33 @@ export class PerkSystem {
           break;
         }
 
+        case 'special_random_weapon': {
+          // Grant a random weapon immediately
+          this.grantRandomWeapon(player);
+          break;
+        }
+
+        case 'special_lifeline_50_50': {
+          // Kill 50% of eligible creatures
+          this.applyLifeline50_50();
+          break;
+        }
+
+        case 'special_jinxed': {
+          // Initialize jinx state
+          this.jinxStates.set(entityId, {
+            nextTriggerTime: gameTime + 2 + Math.random() * 2,
+            interval: 2 + Math.random() * 2,
+          });
+          break;
+        }
+
         case 'special_fire_bullets':
         case 'special_infinite_ammo_window':
         case 'special_ammo_refill_on_pickup':
-        case 'special_random_weapon':
         case 'special_shield_on_hit':
         case 'special_regression_bullets':
-        case 'special_time_slow_on_hit':
-        case 'special_lifeline_50_50':
-        case 'special_jinxed': {
+        case 'special_time_slow_on_hit': {
           // These are handled by other systems checking perk counts
           break;
         }
@@ -171,6 +204,113 @@ export class PerkSystem {
       }
     }
     return true;
+  }
+
+  /**
+   * Grant a random weapon to the player (helper for special_random_weapon)
+   */
+  private grantRandomWeapon(player: Player): void {
+    // Get all available weapon IDs
+    const allWeaponIds = Object.values(WeaponId).filter((id): id is WeaponId => typeof id === 'number');
+
+    // Filter out current weapon and pistol if possible
+    const availableWeapons = allWeaponIds.filter((id) => {
+      if (id === player.currentWeapon.weaponId) return false;
+      // Keep pistol as fallback option
+      return true;
+    });
+
+    // If no alternatives, allow pistol
+    const candidateWeapons = availableWeapons.length > 0 ? availableWeapons : allWeaponIds;
+
+    // Pick random weapon
+    const randomIndex = Math.floor(Math.random() * candidateWeapons.length);
+    const selectedWeaponId = candidateWeapons[randomIndex];
+
+    if (selectedWeaponId === undefined) return;
+
+    // Apply the weapon pickup using shared helper logic
+    const weaponData = getWeaponData(selectedWeaponId);
+    const pickupAmmo = Math.max(weaponData.clipSize * 3, 60);
+
+    this.applyWeaponPickupToPlayer(player, selectedWeaponId, pickupAmmo);
+  }
+
+  /**
+   * Apply a weapon pickup to a player (shared helper for consistency)
+   * Mirrors the logic in WeaponPickupSystem
+   */
+  applyWeaponPickupToPlayer(player: Player, pickupWeaponId: WeaponId, pickupAmmo: number): void {
+    const weaponData = getWeaponData(pickupWeaponId);
+
+    // Check if player already has this weapon equipped
+    if (player.currentWeapon.weaponId === pickupWeaponId) {
+      // Add ammo to current weapon
+      player.currentWeapon.ammo += pickupAmmo;
+      return;
+    }
+
+    if (player.alternateWeapon.weaponId === pickupWeaponId) {
+      // Add ammo to alternate weapon and swap to it
+      player.alternateWeapon.ammo += pickupAmmo;
+      this.swapWeaponSlots(player);
+      return;
+    }
+
+    // Check if current weapon is the default pistol (and we have an alternate)
+    // If so, replace the alternate with the new weapon
+    if (player.currentWeapon.weaponId === WeaponId.PISTOL && player.alternateWeapon.weaponId !== WeaponId.PISTOL) {
+      // Replace alternate with new weapon, keep pistol as fallback
+      player.alternateWeapon = {
+        weaponId: pickupWeaponId,
+        clipSize: Math.min(weaponData.clipSize, pickupAmmo),
+        ammo: Math.max(0, pickupAmmo - weaponData.clipSize),
+      };
+      // Swap to the new weapon
+      this.swapWeaponSlots(player);
+      return;
+    }
+
+    // Default: Replace alternate weapon with new weapon, swap to it
+    player.alternateWeapon = {
+      weaponId: pickupWeaponId,
+      clipSize: Math.min(weaponData.clipSize, pickupAmmo),
+      ammo: Math.max(0, pickupAmmo - weaponData.clipSize),
+    };
+
+    // Swap to the new weapon
+    this.swapWeaponSlots(player);
+  }
+
+  /**
+   * Swap current and alternate weapon slots
+   */
+  private swapWeaponSlots(player: Player): void {
+    const temp: WeaponSlot = { ...player.currentWeapon };
+    player.currentWeapon = { ...player.alternateWeapon };
+    player.alternateWeapon = temp;
+  }
+
+  /**
+   * Apply Lifeline 50/50: Kill 50% of eligible creatures
+   */
+  private applyLifeline50_50(): void {
+    const creatures = this.entityManager.query(['creature']);
+    const eligibleCreatures = creatures.filter((entity) => {
+      const creature = entity.getComponent<'creature'>('creature');
+      if (!creature) return false;
+      // Skip invulnerable creatures
+      // CreatureFlags.INVULNERABLE check would go here if we had flags access
+      return creature.health > 0;
+    });
+
+    // Kill every other creature (stable order)
+    for (let i = 0; i < eligibleCreatures.length; i += 2) {
+      const creature = eligibleCreatures[i]?.getComponent<'creature'>('creature');
+      if (creature) {
+        creature.health = 0;
+      }
+    }
   }
 
   /**
@@ -198,10 +338,11 @@ export class PerkSystem {
   }
 
   /**
-   * Update perk effects (regeneration, death clock, etc.)
+   * Update perk effects (regeneration, death clock, jinxed, etc.)
    */
   update(_entityManager: EntityManager, context: UpdateContext): void {
     const dt = context.dt;
+    const gameTime = context.gameTime;
     const entities = this.entityManager.getEntitiesWithComponent('player');
 
     for (const entityId of entities) {
@@ -229,21 +370,73 @@ export class PerkSystem {
         }
       }
 
-      // Update active effects
-      this.updateActiveEffects(entityId, dt);
+      // Handle jinxed perk
+      this.updateJinxed(entityId, player, gameTime, dt);
+
+      // Update active effects (clean up expired)
+      this.updateActiveEffects(entityId, gameTime);
     }
   }
 
   /**
-   * Update and clean up timed effects
+   * Update jinxed perk effects
    */
-  private updateActiveEffects(entityId: EntityId, _dt: number): void {
+  private updateJinxed(entityId: EntityId, player: Player, gameTime: number, dt: number): void {
+    if (!this.hasPerk(entityId, PerkId.JINXED)) {
+      // Clean up jinx state if perk was removed
+      this.jinxStates.delete(entityId);
+      return;
+    }
+
+    let jinxState = this.jinxStates.get(entityId);
+    if (!jinxState) {
+      // Initialize jinx state
+      jinxState = {
+        nextTriggerTime: gameTime + 2 + Math.random() * 2,
+        interval: 2 + Math.random() * 2,
+      };
+      this.jinxStates.set(entityId, jinxState);
+    }
+
+    // Check if it's time for a jinx effect
+    if (gameTime >= jinxState.nextTriggerTime) {
+      this.triggerJinxEffect(entityId, player, dt);
+
+      // Schedule next trigger
+      jinxState.interval = 2 + Math.random() * 2;
+      jinxState.nextTriggerTime = gameTime + jinxState.interval;
+    }
+  }
+
+  /**
+   * Trigger a jinx effect (random helpful or harmful outcome)
+   */
+  private triggerJinxEffect(_entityId: EntityId, player: Player, _dt: number): void {
+    // 10% chance to damage player (downside)
+    if (Math.random() < 0.1) {
+      player.health = Math.max(0, player.health - 5);
+    }
+
+    // Kill a random creature (upside)
+    const creatures = this.entityManager.query(['creature']);
+    if (creatures.length > 0) {
+      const randomIndex = Math.floor(Math.random() * creatures.length);
+      const targetCreature = creatures[randomIndex]?.getComponent<'creature'>('creature');
+      if (targetCreature) {
+        targetCreature.health = 0;
+      }
+    }
+  }
+
+  /**
+   * Update and clean up timed effects (deterministic gameTime-based)
+   */
+  private updateActiveEffects(entityId: EntityId, gameTime: number): void {
     const effects = this.activeEffects.get(entityId);
     if (!effects) return;
 
-    const now = performance.now();
     const remainingEffects = effects.filter((effect) => {
-      return now - effect.startedAt < effect.duration * 1000;
+      return gameTime < effect.endsAtGameTime;
     });
 
     if (remainingEffects.length === 0) {
@@ -332,13 +525,14 @@ export class PerkSystem {
 
   /**
    * Calculate reload speed multiplier for an entity
+   * Returns time multiplier (higher = faster reload)
    */
   getReloadSpeedMultiplier(entityId: EntityId): number {
     const player = this.entityManager.getComponent<'player'>(entityId, 'player');
     if (!player) return 1;
 
     const multiplier = calculateReloadSpeedMultiplier(player.perkCounts);
-    return 1 / multiplier; // Convert to speed multiplier
+    return multiplier; // This is already a speed multiplier (>1 = faster)
   }
 
   /**
@@ -448,41 +642,108 @@ export class PerkSystem {
   }
 
   /**
-   * Check if entity has infinite ammo window active
-   * (This would need to be called by WeaponSystem after reload)
+   * Start infinite ammo window (deterministic gameTime-based)
+   * Called by WeaponSystem when reload completes
    */
-  startInfiniteAmmoWindow(entityId: EntityId): void {
+  startInfiniteAmmoWindow(entityId: EntityId, gameTime: number, durationSeconds = 3): void {
     if (!this.hasPerk(entityId, PerkId.AMMUNITION_WITHIN)) {
       return;
     }
 
     const effects = this.activeEffects.get(entityId) ?? [];
-    effects.push({
+
+    // Remove existing infinite ammo effect to reset timer
+    const filteredEffects = effects.filter((e) => e.perkId !== PerkId.AMMUNITION_WITHIN);
+
+    filteredEffects.push({
       perkId: PerkId.AMMUNITION_WITHIN,
-      startedAt: performance.now(),
-      duration: 3, // 3 seconds
+      endsAtGameTime: gameTime + durationSeconds,
+      duration: durationSeconds,
     });
-    this.activeEffects.set(entityId, effects);
+
+    this.activeEffects.set(entityId, filteredEffects);
   }
 
   /**
-   * Check if infinite ammo window is active
+   * Check if infinite ammo window is active (deterministic gameTime-based)
    */
-  isInfiniteAmmoActive(entityId: EntityId): boolean {
-    return this.isEffectActive(entityId, PerkId.AMMUNITION_WITHIN);
+  isInfiniteAmmoActive(entityId: EntityId, gameTime: number): boolean {
+    return this.isEffectActive(entityId, PerkId.AMMUNITION_WITHIN, gameTime);
   }
 
   /**
-   * Check if a timed effect is active
+   * Check if a timed effect is active (deterministic gameTime-based)
    */
-  private isEffectActive(entityId: EntityId, perkId: PerkId): boolean {
+  private isEffectActive(entityId: EntityId, perkId: PerkId, gameTime: number): boolean {
     const effects = this.activeEffects.get(entityId);
     if (!effects) return false;
 
-    const now = performance.now();
     return effects.some((effect) => {
-      return effect.perkId === perkId && now - effect.startedAt < effect.duration * 1000;
+      return effect.perkId === perkId && gameTime < effect.endsAtGameTime;
     });
+  }
+
+  /**
+   * Check if entity has regression bullets perk
+   */
+  hasRegressionBullets(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.REGRESSION_BULLETS);
+  }
+
+  /**
+   * Check if entity has shield on hit perk
+   */
+  hasShieldOnHit(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.BREATHING_ROOM);
+  }
+
+  /**
+   * Check if entity has time slow on hit perk
+   */
+  hasTimeSlowOnHit(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.REFLEX_BOOSTED);
+  }
+
+  /**
+   * Check if entity has ammo refill on pickup perk
+   */
+  hasAmmoRefillOnPickup(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.AMMO_MANIAC);
+  }
+
+  /**
+   * Check if entity has bonus magnet perk
+   */
+  hasBonusMagnet(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.BONUS_MAGNET);
+  }
+
+  /**
+   * Refill both weapon clips (for Ammo Maniac perk)
+   */
+  refillWeaponClips(player: Player): void {
+    const currentWeaponData = getWeaponData(player.currentWeapon.weaponId);
+    const alternateWeaponData = getWeaponData(player.alternateWeapon.weaponId);
+
+    const clipBonus = calculateClipSizeBonus(player.perkCounts);
+
+    // Refill current weapon clip
+    const currentMaxClip = currentWeaponData.clipSize + clipBonus;
+    const currentReloadAmount = Math.min(
+      currentMaxClip - player.currentWeapon.clipSize,
+      player.currentWeapon.ammo
+    );
+    player.currentWeapon.clipSize += currentReloadAmount;
+    player.currentWeapon.ammo -= currentReloadAmount;
+
+    // Refill alternate weapon clip
+    const alternateMaxClip = alternateWeaponData.clipSize + clipBonus;
+    const alternateReloadAmount = Math.min(
+      alternateMaxClip - player.alternateWeapon.clipSize,
+      player.alternateWeapon.ammo
+    );
+    player.alternateWeapon.clipSize += alternateReloadAmount;
+    player.alternateWeapon.ammo -= alternateReloadAmount;
   }
 
   /**
@@ -495,6 +756,7 @@ export class PerkSystem {
     player.perkCounts.clear();
     this.activeEffects.delete(entityId);
     this.deathClockTimers.delete(entityId);
+    this.jinxStates.delete(entityId);
   }
 
   /**
@@ -503,5 +765,6 @@ export class PerkSystem {
   cleanupEntity(entityId: EntityId): void {
     this.activeEffects.delete(entityId);
     this.deathClockTimers.delete(entityId);
+    this.jinxStates.delete(entityId);
   }
 }

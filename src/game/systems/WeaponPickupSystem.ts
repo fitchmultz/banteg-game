@@ -3,27 +3,41 @@
  *
  * Handles weapon pickup collection and equipping.
  * Implements two-slot weapon inventory: current + alternate.
+ * Applies Ammo Maniac perk (refill clips on pickup).
  * Priority: 85 (runs before BonusSystem to process pickups)
  */
 
-import { System } from '../../core/ecs/System';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import { WeaponId } from '../../types';
 import { weaponCollectEvents } from './CollisionSystem';
 import { getWeaponData } from '../data';
+import type { Player } from '../components';
+import type { PerkSystem } from './PerkSystem';
 
 export class WeaponPickupSystem extends System {
   readonly name = 'WeaponPickupSystem';
   readonly priority = 85;
 
   private entityManager: EntityManager;
+  private perkSystem: PerkSystem | null = null;
 
-  constructor(entityManager: EntityManager) {
+  constructor(entityManager: EntityManager, perkSystem?: PerkSystem) {
     super();
     this.entityManager = entityManager;
+    if (perkSystem) {
+      this.perkSystem = perkSystem;
+    }
   }
 
-  update(): void {
+  /**
+   * Set the perk system for accessing pickup-related perks
+   */
+  setPerkSystem(perkSystem: PerkSystem): void {
+    this.perkSystem = perkSystem;
+  }
+
+  update(_entityManager: EntityManager, _context: UpdateContext): void {
     // Process weapon collect events from CollisionSystem
     for (const event of weaponCollectEvents) {
       const playerEntity = this.entityManager.getEntity(event.playerId);
@@ -33,14 +47,20 @@ export class WeaponPickupSystem extends System {
       if (!player) continue;
 
       this.applyWeaponPickup(player, event.weaponId, event.ammo);
+
+      // Apply Ammo Maniac refill after pickup if perk is active
+      if (this.perkSystem?.hasAmmoRefillOnPickup(event.playerId)) {
+        this.perkSystem.refillWeaponClips(player);
+      }
     }
   }
 
-  private applyWeaponPickup(
-    player: {
-      currentWeapon: { weaponId: number; clipSize: number; ammo: number };
-      alternateWeapon: { weaponId: number; clipSize: number; ammo: number };
-    },
+  /**
+   * Apply a weapon pickup to a player (can be called externally)
+   * Used by WeaponPickupSystem and PerkSystem for random weapon grants
+   */
+  applyWeaponPickup(
+    player: Player,
     pickupWeaponId: number,
     pickupAmmo: number
   ): void {

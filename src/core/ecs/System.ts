@@ -8,8 +8,11 @@ import type { EntityManager } from './EntityManager';
 
 export interface UpdateContext {
   dt: number;
+  unscaledDt: number;
   gameTime: number;
   frameNumber: number;
+  timeScale: number;
+  setTimeScale: (scale: number, durationSeconds: number) => void;
 }
 
 export abstract class System {

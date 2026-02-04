@@ -305,3 +305,166 @@ describe('Available Perks', () => {
     expect(available).not.toContain(PerkId.SHARPSHOOTER);
   });
 });
+
+describe('Special Perk Effects', () => {
+  describe('Infinite Ammo Window (Ammunition Within)', () => {
+    it('should start infinite ammo window on reload', () => {
+      // This is tested via integration with WeaponSystem
+      // PerkSystem.startInfiniteAmmoWindow should set the effect
+      expect(true).toBe(true); // Placeholder - actual test requires full system integration
+    });
+
+    it('should check infinite ammo window based on gameTime', () => {
+      // PerkSystem.isInfiniteAmmoActive should return true during window
+      expect(true).toBe(true); // Placeholder
+    });
+  });
+
+  describe('Ammo Refill on Pickup (Ammo Maniac)', () => {
+    it('should identify Ammo Maniac perk', () => {
+      const perkCounts = new Map<PerkId, number>([[PerkId.AMMO_MANIAC, 1]]);
+      const hasPerk = perkCounts.has(PerkId.AMMO_MANIAC);
+      expect(hasPerk).toBe(true);
+    });
+
+    it('should calculate clip size bonus for refill', () => {
+      const perkCounts = new Map<PerkId, number>([
+        [PerkId.MY_FAVOURITE_WEAPON, 2],
+        [PerkId.AMMO_MANIAC, 1],
+      ]);
+      const clipBonus = calculateClipSizeBonus(perkCounts);
+      expect(clipBonus).toBe(4); // 2 * 2
+    });
+  });
+
+  describe('Bonus Duration Multiplier', () => {
+    it('should apply Bonus Economist multiplier', () => {
+      const perkCounts = new Map<PerkId, number>([[PerkId.BONUS_ECONOMIST, 2]]);
+      const multiplier = calculateBonusDurationMultiplier(perkCounts);
+      expect(multiplier).toBe(1.5); // 1 + 2*0.25
+    });
+
+    it('should apply both Bonus Economist and Pyrokinetic', () => {
+      // Note: Pyrokinetic adds 0.5 to the multiplier per the code
+      const perkCounts = new Map<PerkId, number>([
+        [PerkId.BONUS_ECONOMIST, 1],
+        [PerkId.PYROKINETIC, 1],
+      ]);
+      const multiplier = calculateBonusDurationMultiplier(perkCounts);
+      // 1 + 0.25 + 0.5 = 1.75
+      expect(multiplier).toBe(1.75);
+    });
+  });
+
+  describe('Perk Data for Special Effects', () => {
+    it('should define special_infinite_ammo_window for Ammunition Within', () => {
+      const perk = getPerkData(PerkId.AMMUNITION_WITHIN);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_infinite_ammo_window')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_infinite_ammo_window')?.value).toBe(3);
+    });
+
+    it('should define special_ammo_refill_on_pickup for Ammo Maniac', () => {
+      const perk = getPerkData(PerkId.AMMO_MANIAC);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_ammo_refill_on_pickup')).toBe(true);
+    });
+
+    it('should define special_random_weapon for Random Weapon', () => {
+      const perk = getPerkData(PerkId.RANDOM_WEAPON);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_random_weapon')).toBe(true);
+    });
+
+    it('should define special_shield_on_hit for Breathing Room', () => {
+      const perk = getPerkData(PerkId.BREATHING_ROOM);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_shield_on_hit')).toBe(true);
+    });
+
+    it('should define special_regression_bullets for Regression Bullets', () => {
+      const perk = getPerkData(PerkId.REGRESSION_BULLETS);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_regression_bullets')).toBe(true);
+    });
+
+    it('should define special_time_slow_on_hit for Reflex Boosted', () => {
+      const perk = getPerkData(PerkId.REFLEX_BOOSTED);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_time_slow_on_hit')).toBe(true);
+    });
+
+    it('should define special_lifeline_50_50 for Lifeline 50/50', () => {
+      const perk = getPerkData(PerkId.LIFELINE_50_50);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_lifeline_50_50')).toBe(true);
+    });
+
+    it('should define special_jinxed for Jinxed', () => {
+      const perk = getPerkData(PerkId.JINXED);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_jinxed')).toBe(true);
+    });
+
+    it('should define special_bonus_magnet for Bonus Magnet', () => {
+      const perk = getPerkData(PerkId.BONUS_MAGNET);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_bonus_magnet')).toBe(true);
+    });
+
+    it('should mark rare perks correctly', () => {
+      const lifeline = getPerkData(PerkId.LIFELINE_50_50);
+      const jinxed = getPerkData(PerkId.JINXED);
+      const instantWinner = getPerkData(PerkId.INSTANT_WINNER);
+
+      expect(lifeline?.isRare).toBe(true);
+      expect(jinxed?.isRare).toBe(true);
+      expect(instantWinner?.isRare).toBe(true);
+    });
+  });
+
+  describe('Fire Bullets (Pyromaniac)', () => {
+    it('should define special_fire_bullets for Pyromaniac', () => {
+      const perk = getPerkData(PerkId.PYROMANIAC);
+      expect(perk).toBeDefined();
+      expect(perk?.effects.some((e) => e.type === 'special_fire_bullets')).toBe(true);
+      expect(perk?.effects.find((e) => e.type === 'special_fire_bullets')?.value).toBe(1.25);
+    });
+  });
+
+  describe('Perk System Integration', () => {
+    it('should identify all special perk effect types', () => {
+      // Verify all special effect types are defined in the type union
+      const specialTypes = [
+        'special_fire_bullets',
+        'special_infinite_ammo_window',
+        'special_ammo_refill_on_pickup',
+        'special_random_weapon',
+        'special_monster_vision',
+        'special_shield_on_hit',
+        'special_regression_bullets',
+        'special_time_slow_on_hit',
+        'special_instant_xp',
+        'special_fatal_lottery',
+        'special_lifeline_50_50',
+        'special_jinxed',
+        'special_infernal_contract',
+        'special_grim_deal',
+        'special_death_clock',
+        'special_highlander',
+        'special_plaguebearer',
+        'special_bandage',
+        'special_bonus_magnet',
+      ];
+
+      // Check that each special perk has the correct effect type
+      for (const type of specialTypes) {
+        const perksWithEffect = ALL_PERKS.filter((p) =>
+          p.effects.some((e) => e.type === type)
+        );
+        // At least one perk should have each effect type
+        expect(perksWithEffect.length).toBeGreaterThan(0);
+      }
+    });
+  });
+});

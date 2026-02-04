@@ -117,7 +117,7 @@ describe('InputSystem', () => {
 
       // Press W key
       input._setKeyDown('KeyW', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -133,7 +133,7 @@ describe('InputSystem', () => {
       // Press W and D keys
       input._setKeyDown('KeyW', true);
       input._setKeyDown('KeyD', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -152,7 +152,7 @@ describe('InputSystem', () => {
 
       // Press R key
       input._setKeyDown('KeyR', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -167,7 +167,7 @@ describe('InputSystem', () => {
 
       // Press Q key
       input._setKeyDown('KeyQ', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -184,7 +184,7 @@ describe('InputSystem', () => {
 
       // Press ArrowUp key (not W)
       input._setKeyDown('ArrowUp', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -199,7 +199,7 @@ describe('InputSystem', () => {
 
       // Press W key (should not move since we're using arrows)
       input._setKeyDown('KeyW', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -218,7 +218,7 @@ describe('InputSystem', () => {
       input._setCanvasSize(1024, 768);
       // Mouse at right edge
       input._setMousePos(1024, 384);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const transform = player.getComponent<'transform'>('transform');
       expect(transform).toBeDefined();
@@ -237,7 +237,7 @@ describe('InputSystem', () => {
       // Mouse at center-right, slightly below center to produce non-zero angle
       // Center is (400, 300), mouse at (600, 400)
       input._setMousePos(600, 400);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const transform = player.getComponent<'transform'>('transform');
       expect(transform).toBeDefined();
@@ -254,7 +254,7 @@ describe('InputSystem', () => {
       const player = PlayerFactory.create(entityManager, 0, 0, { playerIndex: 0, weaponId: 0 });
 
       input._setMouseDown(true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -268,7 +268,7 @@ describe('InputSystem', () => {
       const player = PlayerFactory.create(entityManager, 0, 0, { playerIndex: 0, weaponId: 0 });
 
       input._setMouseDown(true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       const playerComp = player.getComponent<'player'>('player');
       expect(playerComp).toBeDefined();
@@ -286,7 +286,7 @@ describe('InputSystem', () => {
 
       // First update with WASD
       input._setKeyDown('KeyW', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 0, frameNumber: 0 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
 
       let playerComp = player.getComponent<'player'>('player');
       if (playerComp) {
@@ -299,7 +299,7 @@ describe('InputSystem', () => {
 
       // Update with arrow keys
       input._setKeyDown('ArrowUp', true);
-      system.update(entityManager, { dt: 1 / 60, gameTime: 1 / 60, frameNumber: 2 });
+      system.update(entityManager, { dt: 1 / 60, unscaledDt: 1 / 60, gameTime: 1 / 60, frameNumber: 2, timeScale: 1, setTimeScale: () => {} });
 
       playerComp = player.getComponent<'player'>('player');
       if (playerComp) {

@@ -114,7 +114,7 @@ export class SurvivalMode {
     // Note: PerkSystem.update expects (entityManager, context), but we're calling it directly
     // This is a simplified approach - in full implementation, PerkSystem should be added to SystemManager
     if (this.perkSystem) {
-      this.perkSystem.update({} as EntityManager, { dt, gameTime: performance.now(), frameNumber: 0 });
+      this.perkSystem.update({} as EntityManager, { dt, unscaledDt: dt, gameTime: performance.now() / 1000, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
     }
 
     // Check for pending level ups and trigger perk selection

@@ -45,6 +45,7 @@ export interface PerkEffect {
     | 'special_death_clock'
     | 'special_highlander'
     | 'special_plaguebearer'
+    | 'special_bonus_magnet'
     | 'special_bandage';
   value: number;
 }
@@ -235,7 +236,7 @@ const UTILITY_PERKS: PerkData[] = [
     description: 'Auto-collect nearby bonuses',
     category: 'utility',
     maxRank: 1,
-    effects: [], // Placeholder - no stat effect
+    effects: [{ type: 'special_bonus_magnet', value: 1 }],
   },
   {
     id: PerkId.MONSTER_VISION,

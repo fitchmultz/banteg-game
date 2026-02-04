@@ -2,6 +2,7 @@
  * Health System
  *
  * Processes damage events, handles death, manages health regeneration.
+ * Applies perk effects on damage: shield on hit, time slow, regression bullets.
  * Priority: 70
  */
 
@@ -10,13 +11,16 @@ import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
 import { damageEvents } from './CollisionSystem';
 import { BonusFactory } from '../entities';
-import { getCreatureData } from '../data';
+import { getCreatureData, getWeaponData } from '../data';
 import { AiMode } from '../../types';
+import type { PerkSystem } from './PerkSystem';
 
 // Track entity health states
 interface HealthState {
   hitFlashTimer: number;
   isDead: boolean;
+  // Track time-slow cooldown to prevent spam
+  lastTimeSlowTrigger: number;
 }
 
 const healthStates = new Map<EntityId, HealthState>();
@@ -34,29 +38,37 @@ export class HealthSystem extends System {
 
   private entityManager: EntityManager;
   private callbacks: GameStateCallbacks;
+  private perkSystem: PerkSystem | null = null;
   private score = 0;
 
   // Hit flash duration
   private readonly hitFlashDuration = 0.2;
-  // Regeneration interval (seconds)
-  private readonly regenInterval = 1.0;
-  // Base regeneration amount per interval
-  private readonly baseRegenAmount = 1;
+  // Time slow cooldown (seconds)
+  private readonly timeSlowCooldown = 2.0;
 
-  private regenAccumulator = 0;
-
-  constructor(entityManager: EntityManager, callbacks: GameStateCallbacks = {}) {
+  constructor(entityManager: EntityManager, callbacks: GameStateCallbacks = {}, perkSystem?: PerkSystem) {
     super();
     this.entityManager = entityManager;
     this.callbacks = callbacks;
+    if (perkSystem) {
+      this.perkSystem = perkSystem;
+    }
+  }
+
+  /**
+   * Set the perk system for accessing perk effects
+   */
+  setPerkSystem(perkSystem: PerkSystem): void {
+    this.perkSystem = perkSystem;
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
     const dt = context.dt;
+    const gameTime = context.gameTime;
 
     // Process damage events from CollisionSystem
     for (const event of damageEvents) {
-      this.applyDamage(event.targetId, event.damage);
+      this.applyDamage(event, gameTime, context);
     }
 
     // Update all entities with health
@@ -80,20 +92,8 @@ export class HealthSystem extends System {
         this.callbacks.onPlayerDeath?.();
       }
 
-      // Handle regeneration
-      if (player.health > 0 && player.health < player.maxHealth) {
-        this.regenAccumulator += dt;
-        if (this.regenAccumulator >= this.regenInterval) {
-          this.regenAccumulator -= this.regenInterval;
-          // Calculate regeneration amount based on perks
-          let regenAmount = this.baseRegenAmount;
-          const regenPerkCount = player.perkCounts.get(11) ?? 0; // REGENERATION
-          const greaterRegenPerkCount = player.perkCounts.get(12) ?? 0; // GREATER_REGENERATION
-          regenAmount += regenPerkCount * 2 + greaterRegenPerkCount * 5;
-
-          player.health = Math.min(player.maxHealth, player.health + regenAmount);
-        }
-      }
+      // Note: Health regeneration is handled by PerkSystem.update()
+      // to avoid duplicate logic and ensure consistent perk-based regen
     }
 
     // Update creature health states
@@ -120,17 +120,37 @@ export class HealthSystem extends System {
     }
   }
 
-  private applyDamage(targetId: EntityId, damage: number): void {
-    const entity = this.entityManager.getEntity(targetId);
+  private applyDamage(
+    event: {
+      targetId: EntityId;
+      sourceId: EntityId;
+      damage: number;
+      isFireDamage: boolean;
+    },
+    gameTime: number,
+    context: UpdateContext
+  ): void {
+    const entity = this.entityManager.getEntity(event.targetId);
     if (!entity) return;
 
     const player = entity.getComponent<'player'>('player');
     const creature = entity.getComponent<'creature'>('creature');
-    const state = this.getOrCreateHealthState(targetId);
+    const state = this.getOrCreateHealthState(event.targetId);
 
     if (state.isDead) return;
 
-    // Check for shield
+    let finalDamage = event.damage;
+
+    // Apply fire damage multiplier if target is creature and damage is fire
+    if (creature && event.isFireDamage && this.perkSystem) {
+      // Check if source player has Pyromaniac
+      const sourceHasPyromaniac = this.perkSystem.hasFireBullets(event.sourceId);
+      if (sourceHasPyromaniac) {
+        finalDamage *= 1.25; // 25% more fire damage
+      }
+    }
+
+    // Check for shield on player
     if (player && player.shieldTimer > 0) {
       // Shield absorbs damage
       return;
@@ -138,11 +158,56 @@ export class HealthSystem extends System {
 
     // Apply damage
     if (player) {
-      player.health -= damage;
+      player.health -= finalDamage;
       state.hitFlashTimer = this.hitFlashDuration;
+
+      // Apply shield on hit (Breathing Room perk) if player is still alive
+      if (player.health > 0 && this.perkSystem?.hasShieldOnHit(event.targetId)) {
+        // Grant brief shield (3 seconds)
+        player.shieldTimer = Math.max(player.shieldTimer, 3);
+      }
+
+      // Apply time slow on hit (Reflex Boosted perk) with cooldown
+      if (this.perkSystem?.hasTimeSlowOnHit(event.targetId)) {
+        const timeSinceLastTrigger = gameTime - state.lastTimeSlowTrigger;
+        if (timeSinceLastTrigger >= this.timeSlowCooldown) {
+          // Slow time to 0.3x for 2 seconds
+          context.setTimeScale(0.3, 2);
+          state.lastTimeSlowTrigger = gameTime;
+        }
+      }
     } else if (creature) {
-      creature.health -= damage;
+      creature.health -= finalDamage;
       state.hitFlashTimer = this.hitFlashDuration;
+
+      // Apply regression bullets (ammo refund on hit)
+      if (this.perkSystem?.hasRegressionBullets(event.sourceId)) {
+        this.refundAmmoToPlayer(event.sourceId);
+      }
+    }
+  }
+
+  /**
+   * Refund 1 ammo to the source player (for Regression Bullets perk)
+   * Prefers clip refill, then reserve ammo
+   */
+  private refundAmmoToPlayer(sourceId: EntityId): void {
+    const sourceEntity = this.entityManager.getEntity(sourceId);
+    if (!sourceEntity) return;
+
+    const player = sourceEntity.getComponent<'player'>('player');
+    if (!player) return;
+
+    const weaponData = getWeaponData(player.currentWeapon.weaponId);
+    const clipBonus = this.perkSystem?.getClipSizeBonus(sourceId) ?? 0;
+    const maxClipSize = weaponData.clipSize + clipBonus;
+
+    // Try to refund to clip first (up to max clip size)
+    if (player.currentWeapon.clipSize < maxClipSize) {
+      player.currentWeapon.clipSize++;
+    } else {
+      // Clip is full, refund to reserve ammo
+      player.currentWeapon.ammo++;
     }
   }
 
@@ -174,7 +239,7 @@ export class HealthSystem extends System {
   private getOrCreateHealthState(entityId: EntityId): HealthState {
     let state = healthStates.get(entityId);
     if (!state) {
-      state = { hitFlashTimer: 0, isDead: false };
+      state = { hitFlashTimer: 0, isDead: false, lastTimeSlowTrigger: -999 };
       healthStates.set(entityId, state);
     }
     return state;

@@ -1,7 +1,7 @@
 /**
  * Game Loop
  *
- * Fixed timestep game loop with accumulator pattern.
+ * Fixed timestep game loop with accumulator pattern and time-scale support.
  * Based on the frame_dt pattern from the original C source.
  */
 
@@ -33,6 +33,10 @@ export class GameLoop {
   private rafId: number | null = null;
   private gameTime = 0;
 
+  // Time scaling
+  private timeScale = 1.0;
+  private timeScaleRemainingSeconds = 0.0;
+
   // FPS tracking
   private fpsUpdateInterval = 500; // ms
   private lastFpsUpdate = 0;
@@ -52,6 +56,7 @@ export class GameLoop {
 
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
     this.loop = this.loop.bind(this);
+    this.setTimeScale = this.setTimeScale.bind(this);
 
     if (this.pauseOnBlur) {
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
@@ -103,6 +108,23 @@ export class GameLoop {
   }
 
   /**
+   * Get current time scale
+   */
+  get currentTimeScale(): number {
+    return this.timeScale;
+  }
+
+  /**
+   * Set time scale for slow-motion/fast-forward effects
+   * @param scale - Time multiplier (1.0 = normal, 0.5 = half speed)
+   * @param durationSeconds - How long the effect lasts
+   */
+  setTimeScale(scale: number, durationSeconds: number): void {
+    this.timeScale = Math.max(0.01, Math.min(scale, 5.0)); // Clamp between 0.01x and 5x
+    this.timeScaleRemainingSeconds = durationSeconds;
+  }
+
+  /**
    * Clean up resources
    */
   destroy(): void {
@@ -149,16 +171,31 @@ export class GameLoop {
 
     // Fixed timestep updates
     while (this.accumulator >= this.timeStep) {
+      const unscaledDt = this.timeStep / 1000;
+      const scaledDt = unscaledDt * this.timeScale;
+
       const context: UpdateContext = {
-        dt: this.timeStep / 1000,
+        dt: scaledDt,
+        unscaledDt: unscaledDt,
         gameTime: this.gameTime,
         frameNumber: this.frameNumber,
+        timeScale: this.timeScale,
+        setTimeScale: this.setTimeScale,
       };
 
       this.systemManager.update(this.entityManager, context);
       this.entityManager.processDestructions();
 
-      this.gameTime += this.timeStep / 1000;
+      // Update time scale remaining (using unscaled time)
+      if (this.timeScaleRemainingSeconds > 0) {
+        this.timeScaleRemainingSeconds -= unscaledDt;
+        if (this.timeScaleRemainingSeconds <= 0) {
+          this.timeScale = 1.0;
+          this.timeScaleRemainingSeconds = 0;
+        }
+      }
+
+      this.gameTime += scaledDt;
       this.frameNumber++;
       this.accumulator -= this.timeStep;
     }

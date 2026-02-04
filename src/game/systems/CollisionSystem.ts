@@ -3,14 +3,16 @@
  *
  * Handles collisions between entities: projectile-enemy, player-enemy, player-bonus, player-weaponPickup.
  * Uses circle-based collision detection.
+ * Implements Bonus Magnet perk for auto-collection of nearby pickups.
  * Priority: 60
  */
 
-import { System } from '../../core/ecs/System';
+import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityManager } from '../../core/ecs';
 import type { EntityId } from '../../types';
 import { CollisionLayer } from '../components';
 import { getProjectileData } from '../data';
+import type { PerkSystem } from './PerkSystem';
 
 export interface DamageEvent {
   targetId: EntityId;
@@ -38,18 +40,32 @@ export const damageEvents: DamageEvent[] = [];
 export const collectEvents: CollectEvent[] = [];
 export const weaponCollectEvents: WeaponCollectEvent[] = [];
 
+// Bonus magnet radius (in world units)
+const BONUS_MAGNET_RADIUS = 150;
+
 export class CollisionSystem extends System {
   readonly name = 'CollisionSystem';
   readonly priority = 60;
 
   private entityManager: EntityManager;
+  private perkSystem: PerkSystem | null = null;
 
-  constructor(entityManager: EntityManager) {
+  constructor(entityManager: EntityManager, perkSystem?: PerkSystem) {
     super();
     this.entityManager = entityManager;
+    if (perkSystem) {
+      this.perkSystem = perkSystem;
+    }
   }
 
-  update(): void {
+  /**
+   * Set the perk system for accessing perk effects
+   */
+  setPerkSystem(perkSystem: PerkSystem): void {
+    this.perkSystem = perkSystem;
+  }
+
+  update(_entityManager: EntityManager, _context: UpdateContext): void {
     // Clear previous frame's events
     damageEvents.length = 0;
     collectEvents.length = 0;
@@ -108,7 +124,8 @@ export class CollisionSystem extends System {
     for (const player of players) {
       const pTransform = player.getComponent<'transform'>('transform');
       const pCollider = player.getComponent<'collider'>('collider');
-      if (!pTransform || !pCollider) continue;
+      const pData = player.getComponent<'player'>('player');
+      if (!pTransform || !pCollider || !pData) continue;
 
       for (const enemy of enemies) {
         const eTransform = enemy.getComponent<'transform'>('transform');
@@ -132,7 +149,13 @@ export class CollisionSystem extends System {
     for (const player of players) {
       const pTransform = player.getComponent<'transform'>('transform');
       const pCollider = player.getComponent<'collider'>('collider');
-      if (!pTransform || !pCollider) continue;
+      const pData = player.getComponent<'player'>('player');
+      if (!pTransform || !pCollider || !pData) continue;
+
+      // Check if player has Bonus Magnet perk and is alive
+      const hasBonusMagnet = this.perkSystem?.hasBonusMagnet(player.id) ?? false;
+      const isAlive = pData.health > 0;
+      const magnetRadius = hasBonusMagnet && isAlive ? BONUS_MAGNET_RADIUS : pCollider.radius;
 
       for (const bonus of bonuses) {
         const bTransform = bonus.getComponent<'transform'>('transform');
@@ -140,7 +163,7 @@ export class CollisionSystem extends System {
         const bData = bonus.getComponent<'bonus'>('bonus');
         if (!bTransform || !bCollider || !bData) continue;
 
-        if (this.checkCollision(pTransform, pCollider.radius, bTransform, bCollider.radius)) {
+        if (this.checkCollision(pTransform, magnetRadius, bTransform, bCollider.radius)) {
           // Queue collect event
           collectEvents.push({
             playerId: player.id,
@@ -159,7 +182,13 @@ export class CollisionSystem extends System {
     for (const player of players) {
       const pTransform = player.getComponent<'transform'>('transform');
       const pCollider = player.getComponent<'collider'>('collider');
-      if (!pTransform || !pCollider) continue;
+      const pData = player.getComponent<'player'>('player');
+      if (!pTransform || !pCollider || !pData) continue;
+
+      // Check if player has Bonus Magnet perk and is alive
+      const hasBonusMagnet = this.perkSystem?.hasBonusMagnet(player.id) ?? false;
+      const isAlive = pData.health > 0;
+      const magnetRadius = hasBonusMagnet && isAlive ? BONUS_MAGNET_RADIUS : pCollider.radius;
 
       for (const pickup of weaponPickups) {
         const wTransform = pickup.getComponent<'transform'>('transform');
@@ -167,7 +196,7 @@ export class CollisionSystem extends System {
         const wData = pickup.getComponent<'weaponPickup'>('weaponPickup');
         if (!wTransform || !wCollider || !wData) continue;
 
-        if (this.checkCollision(pTransform, pCollider.radius, wTransform, wCollider.radius)) {
+        if (this.checkCollision(pTransform, magnetRadius, wTransform, wCollider.radius)) {
           // Queue weapon collect event
           weaponCollectEvents.push({
             playerId: player.id,

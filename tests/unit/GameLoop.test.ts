@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GameLoop } from '../../src/core/GameLoop';
 import { EntityManager } from '../../src/core/ecs/EntityManager';
-import { System, SystemManager } from '../../src/core/ecs/System';
+import { System, SystemManager, type UpdateContext } from '../../src/core/ecs/System';
 
 // Time tracking for mocks - start at non-zero to avoid first-frame special case
 let mockTime = 1000;
@@ -277,5 +277,106 @@ describe('GameLoop', () => {
       expect(customLoop).toBeTruthy();
       customLoop.destroy();
     });
+  });
+});
+
+describe('GameLoop time scale', () => {
+  let entityManager: EntityManager;
+  let systemManager: SystemManager;
+  let renderCallback: ReturnType<typeof vi.fn>;
+  let gameLoop: GameLoop;
+
+  beforeEach(() => {
+    mockTime = 1000;
+    rafCallbacks.length = 0;
+    rafId = 0;
+
+    entityManager = new EntityManager();
+    systemManager = new SystemManager();
+    renderCallback = vi.fn();
+
+    gameLoop = new GameLoop(entityManager, systemManager, renderCallback);
+  });
+
+  afterEach(() => {
+    gameLoop.destroy();
+    vi.clearAllMocks();
+  });
+
+  it('should default to timeScale of 1', () => {
+    expect(gameLoop.currentTimeScale).toBe(1);
+  });
+
+  it('should apply time scale via setTimeScale', () => {
+    gameLoop.setTimeScale(0.5, 1);
+    expect(gameLoop.currentTimeScale).toBe(0.5);
+  });
+
+  it('should clamp time scale to valid range', () => {
+    gameLoop.setTimeScale(0.001, 1);
+    expect(gameLoop.currentTimeScale).toBe(0.01); // Min clamp
+
+    gameLoop.setTimeScale(10, 1);
+    expect(gameLoop.currentTimeScale).toBe(5); // Max clamp
+  });
+
+  it('should pass scaled dt to systems when timeScale is active', () => {
+    const mockSystem = new (class extends System {
+      name = 'TestSystem';
+      update = vi.fn();
+    })();
+
+    systemManager.addSystem(mockSystem);
+    gameLoop.start();
+
+    // Set time scale to 0.5x
+    gameLoop.setTimeScale(0.5, 1);
+
+    // Run a frame
+    runFrame(1020);
+
+    // Verify update was called with scaled dt
+    expect(mockSystem.update).toHaveBeenCalled();
+    const context = mockSystem.update.mock.calls[0]?.[1] as UpdateContext;
+    expect(context.timeScale).toBe(0.5);
+    expect(context.dt).toBe(context.unscaledDt * 0.5);
+  });
+
+  it('should reset time scale after duration expires', () => {
+    const mockSystem = new (class extends System {
+      name = 'TestSystem';
+      update = vi.fn();
+    })();
+
+    systemManager.addSystem(mockSystem);
+    gameLoop.start();
+
+    // Set time scale for 0.1 seconds
+    gameLoop.setTimeScale(0.5, 0.1);
+    expect(gameLoop.currentTimeScale).toBe(0.5);
+
+    // Run multiple frames to accumulate time and trigger fixed updates
+    // Need enough frames for the 0.1s duration to expire via unscaledDt accumulation
+    for (let i = 0; i < 10; i++) {
+      runFrame(1100 + i * 20);
+    }
+
+    // Time scale should have reset
+    expect(gameLoop.currentTimeScale).toBe(1);
+  });
+
+  it('should provide setTimeScale in UpdateContext', () => {
+    const mockSystem = new (class extends System {
+      name = 'TestSystem';
+      update = vi.fn();
+    })();
+
+    systemManager.addSystem(mockSystem);
+    gameLoop.start();
+
+    runFrame(1020);
+
+    const context = mockSystem.update.mock.calls[0]?.[1] as UpdateContext;
+    expect(typeof context.setTimeScale).toBe('function');
   });
 });
