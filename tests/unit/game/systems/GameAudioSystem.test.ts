@@ -118,7 +118,7 @@ describe('GameAudioSystem', () => {
       collectEvents.push({
         playerId: 1,
         bonusId: 100,
-        bonusType: BonusType.HEALTH,
+        bonusType: BonusType.MEDIKIT,
         value: 25,
       });
 
@@ -161,7 +161,7 @@ describe('GameAudioSystem', () => {
       collectEvents.push({
         playerId: 1,
         bonusId: 100,
-        bonusType: BonusType.HEALTH,
+        bonusType: BonusType.MEDIKIT,
         value: 25,
       });
 

@@ -407,16 +407,16 @@ export class RenderSystem extends System {
       // Color based on bonus type
       let glowColor: { r: number; g: number; b: number };
       switch (bonus.bonusType) {
-        case BonusType.HEALTH:
+        case BonusType.MEDIKIT:
           glowColor = { r: 1, g: 0, b: 0 };
           break;
-        case BonusType.AMMO:
+        case BonusType.WEAPON:
           glowColor = { r: 1, g: 1, b: 0 };
           break;
         case BonusType.WEAPON_POWER_UP:
           glowColor = { r: 1, g: 0.5, b: 0 };
           break;
-        case BonusType.SPEED_BOOST:
+        case BonusType.SPEED:
           glowColor = { r: 0, g: 1, b: 1 };
           break;
         case BonusType.SHIELD:
@@ -425,19 +425,30 @@ export class RenderSystem extends System {
         case BonusType.FIRE_BULLETS:
           glowColor = { r: 1, g: 0.3, b: 0 };
           break;
-        case BonusType.EXP_MULTIPLIER:
+        case BonusType.DOUBLE_EXPERIENCE:
           glowColor = { r: 1, g: 0, b: 1 };
           break;
-
+        case BonusType.POINTS:
+          glowColor = { r: 1, g: 1, b: 0 };
+          break;
+        case BonusType.ATOMIC:
+          glowColor = { r: 1, g: 0.3, b: 0 };
+          break;
+        case BonusType.FIREBLAST:
+          glowColor = { r: 1, g: 0.3, b: 0 };
+          break;
+        case BonusType.SHOCK_CHAIN:
+          glowColor = { r: 0, g: 0.666, b: 1 };
+          break;
         case BonusType.FREEZE:
           glowColor = { r: 0, g: 0.666, b: 1 };
-          break; // #00aaff
+          break;
         case BonusType.ENERGIZER:
           glowColor = { r: 1, g: 0.866, b: 0 };
-          break; // #ffdd00
+          break;
         case BonusType.REFLEX_BOOST:
           glowColor = { r: 0.666, g: 0, b: 1 };
-          break; // #aa00ff
+          break;
 
         default:
           glowColor = { r: 1, g: 1, b: 1 };

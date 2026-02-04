@@ -7,7 +7,12 @@
 
 import type { EntityManager } from '../../core/ecs';
 import type { QuestId, GameStats, CreatureTypeId } from '../../types';
-import { getQuestData, getAvailableQuests, type QuestData, type QuestObjective } from '../data/quests';
+import {
+  getQuestData,
+  getAvailableQuests,
+  type QuestData,
+  type QuestObjective,
+} from '../data/quests';
 import { QuestSpawnSystem } from '../systems/QuestSpawnSystem';
 import type { ProgressionManager } from '../progression/ProgressionManager';
 

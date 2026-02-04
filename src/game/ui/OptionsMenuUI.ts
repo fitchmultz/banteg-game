@@ -677,12 +677,7 @@ export class OptionsMenuUI {
 
     for (let i = 0; i < sections.length; i++) {
       const sectionX = startX + i * tabWidth;
-      if (
-        x >= sectionX &&
-        x <= sectionX + tabWidth &&
-        y >= tabY &&
-        y <= tabY + tabHeight
-      ) {
+      if (x >= sectionX && x <= sectionX + tabWidth && y >= tabY && y <= tabY + tabHeight) {
         this.currentSection = sections[i] ?? 'AUDIO';
         this.selectedIndex = this.items.findIndex((item) => item.section === this.currentSection);
         return;

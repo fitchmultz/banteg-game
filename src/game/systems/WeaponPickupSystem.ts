@@ -59,11 +59,7 @@ export class WeaponPickupSystem extends System {
    * Apply a weapon pickup to a player (can be called externally)
    * Used by WeaponPickupSystem and PerkSystem for random weapon grants
    */
-  applyWeaponPickup(
-    player: Player,
-    pickupWeaponId: number,
-    pickupAmmo: number
-  ): void {
+  applyWeaponPickup(player: Player, pickupWeaponId: number, pickupAmmo: number): void {
     // Validate weapon ID
     if (!Object.values(WeaponId).includes(pickupWeaponId as WeaponId)) {
       console.warn(`Invalid weapon pickup ID: ${pickupWeaponId}`);
@@ -89,7 +85,10 @@ export class WeaponPickupSystem extends System {
 
     // Check if current weapon is the default pistol (and we have an alternate)
     // If so, replace the alternate with the new weapon
-    if (player.currentWeapon.weaponId === WeaponId.PISTOL && player.alternateWeapon.weaponId !== WeaponId.PISTOL) {
+    if (
+      player.currentWeapon.weaponId === WeaponId.PISTOL &&
+      player.alternateWeapon.weaponId !== WeaponId.PISTOL
+    ) {
       // Replace alternate with new weapon, keep pistol as fallback
       player.alternateWeapon = {
         weaponId,

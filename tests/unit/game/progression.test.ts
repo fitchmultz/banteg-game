@@ -434,7 +434,13 @@ describe('ProgressionManager', () => {
 
       const resetManager = new ProgressionManager();
       resetManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
-      resetManager.recordSurvivalRun({ score: 5000, kills: 100, time: 120, level: 10, timeElapsed: 120 });
+      resetManager.recordSurvivalRun({
+        score: 5000,
+        kills: 100,
+        time: 120,
+        level: 10,
+        timeElapsed: 120,
+      });
 
       expect(resetManager.getSurvivalHighScore().bestScore).toBe(5000);
 
@@ -460,7 +466,13 @@ describe('ProgressionManager', () => {
       const onNewSurvivalRecord = vi.fn();
       const { manager: callbackManager } = createProgressionManager({ onNewSurvivalRecord });
 
-      callbackManager.recordSurvivalRun({ score: 10000, kills: 200, time: 300, level: 25, timeElapsed: 300 });
+      callbackManager.recordSurvivalRun({
+        score: 10000,
+        kills: 200,
+        time: 300,
+        level: 25,
+        timeElapsed: 300,
+      });
 
       expect(onNewSurvivalRecord).toHaveBeenCalledWith(expect.any(Object));
     });
@@ -569,7 +581,13 @@ describe('ProgressionManager', () => {
       const { manager: callbackManager } = createProgressionManager({ onNewSurvivalRecord });
 
       expect(() => {
-        callbackManager.recordSurvivalRun({ score: 10000, kills: 200, time: 300, level: 25, timeElapsed: 300 });
+        callbackManager.recordSurvivalRun({
+          score: 10000,
+          kills: 200,
+          time: 300,
+          level: 25,
+          timeElapsed: 300,
+        });
       }).not.toThrow();
 
       // Record should still be saved

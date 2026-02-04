@@ -221,10 +221,7 @@ describe('Decompiled Source Splitter', () => {
       const outputDir = join(TEMP_DIR, 'simple_verify');
 
       splitFile(inputPath, outputDir, true);
-      const result = verifyReassembly(
-        join(outputDir, 'manifest.json'),
-        inputPath
-      );
+      const result = verifyReassembly(join(outputDir, 'manifest.json'), inputPath);
 
       expect(result.success).toBe(true);
       expect(result.chunksVerified).toBe(4);
@@ -243,10 +240,7 @@ describe('Decompiled Source Splitter', () => {
       writeFileSync(modifiedPath, modifiedContent);
 
       expect(() => {
-        verifyReassembly(
-          join(outputDir, 'manifest.json'),
-          modifiedPath
-        );
+        verifyReassembly(join(outputDir, 'manifest.json'), modifiedPath);
       }).toThrow('SHA256 mismatch');
     });
 

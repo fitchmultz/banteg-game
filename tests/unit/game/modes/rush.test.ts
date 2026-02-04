@@ -220,12 +220,10 @@ describe('RushMode', () => {
     });
 
     it('should use custom map dimensions', () => {
-      const customRush = new RushMode(
-        entityManager,
-        { onSpawn: callbacks.onSpawn },
-        undefined,
-        { mapWidth: 1024, mapHeight: 1024 }
-      );
+      const customRush = new RushMode(entityManager, { onSpawn: callbacks.onSpawn }, undefined, {
+        mapWidth: 1024,
+        mapHeight: 1024,
+      });
 
       customRush.start();
       customRush.update(0.01);

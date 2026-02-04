@@ -111,24 +111,32 @@ describe('Audio Catalog', () => {
     });
 
     it('should return pickup_bonus for all other bonus types', () => {
-      expect(getBonusPickupSample(BonusType.HEALTH)).toBe(SAMPLES.PICKUP_BONUS);
-      expect(getBonusPickupSample(BonusType.AMMO)).toBe(SAMPLES.PICKUP_BONUS);
-      expect(getBonusPickupSample(BonusType.SPEED_BOOST)).toBe(SAMPLES.PICKUP_BONUS);
+      expect(getBonusPickupSample(BonusType.MEDIKIT)).toBe(SAMPLES.PICKUP_BONUS);
+      expect(getBonusPickupSample(BonusType.WEAPON)).toBe(SAMPLES.PICKUP_BONUS);
+      expect(getBonusPickupSample(BonusType.SPEED)).toBe(SAMPLES.PICKUP_BONUS);
       expect(getBonusPickupSample(BonusType.SHIELD)).toBe(SAMPLES.PICKUP_BONUS);
       expect(getBonusPickupSample(BonusType.FIRE_BULLETS)).toBe(SAMPLES.PICKUP_BONUS);
-      expect(getBonusPickupSample(BonusType.EXP_MULTIPLIER)).toBe(SAMPLES.PICKUP_BONUS);
+      expect(getBonusPickupSample(BonusType.DOUBLE_EXPERIENCE)).toBe(SAMPLES.PICKUP_BONUS);
     });
   });
 
   describe('getDamageSample', () => {
     it('should return hit_player when target is player', () => {
-      expect(getDamageSample({ targetIsPlayer: true, isFireDamage: false })).toBe(SAMPLES.HIT_PLAYER);
-      expect(getDamageSample({ targetIsPlayer: true, isFireDamage: true })).toBe(SAMPLES.HIT_PLAYER);
+      expect(getDamageSample({ targetIsPlayer: true, isFireDamage: false })).toBe(
+        SAMPLES.HIT_PLAYER
+      );
+      expect(getDamageSample({ targetIsPlayer: true, isFireDamage: true })).toBe(
+        SAMPLES.HIT_PLAYER
+      );
     });
 
     it('should return hit_enemy when target is not player', () => {
-      expect(getDamageSample({ targetIsPlayer: false, isFireDamage: false })).toBe(SAMPLES.HIT_ENEMY);
-      expect(getDamageSample({ targetIsPlayer: false, isFireDamage: true })).toBe(SAMPLES.HIT_ENEMY);
+      expect(getDamageSample({ targetIsPlayer: false, isFireDamage: false })).toBe(
+        SAMPLES.HIT_ENEMY
+      );
+      expect(getDamageSample({ targetIsPlayer: false, isFireDamage: true })).toBe(
+        SAMPLES.HIT_ENEMY
+      );
     });
   });
 

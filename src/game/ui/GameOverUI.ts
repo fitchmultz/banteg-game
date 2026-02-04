@@ -300,7 +300,11 @@ export class GameOverUI {
         this.ctx.fillText('★ NEW RECORD! ★', panelX + panelWidth / 2, currentY + 10);
       } else {
         this.ctx.fillStyle = '#666677';
-        this.ctx.fillText(`Best: ${this.stats.bestScore.toLocaleString()}`, panelX + panelWidth / 2, currentY + 10);
+        this.ctx.fillText(
+          `Best: ${this.stats.bestScore.toLocaleString()}`,
+          panelX + panelWidth / 2,
+          currentY + 10
+        );
       }
     }
   }

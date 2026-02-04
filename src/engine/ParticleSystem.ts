@@ -319,12 +319,7 @@ export class ParticleSystem {
     for (const particle of this.particles) {
       if (!particle.active) continue;
 
-      renderer.setColor(
-        particle.color.r,
-        particle.color.g,
-        particle.color.b,
-        particle.alpha
-      );
+      renderer.setColor(particle.color.r, particle.color.g, particle.color.b, particle.alpha);
 
       // Draw particle as a small rectangle or circle
       if (particle.size < 3) {

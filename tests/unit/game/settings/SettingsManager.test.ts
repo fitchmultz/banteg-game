@@ -140,14 +140,16 @@ describe('SettingsManager', () => {
       const manager = new SettingsManager();
       const config = manager.getConfig();
 
-      expect(config).toEqual(expect.objectContaining({
-        playerName: expect.any(String),
-        sfxVolume: expect.any(Number),
-        musicVolume: expect.any(Number),
-        resolution: expect.any(Object),
-        fullscreen: expect.any(Boolean),
-        controls: expect.any(Object),
-      }));
+      expect(config).toEqual(
+        expect.objectContaining({
+          playerName: expect.any(String),
+          sfxVolume: expect.any(Number),
+          musicVolume: expect.any(Number),
+          resolution: expect.any(Object),
+          fullscreen: expect.any(Boolean),
+          controls: expect.any(Object),
+        })
+      );
     });
 
     it('should get key bindings', () => {

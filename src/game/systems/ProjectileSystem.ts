@@ -70,7 +70,9 @@ export class ProjectileSystem extends System {
   private applyHoming(
     transform: { x: number; y: number; rotation: number },
     velocity: { x: number; y: number; maxSpeed: number },
-    enemies: Array<{ getComponent<T extends 'transform'>(type: T): { x: number; y: number } | undefined }>,
+    enemies: Array<{
+      getComponent<T extends 'transform'>(type: T): { x: number; y: number } | undefined;
+    }>,
     dt: number
   ): void {
     // Find nearest enemy

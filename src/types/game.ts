@@ -240,18 +240,20 @@ export type QuestId =
   | 'spideroids';
 
 export enum BonusType {
-  HEALTH = 0,
-  AMMO = 1,
-  WEAPON_POWER_UP = 2,
-  SPEED_BOOST = 3,
-  SHIELD = 4,
-  FIRE_BULLETS = 5,
-  EXP_MULTIPLIER = 6,
-
-  // New power-ups
-  FREEZE = 7,
-  ENERGIZER = 8,
-  REFLEX_BOOST = 9,
+  POINTS = 0,
+  WEAPON = 1,
+  ATOMIC = 2,
+  DOUBLE_EXPERIENCE = 3,
+  FIREBLAST = 4,
+  SHOCK_CHAIN = 5,
+  REFLEX_BOOST = 6,
+  SHIELD = 7,
+  FREEZE = 8,
+  SPEED = 9,
+  ENERGIZER = 10,
+  WEAPON_POWER_UP = 11,
+  FIRE_BULLETS = 12,
+  MEDIKIT = 13,
 }
 
 // ============================================================================

@@ -24,34 +24,38 @@ export interface BonusCreateOptions {
 
 // Bonus visual properties
 const BONUS_VISUALS: Record<BonusType, { color: string; size: number; label: string }> = {
-  [BonusType.HEALTH]: { color: '#ff0000', size: 16, label: 'HP' },
-  [BonusType.AMMO]: { color: '#ffff00', size: 16, label: 'AM' },
-  [BonusType.WEAPON_POWER_UP]: { color: '#ff8800', size: 20, label: 'WP' },
-  [BonusType.SPEED_BOOST]: { color: '#00ffff', size: 16, label: 'SP' },
-  [BonusType.SHIELD]: { color: '#0088ff', size: 20, label: 'SH' },
-  [BonusType.FIRE_BULLETS]: { color: '#ff4400', size: 18, label: 'FB' },
-  [BonusType.EXP_MULTIPLIER]: { color: '#ff00ff', size: 16, label: 'XP' },
-
-  // New power-ups
-  [BonusType.FREEZE]: { color: '#00aaff', size: 18, label: 'FR' },
-  [BonusType.ENERGIZER]: { color: '#ffdd00', size: 18, label: 'EN' },
+  [BonusType.POINTS]: { color: '#ffff00', size: 16, label: 'XP' },
+  [BonusType.WEAPON]: { color: '#ffff00', size: 16, label: 'WP' },
+  [BonusType.ATOMIC]: { color: '#ff4400', size: 24, label: 'AT' },
+  [BonusType.DOUBLE_EXPERIENCE]: { color: '#ff00ff', size: 16, label: '2X' },
+  [BonusType.FIREBLAST]: { color: '#ff4400', size: 20, label: 'FB' },
+  [BonusType.SHOCK_CHAIN]: { color: '#00aaff', size: 20, label: 'SC' },
   [BonusType.REFLEX_BOOST]: { color: '#aa00ff', size: 18, label: 'RB' },
+  [BonusType.SHIELD]: { color: '#0088ff', size: 20, label: 'SH' },
+  [BonusType.FREEZE]: { color: '#00aaff', size: 18, label: 'FR' },
+  [BonusType.SPEED]: { color: '#00ffff', size: 16, label: 'SP' },
+  [BonusType.ENERGIZER]: { color: '#ffdd00', size: 18, label: 'EN' },
+  [BonusType.WEAPON_POWER_UP]: { color: '#ff8800', size: 20, label: 'PW' },
+  [BonusType.FIRE_BULLETS]: { color: '#ff4400', size: 18, label: 'FB' },
+  [BonusType.MEDIKIT]: { color: '#ff0000', size: 16, label: 'HP' },
 };
 
 // Default bonus values
 const BONUS_VALUES: Record<BonusType, number> = {
-  [BonusType.HEALTH]: 25,
-  [BonusType.AMMO]: 30,
-  [BonusType.WEAPON_POWER_UP]: 10, // seconds
-  [BonusType.SPEED_BOOST]: 10, // seconds
+  [BonusType.POINTS]: 500, // XP amount
+  [BonusType.WEAPON]: 0, // Weapon pickup - handled separately
+  [BonusType.ATOMIC]: 0, // Instant explosion
+  [BonusType.DOUBLE_EXPERIENCE]: 4, // seconds
+  [BonusType.FIREBLAST]: 2, // seconds
+  [BonusType.SHOCK_CHAIN]: 3, // seconds
+  [BonusType.REFLEX_BOOST]: 5, // seconds
   [BonusType.SHIELD]: 15, // seconds
+  [BonusType.FREEZE]: 8, // seconds
+  [BonusType.SPEED]: 10, // seconds
+  [BonusType.ENERGIZER]: 8, // seconds
+  [BonusType.WEAPON_POWER_UP]: 10, // seconds
   [BonusType.FIRE_BULLETS]: 20, // seconds
-  [BonusType.EXP_MULTIPLIER]: 2, // multiplier
-
-  // New power-ups (durations in seconds)
-  [BonusType.FREEZE]: 8,
-  [BonusType.ENERGIZER]: 8,
-  [BonusType.REFLEX_BOOST]: 5,
+  [BonusType.MEDIKIT]: 25, // HP amount
 };
 
 /**
@@ -144,18 +148,17 @@ export function createWeaponPickupEntity(
 export function createRandomBonus(entityManager: EntityManager, x: number, y: number): Entity {
   // Weighted random selection
   const types = [
-    { type: BonusType.HEALTH, weight: 20 },
-    { type: BonusType.AMMO, weight: 25 },
+    { type: BonusType.POINTS, weight: 20 },
+    { type: BonusType.WEAPON, weight: 25 },
     { type: BonusType.WEAPON_POWER_UP, weight: 10 },
-    { type: BonusType.SPEED_BOOST, weight: 15 },
+    { type: BonusType.SPEED, weight: 15 },
     { type: BonusType.SHIELD, weight: 10 },
     { type: BonusType.FIRE_BULLETS, weight: 8 },
-    { type: BonusType.EXP_MULTIPLIER, weight: 12 },
-
-    // New power-ups
+    { type: BonusType.DOUBLE_EXPERIENCE, weight: 12 },
     { type: BonusType.FREEZE, weight: 10 },
     { type: BonusType.ENERGIZER, weight: 8 },
     { type: BonusType.REFLEX_BOOST, weight: 8 },
+    { type: BonusType.MEDIKIT, weight: 20 },
   ];
 
   const totalWeight = types.reduce((sum, t) => sum + t.weight, 0);
@@ -168,7 +171,7 @@ export function createRandomBonus(entityManager: EntityManager, x: number, y: nu
     }
   }
 
-  return createBonusEntity(entityManager, BonusType.HEALTH, x, y);
+  return createBonusEntity(entityManager, BonusType.MEDIKIT, x, y);
 }
 
 export const BonusFactory = {

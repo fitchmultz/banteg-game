@@ -227,7 +227,9 @@ describe('Quest Spawn Entries', () => {
   it('should have valid trigger times', () => {
     for (const quest of ALL_QUESTS) {
       // Sort entries by time for checking (QuestSpawnSystem sorts them at runtime)
-      const sortedEntries = [...quest.spawnEntries].sort((a, b) => a.triggerTimeMs - b.triggerTimeMs);
+      const sortedEntries = [...quest.spawnEntries].sort(
+        (a, b) => a.triggerTimeMs - b.triggerTimeMs
+      );
       let lastTime = -1;
       for (const entry of sortedEntries) {
         expect(entry.triggerTimeMs).toBeGreaterThanOrEqual(lastTime);

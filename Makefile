@@ -20,7 +20,13 @@ test:
 	bash scripts/test.sh
 
 # CI gate: lint + type-check + test + build
-ci: lint type-check test build
+ci: lint type-check test build parity-check
+
+# Parity audit: extract canonical data and run parity tests
+parity-check:
+	@echo "Running parity audit..."
+	pnpm run extract:parity
+	pnpm run test:parity
 
 # Lint and auto-fix issues
 lint:

@@ -58,7 +58,9 @@ export class AudioManager {
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to load sample "${name}": HTTP ${response.status} ${response.statusText} (${url})`);
+      throw new Error(
+        `Failed to load sample "${name}": HTTP ${response.status} ${response.statusText} (${url})`
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -121,7 +123,9 @@ export class AudioManager {
 
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to load tune "${name}": HTTP ${response.status} ${response.statusText} (${url})`);
+      throw new Error(
+        `Failed to load tune "${name}": HTTP ${response.status} ${response.statusText} (${url})`
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();

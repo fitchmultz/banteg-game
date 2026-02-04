@@ -97,11 +97,11 @@ export class BonusSystem extends System {
     const pyrokineticMultiplier = hasPyrokinetic ? 1.5 : 1;
 
     switch (bonusType) {
-      case BonusType.HEALTH:
+      case BonusType.MEDIKIT:
         player.health = Math.min(player.maxHealth, player.health + value);
         break;
 
-      case BonusType.AMMO: {
+      case BonusType.WEAPON: {
         // Add ammo to current weapon
         const weaponData = getWeaponData(player.currentWeapon.weaponId);
         const ammoToAdd = Math.floor(weaponData.clipSize * 0.5);
@@ -125,7 +125,7 @@ export class BonusSystem extends System {
         );
         break;
 
-      case BonusType.SPEED_BOOST:
+      case BonusType.SPEED:
         player.speedBonusTimer = Math.max(
           player.speedBonusTimer,
           this.speedBoostDuration * durationMultiplier
@@ -144,7 +144,7 @@ export class BonusSystem extends System {
         );
         break;
 
-      case BonusType.EXP_MULTIPLIER:
+      case BonusType.DOUBLE_EXPERIENCE:
         // Experience multiplier would be tracked in a separate system
         // For now, just grant immediate XP
         // (XP is tracked in HealthSystem)

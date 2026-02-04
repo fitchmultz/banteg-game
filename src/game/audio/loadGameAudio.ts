@@ -46,7 +46,7 @@ const loadState: LoadState = {
  * Works correctly with GitHub Pages base: '/crimsonland-remake/'
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const VITE_BASE_URL = ((import.meta as { env?: Record<string, string> }).env?.BASE_URL) ?? '/';
+const VITE_BASE_URL = (import.meta as { env?: Record<string, string> }).env?.BASE_URL ?? '/';
 
 function buildAssetUrl(path: string): string {
   // Ensure base ends with / and path doesn't start with /

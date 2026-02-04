@@ -211,7 +211,9 @@ export class PerkSystem {
    */
   private grantRandomWeapon(player: Player): void {
     // Get all available weapon IDs
-    const allWeaponIds = Object.values(WeaponId).filter((id): id is WeaponId => typeof id === 'number');
+    const allWeaponIds = Object.values(WeaponId).filter(
+      (id): id is WeaponId => typeof id === 'number'
+    );
 
     // Filter out current weapon and pistol if possible
     const availableWeapons = allWeaponIds.filter((id) => {
@@ -259,7 +261,10 @@ export class PerkSystem {
 
     // Check if current weapon is the default pistol (and we have an alternate)
     // If so, replace the alternate with the new weapon
-    if (player.currentWeapon.weaponId === WeaponId.PISTOL && player.alternateWeapon.weaponId !== WeaponId.PISTOL) {
+    if (
+      player.currentWeapon.weaponId === WeaponId.PISTOL &&
+      player.alternateWeapon.weaponId !== WeaponId.PISTOL
+    ) {
       // Replace alternate with new weapon, keep pistol as fallback
       player.alternateWeapon = {
         weaponId: pickupWeaponId,

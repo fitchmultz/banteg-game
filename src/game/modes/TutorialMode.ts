@@ -41,8 +41,12 @@ export interface TutorialModeCallbacks {
   onStageChange?: (stage: TutorialStage, previousStage: TutorialStage) => void;
   onComplete?: (stats: GameStats) => void;
   onRequestPerkSelection?: () => void;
-  onSpawnBonuses?: (bonuses: Array<{ type: BonusType; x: number; y: number; value?: number }>) => void;
-  onSpawnEnemies?: (enemies: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }>) => void;
+  onSpawnBonuses?: (
+    bonuses: Array<{ type: BonusType; x: number; y: number; value?: number }>
+  ) => void;
+  onSpawnEnemies?: (
+    enemies: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }>
+  ) => void;
 }
 
 export interface TutorialModeOptions {
@@ -310,9 +314,9 @@ export class TutorialMode {
    */
   private spawnTutorialBonuses(): void {
     const bonuses = [
-      { type: BonusType.SPEED_BOOST, x: 260, y: 260, value: 500 },
+      { type: BonusType.SPEED, x: 260, y: 260, value: 500 },
       { type: BonusType.WEAPON_POWER_UP, x: 600, y: 400, value: 1000 },
-      { type: BonusType.EXP_MULTIPLIER, x: 300, y: 400, value: 500 },
+      { type: BonusType.DOUBLE_EXPERIENCE, x: 300, y: 400, value: 500 },
     ];
     this.spawnedBonuses = bonuses.length;
     this.callbacks.onSpawnBonuses?.(bonuses);
@@ -381,13 +385,13 @@ export class TutorialMode {
   private getBonusTypeForLoop(loop: number): BonusType {
     switch (loop) {
       case 1:
-        return BonusType.SPEED_BOOST;
+        return BonusType.SPEED;
       case 3:
         return BonusType.WEAPON_POWER_UP;
       case 5:
-        return BonusType.EXP_MULTIPLIER;
+        return BonusType.DOUBLE_EXPERIENCE;
       default:
-        return BonusType.HEALTH;
+        return BonusType.MEDIKIT;
     }
   }
 

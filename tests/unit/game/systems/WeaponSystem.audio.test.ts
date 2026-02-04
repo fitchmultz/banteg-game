@@ -62,7 +62,14 @@ describe('WeaponSystem audio', () => {
     it('should play fire sound when weapon fires', () => {
       createPlayerWithWeapon(WeaponId.PISTOL, 6, 50);
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       expect(audio.playSample).toHaveBeenCalled();
       const sampleName = vi.mocked(audio.playSample).mock.calls[0]?.[0] as string;
@@ -72,7 +79,14 @@ describe('WeaponSystem audio', () => {
     it('should play shotgun sound for shotgun weapons', () => {
       createPlayerWithWeapon(WeaponId.SHOTGUN, 8, 50);
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       expect(audio.playSample).toHaveBeenCalled();
       expect(vi.mocked(audio.playSample).mock.calls[0]?.[0]).toBe(SAMPLES.WEAPON_FIRE_SHOTGUN);
@@ -87,7 +101,14 @@ describe('WeaponSystem audio', () => {
         playerComp.fireJustPressed = false;
       }
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       expect(audio.playSample).toHaveBeenCalled();
       expect(vi.mocked(audio.playSample).mock.calls[0]?.[0]).toBe(SAMPLES.WEAPON_FIRE_ENERGY);
@@ -96,7 +117,14 @@ describe('WeaponSystem audio', () => {
     it('should not play fire sound when out of ammo', () => {
       createPlayerWithWeapon(WeaponId.PISTOL, 0, 0);
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       expect(audio.playSample).not.toHaveBeenCalled();
     });
@@ -104,12 +132,19 @@ describe('WeaponSystem audio', () => {
     it('should play one sound per shot, not per pellet for shotguns', () => {
       createPlayerWithWeapon(WeaponId.SHOTGUN, 8, 50);
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       // Should play exactly one sound even though shotgun fires multiple pellets
-      const fireSounds = vi.mocked(audio.playSample).mock.calls.filter(
-        (call) => call[0] === SAMPLES.WEAPON_FIRE_SHOTGUN
-      );
+      const fireSounds = vi
+        .mocked(audio.playSample)
+        .mock.calls.filter((call) => call[0] === SAMPLES.WEAPON_FIRE_SHOTGUN);
       expect(fireSounds.length).toBe(1);
     });
   });
@@ -123,11 +158,18 @@ describe('WeaponSystem audio', () => {
         playerComp.reloadRequested = true;
       }
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
-      const reloadCalls = vi.mocked(audio.playSample).mock.calls.filter(
-        (call) => call[0] === SAMPLES.WEAPON_RELOAD
-      );
+      const reloadCalls = vi
+        .mocked(audio.playSample)
+        .mock.calls.filter((call) => call[0] === SAMPLES.WEAPON_RELOAD);
       expect(reloadCalls.length).toBe(1);
     });
 
@@ -139,11 +181,18 @@ describe('WeaponSystem audio', () => {
         playerComp.reloadRequested = true;
       }
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
-      const reloadCalls = vi.mocked(audio.playSample).mock.calls.filter(
-        (call) => call[0] === SAMPLES.WEAPON_RELOAD
-      );
+      const reloadCalls = vi
+        .mocked(audio.playSample)
+        .mock.calls.filter((call) => call[0] === SAMPLES.WEAPON_RELOAD);
       expect(reloadCalls.length).toBe(0);
     });
 
@@ -155,11 +204,18 @@ describe('WeaponSystem audio', () => {
         playerComp.reloadRequested = true;
       }
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
-      const reloadCalls = vi.mocked(audio.playSample).mock.calls.filter(
-        (call) => call[0] === SAMPLES.WEAPON_RELOAD
-      );
+      const reloadCalls = vi
+        .mocked(audio.playSample)
+        .mock.calls.filter((call) => call[0] === SAMPLES.WEAPON_RELOAD);
       expect(reloadCalls.length).toBe(0);
     });
   });
@@ -172,7 +228,14 @@ describe('WeaponSystem audio', () => {
         playerComp.swapWeaponRequested = true;
       }
 
-      system.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      system.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       // Should not play any sound when swapping
       expect(audio.playSample).not.toHaveBeenCalled();

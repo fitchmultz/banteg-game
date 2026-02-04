@@ -220,7 +220,7 @@ const SOUND_DEFS: SoundDef[] = [
         for (let i = startSample; i < endSample; i++) {
           const t = (i - startSample) / sr;
           const envelope = Math.max(0, 1 - t / 0.12);
-          buffer[i] += Math.sin((t * notes[n]) % 1 * Math.PI * 2) * 0.15 * envelope;
+          buffer[i] += Math.sin(((t * notes[n]) % 1) * Math.PI * 2) * 0.15 * envelope;
         }
       }
 
@@ -272,7 +272,7 @@ const SOUND_DEFS: SoundDef[] = [
           for (let i = startSample; i < Math.min(samples, startSample + beatSamples * 1.5); i++) {
             const t = (i - startSample) / sr;
             const envelope = Math.exp(-t / 0.3);
-            buffer[i] += Math.sin((t * bassFreq) % 1 * Math.PI * 2) * 0.2 * envelope;
+            buffer[i] += Math.sin(((t * bassFreq) % 1) * Math.PI * 2) * 0.2 * envelope;
           }
         }
 
@@ -282,7 +282,7 @@ const SOUND_DEFS: SoundDef[] = [
           for (let i = startSample; i < endSample; i++) {
             const t = (i - startSample) / sr;
             const envelope = Math.exp(-t / 0.2) * 0.5;
-            buffer[i] += Math.sin((t * melodyFreq) % 1 * Math.PI * 2) * 0.15 * envelope;
+            buffer[i] += Math.sin(((t * melodyFreq) % 1) * Math.PI * 2) * 0.15 * envelope;
           }
         }
       }

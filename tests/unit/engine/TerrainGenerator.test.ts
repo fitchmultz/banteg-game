@@ -157,7 +157,10 @@ describe('TerrainGenerator', () => {
         document.createElement('canvas')
       );
       expect(pattern).toBeDefined();
-      expect(mockContext.createPattern).toHaveBeenCalledWith(expect.any(HTMLCanvasElement), 'repeat');
+      expect(mockContext.createPattern).toHaveBeenCalledWith(
+        expect.any(HTMLCanvasElement),
+        'repeat'
+      );
     });
 
     it('createTerrainPattern should return null when pattern creation fails', () => {
@@ -175,7 +178,9 @@ describe('TerrainGenerator', () => {
       // Mock getContext to return null
       vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 
-      expect(() => new TerrainGenerator()).toThrow('Failed to get 2D context for terrain generation');
+      expect(() => new TerrainGenerator()).toThrow(
+        'Failed to get 2D context for terrain generation'
+      );
     });
   });
 
@@ -183,7 +188,7 @@ describe('TerrainGenerator', () => {
     it('should draw all three layers', () => {
       const generator = new TerrainGenerator();
       generator.generateTerrainTexture();
-      
+
       // Should draw base color + 800 + 35 + 15 = 851 fillRect calls
       // (base color fill + detail sprites as irregular polygons)
       expect(mockContext.fillRect).toHaveBeenCalled();
@@ -194,7 +199,7 @@ describe('TerrainGenerator', () => {
     it('should use random rotation for sprites', () => {
       const generator = new TerrainGenerator();
       generator.generateTerrainTexture();
-      
+
       // Should rotate for each detail sprite
       expect(mockContext.rotate).toHaveBeenCalled();
     });
@@ -202,7 +207,7 @@ describe('TerrainGenerator', () => {
     it('should translate for each sprite position', () => {
       const generator = new TerrainGenerator();
       generator.generateTerrainTexture();
-      
+
       // Should translate for each detail sprite
       expect(mockContext.translate).toHaveBeenCalled();
     });

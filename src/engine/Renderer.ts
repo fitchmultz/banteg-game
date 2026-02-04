@@ -599,11 +599,22 @@ export class Renderer {
   /**
    * Draw a radial glow effect using a gradient
    */
-  drawGlow(x: number, y: number, radius: number, color: { r: number; g: number; b: number; a?: number }): void {
+  drawGlow(
+    x: number,
+    y: number,
+    radius: number,
+    color: { r: number; g: number; b: number; a?: number }
+  ): void {
     const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
     const alpha = color.a ?? 1;
-    gradient.addColorStop(0, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha})`);
-    gradient.addColorStop(0.5, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha * 0.3})`);
+    gradient.addColorStop(
+      0,
+      `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha})`
+    );
+    gradient.addColorStop(
+      0.5,
+      `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${alpha * 0.3})`
+    );
     gradient.addColorStop(1, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, 0)`);
 
     this.ctx.fillStyle = gradient;
@@ -637,8 +648,14 @@ export class Renderer {
     const currentIntensity = Math.max(0, intensity + flickerAmount);
 
     const gradient = this.ctx.createRadialGradient(x, y, 0, x, y, radius);
-    gradient.addColorStop(0, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity})`);
-    gradient.addColorStop(0.4, `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity * 0.3})`);
+    gradient.addColorStop(
+      0,
+      `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity})`
+    );
+    gradient.addColorStop(
+      0.4,
+      `rgba(${color.r * 255}, ${color.g * 255}, ${color.b * 255}, ${currentIntensity * 0.3})`
+    );
     gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
     this.ctx.globalCompositeOperation = 'screen';

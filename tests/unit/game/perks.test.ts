@@ -459,9 +459,7 @@ describe('Special Perk Effects', () => {
 
       // Check that each special perk has the correct effect type
       for (const type of specialTypes) {
-        const perksWithEffect = ALL_PERKS.filter((p) =>
-          p.effects.some((e) => e.type === type)
-        );
+        const perksWithEffect = ALL_PERKS.filter((p) => p.effects.some((e) => e.type === type));
         // At least one perk should have each effect type
         expect(perksWithEffect.length).toBeGreaterThan(0);
       }

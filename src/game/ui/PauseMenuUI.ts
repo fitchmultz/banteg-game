@@ -314,7 +314,11 @@ export class PauseMenuUI {
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'bottom';
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    this.ctx.fillText('Press ESC to Resume | Arrow Keys to Navigate | Enter to Select', width / 2, height - 50);
+    this.ctx.fillText(
+      'Press ESC to Resume | Arrow Keys to Navigate | Enter to Select',
+      width / 2,
+      height - 50
+    );
   }
 
   private handleKeyDown(e: KeyboardEvent): void {

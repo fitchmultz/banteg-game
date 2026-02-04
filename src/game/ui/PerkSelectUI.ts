@@ -281,7 +281,13 @@ export class PerkSelectUI {
 
     for (let i = 0; i < this.cards.length; i++) {
       const card = this.cards[i];
-      if (card && x >= card.x && x <= card.x + card.width && y >= card.y && y <= card.y + card.height) {
+      if (
+        card &&
+        x >= card.x &&
+        x <= card.x + card.width &&
+        y >= card.y &&
+        y <= card.y + card.height
+      ) {
         this.selectCard(i);
         break;
       }

@@ -195,13 +195,7 @@ export class TutorialUI {
     // Prompt text
     this.ctx.font = '18px Arial, sans-serif';
     this.ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
-    this.wrapText(
-      this.promptText,
-      centerX,
-      boxY + 60,
-      this.PROMPT_BOX_WIDTH - 40,
-      24
-    );
+    this.wrapText(this.promptText, centerX, boxY + 60, this.PROMPT_BOX_WIDTH - 40, 24);
 
     // Progress indicator
     if (this.currentStage > 0 && this.currentStage < 8) {
@@ -342,13 +336,7 @@ export class TutorialUI {
     this.ctx.closePath();
   }
 
-  private wrapText(
-    text: string,
-    x: number,
-    y: number,
-    maxWidth: number,
-    lineHeight: number
-  ): void {
+  private wrapText(text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
     const words = text.split(' ');
     let line = '';
     let currentY = y;

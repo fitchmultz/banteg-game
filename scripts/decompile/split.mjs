@@ -60,11 +60,15 @@ export function findMarkers(buffer) {
   let lineStart = 0;
 
   for (let i = 0; i < buffer.length; i++) {
-    if (buffer[i] === 0x0a) { // LF
+    if (buffer[i] === 0x0a) {
+      // LF
       // Check if this line is a marker
       const lineBuffer = buffer.slice(lineStart, i);
       // Strip any trailing CR for Windows line endings
-      const endOffset = lineBuffer.length > 0 && lineBuffer[lineBuffer.length - 1] === 0x0d ? -1 : lineBuffer.length;
+      const endOffset =
+        lineBuffer.length > 0 && lineBuffer[lineBuffer.length - 1] === 0x0d
+          ? -1
+          : lineBuffer.length;
       const lineContent = lineBuffer.slice(0, endOffset).toString('utf-8');
 
       const match = lineContent.match(MARKER_REGEX);
@@ -73,7 +77,7 @@ export function findMarkers(buffer) {
           offset: lineStart,
           name: match[1],
           addrHex: match[2].toLowerCase(),
-          line: line
+          line: line,
         });
       }
 
@@ -85,7 +89,8 @@ export function findMarkers(buffer) {
   // Check last line (in case file doesn't end with newline)
   if (lineStart < buffer.length) {
     const lineBuffer = buffer.slice(lineStart);
-    const endOffset = lineBuffer.length > 0 && lineBuffer[lineBuffer.length - 1] === 0x0d ? -1 : lineBuffer.length;
+    const endOffset =
+      lineBuffer.length > 0 && lineBuffer[lineBuffer.length - 1] === 0x0d ? -1 : lineBuffer.length;
     const lineContent = lineBuffer.slice(0, endOffset).toString('utf-8');
 
     const match = lineContent.match(MARKER_REGEX);
@@ -94,7 +99,7 @@ export function findMarkers(buffer) {
         offset: lineStart,
         name: match[1],
         addrHex: match[2].toLowerCase(),
-        line: line
+        line: line,
       });
     }
   }
@@ -116,7 +121,7 @@ export function createChunks(buffer, markers) {
     chunks.push({
       start: 0,
       end: buffer.length,
-      marker: null
+      marker: null,
     });
     return chunks;
   }
@@ -126,7 +131,7 @@ export function createChunks(buffer, markers) {
     chunks.push({
       start: 0,
       end: markers[0].offset,
-      marker: null
+      marker: null,
     });
   }
 
@@ -137,7 +142,7 @@ export function createChunks(buffer, markers) {
     chunks.push({
       start,
       end,
-      marker: markers[i]
+      marker: markers[i],
     });
   }
 
@@ -215,11 +220,13 @@ export function splitFile(inputPath, outputDir, clean = false) {
       end: chunk.end,
       byteLength: chunk.end - chunk.start,
       sha256: chunkSha256,
-      marker: chunk.marker ? {
-        name: chunk.marker.name,
-        addrHex: chunk.marker.addrHex,
-        line: chunk.marker.line
-      } : null
+      marker: chunk.marker
+        ? {
+            name: chunk.marker.name,
+            addrHex: chunk.marker.addrHex,
+            line: chunk.marker.line,
+          }
+        : null,
     });
   }
 
@@ -229,17 +236,14 @@ export function splitFile(inputPath, outputDir, clean = false) {
     source: {
       originalPath: `decompile/original/${basename(inputPath)}`,
       byteLength: buffer.length,
-      sha256: originalSha256
+      sha256: originalSha256,
     },
     chunkDir: 'chunks',
-    chunks: manifestChunks
+    chunks: manifestChunks,
   };
 
   // Write manifest with stable formatting
-  writeFileSync(
-    join(outputDir, 'manifest.json'),
-    `${JSON.stringify(manifest, null, 2)}\n`
-  );
+  writeFileSync(join(outputDir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
 
   return manifest;
 }
@@ -297,8 +301,8 @@ export function verifyReassembly(manifestPath, originalPath) {
     if (chunkSha256 !== chunk.sha256) {
       throw new Error(
         `SHA256 mismatch for chunk ${chunk.file}\n` +
-        `Expected: ${chunk.sha256}\n` +
-        `Actual:   ${chunkSha256}`
+          `Expected: ${chunk.sha256}\n` +
+          `Actual:   ${chunkSha256}`
       );
     }
 
@@ -306,8 +310,8 @@ export function verifyReassembly(manifestPath, originalPath) {
     if (chunk.start !== currentOffset) {
       throw new Error(
         `Offset mismatch for chunk ${chunk.file}\n` +
-        `Expected start: ${currentOffset}\n` +
-        `Actual start:   ${chunk.start}`
+          `Expected start: ${currentOffset}\n` +
+          `Actual start:   ${chunk.start}`
       );
     }
 
@@ -315,8 +319,8 @@ export function verifyReassembly(manifestPath, originalPath) {
     if (chunkBuffer.length !== chunk.byteLength) {
       throw new Error(
         `Byte length mismatch for chunk ${chunk.file}\n` +
-        `Expected: ${chunk.byteLength}\n` +
-        `Actual:   ${chunkBuffer.length}`
+          `Expected: ${chunk.byteLength}\n` +
+          `Actual:   ${chunkBuffer.length}`
       );
     }
 
@@ -349,7 +353,7 @@ export function verifyReassembly(manifestPath, originalPath) {
     success: true,
     chunksVerified: chunks.length,
     totalBytes: manifest.source.byteLength,
-    sha256: manifest.source.sha256
+    sha256: manifest.source.sha256,
   };
 }
 
@@ -471,11 +475,10 @@ async function main() {
         // Verify roundtrip
         if (!skipVerify) {
           console.log('Verifying reassembly...');
-          const result = verifyReassembly(
-            join(outputDir, 'manifest.json'),
-            inputPath
+          const result = verifyReassembly(join(outputDir, 'manifest.json'), inputPath);
+          console.log(
+            `✓ Verification passed (${result.chunksVerified} chunks, ${result.totalBytes} bytes)`
           );
-          console.log(`✓ Verification passed (${result.chunksVerified} chunks, ${result.totalBytes} bytes)`);
         }
 
         return 0;
@@ -497,7 +500,9 @@ async function main() {
 
         console.log(`Verifying ${manifestPath} against ${originalPath}...`);
         const result = verifyReassembly(manifestPath, originalPath);
-        console.log(`✓ Verification passed (${result.chunksVerified} chunks, ${result.totalBytes} bytes)`);
+        console.log(
+          `✓ Verification passed (${result.chunksVerified} chunks, ${result.totalBytes} bytes)`
+        );
 
         return 0;
       }
@@ -515,5 +520,5 @@ async function main() {
 
 // Only run main if this file is executed directly (not imported)
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().then(code => process.exit(code));
+  main().then((code) => process.exit(code));
 }

@@ -92,7 +92,14 @@ describe('WeaponPickupSystem', () => {
       });
 
       // Process pickup
-      weaponPickupSystem.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      weaponPickupSystem.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       // Ammo should be added to current weapon
       expect(player.currentWeapon.ammo).toBe(initialAmmo + 60);
@@ -125,7 +132,14 @@ describe('WeaponPickupSystem', () => {
       });
 
       // Process pickup
-      weaponPickupSystem.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      weaponPickupSystem.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       // Should have swapped to shotgun and added ammo
       expect(player.currentWeapon.weaponId).toBe(WeaponId.SHOTGUN);
@@ -159,7 +173,14 @@ describe('WeaponPickupSystem', () => {
       });
 
       // Process pickup
-      weaponPickupSystem.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} });
+      weaponPickupSystem.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
 
       // Should have swapped to assault rifle, and pistol moved to alternate
       expect(player.currentWeapon.weaponId).toBe(WeaponId.ASSAULT_RIFLE);
@@ -183,7 +204,16 @@ describe('WeaponPickupSystem', () => {
       });
 
       // Process pickup (should not throw)
-      expect(() => weaponPickupSystem.update(entityManager, { dt: 0.016, unscaledDt: 0.016, gameTime: 0, frameNumber: 0, timeScale: 1, setTimeScale: () => {} })).not.toThrow();
+      expect(() =>
+        weaponPickupSystem.update(entityManager, {
+          dt: 0.016,
+          unscaledDt: 0.016,
+          gameTime: 0,
+          frameNumber: 0,
+          timeScale: 1,
+          setTimeScale: () => {},
+        })
+      ).not.toThrow();
 
       // Weapons should remain unchanged
       expect(player.currentWeapon).toEqual(initialCurrent);

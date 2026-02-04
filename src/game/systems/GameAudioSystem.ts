@@ -73,7 +73,10 @@ export class GameAudioSystem extends System {
 
     // Cleanup old damage event IDs (keep last 100)
     if (this.processedDamageEvents.size > 100) {
-      const toRemove = Array.from(this.processedDamageEvents).slice(0, this.processedDamageEvents.size - 100);
+      const toRemove = Array.from(this.processedDamageEvents).slice(
+        0,
+        this.processedDamageEvents.size - 100
+      );
       for (const id of toRemove) {
         this.processedDamageEvents.delete(id);
       }
@@ -91,7 +94,10 @@ export class GameAudioSystem extends System {
 
     // Cleanup old collect event IDs
     if (this.processedCollectEvents.size > 50) {
-      const toRemove = Array.from(this.processedCollectEvents).slice(0, this.processedCollectEvents.size - 50);
+      const toRemove = Array.from(this.processedCollectEvents).slice(
+        0,
+        this.processedCollectEvents.size - 50
+      );
       for (const id of toRemove) {
         this.processedCollectEvents.delete(id);
       }
@@ -108,7 +114,10 @@ export class GameAudioSystem extends System {
 
     // Cleanup old weapon event IDs
     if (this.processedWeaponEvents.size > 50) {
-      const toRemove = Array.from(this.processedWeaponEvents).slice(0, this.processedWeaponEvents.size - 50);
+      const toRemove = Array.from(this.processedWeaponEvents).slice(
+        0,
+        this.processedWeaponEvents.size - 50
+      );
       for (const id of toRemove) {
         this.processedWeaponEvents.delete(id);
       }
