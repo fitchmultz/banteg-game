@@ -11,3 +11,4 @@ export * from './PauseMenuUI';
 export * from './GameOverUI';
 export * from './TutorialUI';
 export * from './OptionsMenuUI';
+export * from './HighScoresUI';

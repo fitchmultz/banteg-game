@@ -45,6 +45,7 @@ import {
 } from './game/systems';
 import {
   GameOverUI,
+  HighScoresUI,
   MainMenuUI,
   OptionsMenuUI,
   PauseMenuUI,
@@ -82,6 +83,7 @@ interface GlobalGameState {
   gameOverUI: GameOverUI | null;
   tutorialUI: TutorialUI | null;
   optionsMenuUI: OptionsMenuUI | null;
+  highScoresUI: HighScoresUI | null;
   settingsManager: SettingsManager | null;
   currentGameState: GameState | null;
   playerEntityId: number | null; // P1 entity ID (for backward compatibility)
@@ -112,6 +114,7 @@ const gameState: GlobalGameState = {
   gameOverUI: null,
   tutorialUI: null,
   optionsMenuUI: null,
+  highScoresUI: null,
   settingsManager: null,
   currentGameState: null,
   playerEntityId: null,
@@ -428,6 +431,19 @@ async function init(): Promise<void> {
     onShowCredits: () => {
       console.log('Credits not implemented yet');
     },
+    onShowHighScores: () => {
+      gameState.mainMenuUI?.hide();
+      gameState.highScoresUI?.show();
+    },
+  });
+
+  gameState.highScoresUI = new HighScoresUI({
+    canvas: renderer.getCanvas(),
+    progressionManager,
+    onBack: () => {
+      gameState.highScoresUI?.hide();
+      showMainMenu();
+    },
   });
 
   gameState.perkSelectUI = new PerkSelectUI({
@@ -690,6 +706,7 @@ function showMainMenu(): void {
   gameState.perkSelectUI?.hide();
   gameState.questMenuUI?.hide();
   gameState.tutorialUI?.hide();
+  gameState.highScoresUI?.hide();
 }
 
 function startMenuLoop(): void {
@@ -711,6 +728,12 @@ function startMenuLoop(): void {
     // Also render quest menu if visible
     if (gameState.questMenuUI?.isShown()) {
       gameState.questMenuUI?.render();
+    }
+
+    // Also render high scores UI if visible
+    if (gameState.highScoresUI?.isShown()) {
+      gameState.highScoresUI?.update(dt);
+      gameState.highScoresUI?.render();
     }
 
     requestAnimationFrame(menuLoop);
@@ -1231,6 +1254,7 @@ function cleanup(): void {
   gameState.gameOverUI?.destroy();
   gameState.tutorialUI?.destroy();
   gameState.optionsMenuUI?.destroy();
+  gameState.highScoresUI?.destroy();
   gameState.console?.destroy();
   systemManager.clear();
   entityManager.clear();
@@ -1319,6 +1343,17 @@ document.addEventListener('keydown', (e) => {
     } else {
       gameState.mainMenuUI?.hide();
       gameState.questMenuUI?.show();
+    }
+  }
+
+  // High scores menu from main menu
+  if (e.code === 'KeyH' && gameState.appState.type === 'MENU') {
+    if (gameState.highScoresUI?.isShown()) {
+      gameState.highScoresUI?.hide();
+      showMainMenu();
+    } else {
+      gameState.mainMenuUI?.hide();
+      gameState.highScoresUI?.show();
     }
   }
 });

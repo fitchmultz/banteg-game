@@ -13,6 +13,7 @@ export type MenuOption =
   | 'COOP_SURVIVAL'
   | 'RUSH'
   | 'QUEST'
+  | 'HIGH_SCORES'
   | 'OPTIONS'
   | 'CREDITS';
 
@@ -31,6 +32,7 @@ export interface MainMenuUIOptions {
   onSelectMode: (mode: GameMode) => void;
   onShowOptions?: () => void;
   onShowCredits?: () => void;
+  onShowHighScores?: () => void;
 }
 
 export class MainMenuUI {
@@ -109,6 +111,7 @@ export class MainMenuUI {
       { id: 'COOP_SURVIVAL', label: 'CO-OP SURVIVAL' },
       { id: 'RUSH', label: 'RUSH MODE' },
       { id: 'QUEST', label: 'QUEST MODE' },
+      { id: 'HIGH_SCORES', label: 'HIGH SCORES' },
       { id: 'OPTIONS', label: 'OPTIONS' },
       { id: 'CREDITS', label: 'CREDITS' },
     ];
@@ -417,6 +420,9 @@ export class MainMenuUI {
         break;
       case 'QUEST':
         this.options.onSelectMode({ type: 'QUEST', questId: 'nagolipoli' }); // Default first quest
+        break;
+      case 'HIGH_SCORES':
+        this.options.onShowHighScores?.();
         break;
       case 'OPTIONS':
         this.options.onShowOptions?.();
