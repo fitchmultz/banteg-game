@@ -9,7 +9,7 @@ import type { QuestId, PerkId, WeaponId, CreatureTypeId, GameStats } from '../..
 import { getQuestData, isQuestUnlocked, getStartingQuest } from '../data/quests';
 
 // Storage key for localStorage
-const STORAGE_KEY = 'crimsonland_progression_v1';
+export const STORAGE_KEY = 'crimsonland_progression_v1';
 
 // Current save version for migrations
 const SAVE_VERSION = 1;
@@ -88,7 +88,7 @@ function createDefaultProgression(): PlayerProgression {
     version: SAVE_VERSION,
     completedQuests: [],
     questHighScores: {},
-    survivalHighScore: DEFAULT_SURVIVAL_HIGH_SCORE,
+    survivalHighScore: { ...DEFAULT_SURVIVAL_HIGH_SCORE },
     statistics: { ...DEFAULT_STATISTICS },
     unlockedFeatures: [],
     lastPlayedAt: new Date().toISOString(),
@@ -200,7 +200,11 @@ export class ProgressionManager {
     }
 
     this.markDirty();
-    this.callbacks.onQuestCompleted?.(questId, highScore);
+    try {
+      this.callbacks.onQuestCompleted?.(questId, highScore);
+    } catch (error) {
+      console.warn('onQuestCompleted callback failed:', error);
+    }
   }
 
   /**
@@ -289,7 +293,11 @@ export class ProgressionManager {
 
     if (newRecord) {
       current.achievedAt = new Date().toISOString();
-      this.callbacks.onNewSurvivalRecord?.(current);
+      try {
+        this.callbacks.onNewSurvivalRecord?.(current);
+      } catch (error) {
+        console.warn('onNewSurvivalRecord callback failed:', error);
+      }
     }
 
     this.data.statistics.totalSurvivalRuns++;
@@ -406,7 +414,11 @@ export class ProgressionManager {
     if (!this.data.unlockedFeatures.includes(feature)) {
       this.data.unlockedFeatures.push(feature);
       this.markDirty();
-      this.callbacks.onMilestoneReached?.(feature);
+      try {
+        this.callbacks.onMilestoneReached?.(feature);
+      } catch (error) {
+        console.warn('onMilestoneReached callback failed:', error);
+      }
     }
   }
 

@@ -2,44 +2,64 @@
  * Progression System Unit Tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ProgressionManager } from '../../../src/game/progression/ProgressionManager';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { ProgressionManager, STORAGE_KEY } from '../../../src/game/progression/ProgressionManager';
+import type { ProgressionCallbacks } from '../../../src/game/progression/ProgressionManager';
 import { type QuestId, PerkId, CreatureTypeId, WeaponId } from '../../../src/types';
 
-// Mock localStorage - use a function to get fresh storage for each test context
-let localStorageStore: Record<string, string> = {};
-const localStorageMock = {
-  getItem: vi.fn((key: string) => {
-    // Always access the current store object
-    return localStorageStore[key] ?? null;
-  }),
-  setItem: vi.fn((key: string, value: string) => {
-    localStorageStore[key] = value;
-  }),
-  clear: vi.fn(() => {
-    localStorageStore = {};
-  }),
-  removeItem: vi.fn((key: string) => {
-    delete localStorageStore[key];
-  }),
-};
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-  writable: true,
-});
+// Create a fresh storage object for test isolation
+function createStorage(): Record<string, string> {
+  return {};
+}
 
-// Note: These tests have shared state issues due to the localStorage mock.
-// They are marked as skip until the test isolation is properly implemented.
-describe.skip('ProgressionManager', () => {
+// Factory to create a fresh localStorage mock with isolated storage
+function createLocalStorageMock(store: Record<string, string>) {
+  return {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    clear: vi.fn(() => {
+      for (const key of Object.keys(store)) {
+        delete store[key];
+      }
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+  };
+}
+
+// Factory for fresh ProgressionManager with isolated storage
+function createProgressionManager(
+  callbacks?: ProgressionCallbacks,
+  store?: Record<string, string>
+): { manager: ProgressionManager; store: Record<string, string> } {
+  const storageStore = store ?? createStorage();
+  const mock = createLocalStorageMock(storageStore);
+  vi.stubGlobal('localStorage', mock);
+  const manager = new ProgressionManager(callbacks);
+  return { manager, store: storageStore };
+}
+
+describe('ProgressionManager', () => {
   let manager: ProgressionManager;
+  let store: Record<string, string>;
+  let localStorageMock: ReturnType<typeof createLocalStorageMock>;
 
   beforeEach(() => {
-    // Completely reset storage before each test by creating new object
-    localStorageStore = {};
-    // Reset mock calls but keep implementation
-    localStorageMock.getItem.mockClear();
-    localStorageMock.setItem.mockClear();
+    // Create completely fresh isolated storage for each test
+    store = createStorage();
+    localStorageMock = createLocalStorageMock(store);
+    // Stub global localStorage
+    vi.stubGlobal('localStorage', localStorageMock);
+    // Create fresh manager
     manager = new ProgressionManager();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
   });
 
   describe('Initialization', () => {
@@ -84,7 +104,8 @@ describe.skip('ProgressionManager', () => {
         totalPlaySessions: 5,
       };
 
-      localStorageMock.getItem.mockReturnValue(JSON.stringify(savedData));
+      store[STORAGE_KEY] = JSON.stringify(savedData);
+      // Create manager that uses the pre-populated store
       const loadedManager = new ProgressionManager();
 
       expect(loadedManager.isQuestCompleted('nagolipoli')).toBe(true);
@@ -304,10 +325,9 @@ describe.skip('ProgressionManager', () => {
   });
 
   describe('Session Management', () => {
-    it.skip('should track play sessions', () => {
-      // TODO: Fix test isolation - shared localStorage mock state between tests
-      // Create a fresh manager for this test
-      const sessionManager = new ProgressionManager();
+    it('should track play sessions', () => {
+      // Fresh manager with clean storage
+      const { manager: sessionManager } = createProgressionManager();
       expect(sessionManager.getTotalSessions()).toBe(0);
 
       sessionManager.startSession();
@@ -317,10 +337,9 @@ describe.skip('ProgressionManager', () => {
       expect(sessionManager.getTotalSessions()).toBe(2);
     });
 
-    it.skip('should update last played timestamp', () => {
-      // TODO: Fix test isolation - shared localStorage mock state between tests
-      // Create a fresh manager for this test
-      const timestampManager = new ProgressionManager();
+    it('should update last played timestamp', () => {
+      // Fresh manager with clean storage
+      const { manager: timestampManager } = createProgressionManager();
       const before = Date.now();
       timestampManager.startSession();
       const after = Date.now();
@@ -408,23 +427,29 @@ describe.skip('ProgressionManager', () => {
 
   describe('Reset', () => {
     it('should reset all progression', () => {
-      // Create a fresh manager for this test
-      const freshManager = new ProgressionManager();
-      freshManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
-      freshManager.recordSurvivalRun({ score: 5000, kills: 100, time: 120, level: 10, timeElapsed: 120 });
+      // Create completely isolated storage and manager
+      const isolatedStore = createStorage();
+      const isolatedMock = createLocalStorageMock(isolatedStore);
+      vi.stubGlobal('localStorage', isolatedMock);
 
-      freshManager.reset();
+      const resetManager = new ProgressionManager();
+      resetManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
+      resetManager.recordSurvivalRun({ score: 5000, kills: 100, time: 120, level: 10, timeElapsed: 120 });
 
-      expect(freshManager.getCompletedQuests()).toEqual([]);
-      expect(freshManager.getSurvivalHighScore().bestScore).toBe(0);
-      expect(freshManager.getStatistics().totalKills).toBe(0);
+      expect(resetManager.getSurvivalHighScore().bestScore).toBe(5000);
+
+      resetManager.reset();
+
+      expect(resetManager.getCompletedQuests()).toEqual([]);
+      expect(resetManager.getSurvivalHighScore().bestScore).toBe(0);
+      expect(resetManager.getStatistics().totalKills).toBe(0);
     });
   });
 
   describe('Callbacks', () => {
     it('should call onQuestCompleted callback', () => {
       const onQuestCompleted = vi.fn();
-      const callbackManager = new ProgressionManager({ onQuestCompleted });
+      const { manager: callbackManager } = createProgressionManager({ onQuestCompleted });
 
       callbackManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
 
@@ -433,7 +458,7 @@ describe.skip('ProgressionManager', () => {
 
     it('should call onNewSurvivalRecord callback', () => {
       const onNewSurvivalRecord = vi.fn();
-      const callbackManager = new ProgressionManager({ onNewSurvivalRecord });
+      const { manager: callbackManager } = createProgressionManager({ onNewSurvivalRecord });
 
       callbackManager.recordSurvivalRun({ score: 10000, kills: 200, time: 300, level: 25, timeElapsed: 300 });
 
@@ -442,7 +467,7 @@ describe.skip('ProgressionManager', () => {
 
     it('should call onMilestoneReached callback', () => {
       const onMilestoneReached = vi.fn();
-      const callbackManager = new ProgressionManager({ onMilestoneReached });
+      const { manager: callbackManager } = createProgressionManager({ onMilestoneReached });
 
       // Set up stats for 100 kills milestone
       for (let i = 0; i < 100; i++) {
@@ -451,6 +476,242 @@ describe.skip('ProgressionManager', () => {
       callbackManager.checkMilestones();
 
       expect(onMilestoneReached).toHaveBeenCalled();
+    });
+  });
+
+  describe('Failure Modes', () => {
+    it('should handle corrupted localStorage gracefully', () => {
+      // Pre-populate store before creating manager
+      store[STORAGE_KEY] = 'not valid json{';
+      const corruptedManager = new ProgressionManager();
+      expect(corruptedManager.getStatistics().totalKills).toBe(0);
+      expect(corruptedManager.getCompletedQuests()).toEqual([]);
+    });
+
+    it('should handle localStorage with null value', () => {
+      store[STORAGE_KEY] = 'null';
+      const nullManager = new ProgressionManager();
+      expect(nullManager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should handle missing required fields in stored data', () => {
+      const incompleteData = {
+        version: 1,
+        // Missing most fields
+        completedQuests: ['nagolipoli'],
+      };
+      store[STORAGE_KEY] = JSON.stringify(incompleteData);
+      const incompleteManager = new ProgressionManager();
+      // Should merge with defaults
+      expect(incompleteManager.isQuestCompleted('nagolipoli')).toBe(true);
+      expect(incompleteManager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should migrate from version 0 (no version field)', () => {
+      const v0Data = {
+        completedQuests: ['nagolipoli'],
+        questHighScores: {
+          nagolipoli: {
+            bestTime: 60,
+            bestScore: 1000,
+            completedAt: '2024-01-01',
+            attempts: 1,
+          },
+        },
+        survivalHighScore: {
+          bestScore: 5000,
+          bestTime: 120,
+          bestLevel: 5,
+          achievedAt: '2024-01-01',
+        },
+        statistics: {
+          totalKills: 100,
+          totalDeaths: 5,
+          totalTimePlayed: 3600,
+          totalQuestsCompleted: 1,
+          totalSurvivalRuns: 10,
+          perksChosen: {},
+          killsByCreatureType: {},
+          shotsFired: 0,
+          shotsHit: 0,
+          accuracy: 0,
+        },
+        unlockedFeatures: [],
+        lastPlayedAt: '2024-01-01',
+        totalPlaySessions: 5,
+        // No version field - indicates v0
+      };
+      store[STORAGE_KEY] = JSON.stringify(v0Data);
+      const migratedManager = new ProgressionManager();
+      expect(migratedManager.isQuestCompleted('nagolipoli')).toBe(true);
+      expect(migratedManager.getTotalSessions()).toBe(5);
+    });
+
+    it('should handle callback exceptions without breaking operations', () => {
+      const onQuestCompleted = vi.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      const { manager: callbackManager } = createProgressionManager({ onQuestCompleted });
+
+      // Should not throw even though callback throws
+      expect(() => {
+        callbackManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
+      }).not.toThrow();
+
+      // Quest should still be recorded
+      expect(callbackManager.isQuestCompleted('nagolipoli')).toBe(true);
+    });
+
+    it('should handle onNewSurvivalRecord callback exception', () => {
+      const onNewSurvivalRecord = vi.fn().mockImplementation(() => {
+        throw new Error('Survival callback error');
+      });
+      const { manager: callbackManager } = createProgressionManager({ onNewSurvivalRecord });
+
+      expect(() => {
+        callbackManager.recordSurvivalRun({ score: 10000, kills: 200, time: 300, level: 25, timeElapsed: 300 });
+      }).not.toThrow();
+
+      // Record should still be saved
+      expect(callbackManager.getSurvivalHighScore().bestScore).toBe(10000);
+    });
+
+    it('should handle onMilestoneReached callback exception', () => {
+      const onMilestoneReached = vi.fn().mockImplementation(() => {
+        throw new Error('Milestone callback error');
+      });
+      const { manager: callbackManager } = createProgressionManager({ onMilestoneReached });
+
+      // Set up stats for 100 kills milestone
+      for (let i = 0; i < 100; i++) {
+        callbackManager.recordKill(CreatureTypeId.ZOMBIE);
+      }
+
+      expect(() => {
+        callbackManager.checkMilestones();
+      }).not.toThrow();
+
+      // Milestone should still be unlocked
+      expect(callbackManager.isFeatureUnlocked('kills_100')).toBe(true);
+    });
+
+    it('should handle quest high score with negative time', () => {
+      manager.recordQuestComplete('nagolipoli', { time: -10, score: 1000, kills: 50 });
+      const highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestTime).toBe(-10);
+    });
+
+    it('should handle quest high score with negative score', () => {
+      manager.recordQuestComplete('nagolipoli', { time: 60, score: -500, kills: 50 });
+      const highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestScore).toBe(-500);
+    });
+
+    it('should handle statistics with very large numbers', () => {
+      const largeData = {
+        version: 1,
+        completedQuests: [],
+        questHighScores: {},
+        survivalHighScore: {
+          bestScore: Number.MAX_SAFE_INTEGER,
+          bestTime: Number.MAX_SAFE_INTEGER,
+          bestLevel: Number.MAX_SAFE_INTEGER,
+          achievedAt: '2024-01-01',
+        },
+        statistics: {
+          totalKills: Number.MAX_SAFE_INTEGER,
+          totalDeaths: Number.MAX_SAFE_INTEGER,
+          totalTimePlayed: Number.MAX_SAFE_INTEGER,
+          totalQuestsCompleted: Number.MAX_SAFE_INTEGER,
+          totalSurvivalRuns: Number.MAX_SAFE_INTEGER,
+          perksChosen: {},
+          killsByCreatureType: {},
+          shotsFired: Number.MAX_SAFE_INTEGER,
+          shotsHit: Number.MAX_SAFE_INTEGER,
+          accuracy: 100,
+        },
+        unlockedFeatures: [],
+        lastPlayedAt: '2024-01-01',
+        totalPlaySessions: Number.MAX_SAFE_INTEGER,
+      };
+      store[STORAGE_KEY] = JSON.stringify(largeData);
+      const largeManager = new ProgressionManager();
+      expect(largeManager.getStatistics().totalKills).toBe(Number.MAX_SAFE_INTEGER);
+      expect(largeManager.getTotalSessions()).toBe(Number.MAX_SAFE_INTEGER);
+    });
+
+    it('should handle import with valid JSON but missing structure', () => {
+      const result = manager.importData('{}');
+      expect(result).toBe(true);
+      // Should use defaults for missing fields
+      expect(manager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should handle import with array instead of object', () => {
+      const result = manager.importData('[]');
+      expect(result).toBe(true);
+      // Should merge array with defaults via spread operator
+      expect(manager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should handle localStorage quota exceeded error gracefully', () => {
+      const quotaError = new Error('QuotaExceededError');
+      quotaError.name = 'QuotaExceededError';
+      localStorageMock.setItem.mockImplementation(() => {
+        throw quotaError;
+      });
+
+      manager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
+
+      // Should not throw, just log warning
+      expect(() => manager.save()).not.toThrow();
+    });
+
+    it('should handle localStorage being unavailable', () => {
+      vi.stubGlobal('localStorage', undefined);
+      const { manager: noStorageManager } = createProgressionManager();
+      expect(noStorageManager.getStatistics().totalKills).toBe(0);
+      // Operations should not throw
+      expect(() => {
+        noStorageManager.recordKill(CreatureTypeId.ZOMBIE);
+        noStorageManager.save();
+      }).not.toThrow();
+    });
+
+    it('should handle empty string in localStorage', () => {
+      store[STORAGE_KEY] = '';
+      const emptyManager = new ProgressionManager();
+      expect(emptyManager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should handle quest high score comparison with zero values', () => {
+      // First completion with zero score
+      manager.recordQuestComplete('nagolipoli', { time: 60, score: 0, kills: 0 });
+      let highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestScore).toBe(0);
+
+      // Second completion with positive score
+      manager.recordQuestComplete('nagolipoli', { time: 60, score: 100, kills: 10 });
+      highScore = manager.getQuestHighScore('nagolipoli');
+      expect(highScore?.bestScore).toBe(100);
+    });
+
+    it('should handle multiple callback errors in sequence', () => {
+      let callCount = 0;
+      const onQuestCompleted = vi.fn().mockImplementation(() => {
+        callCount++;
+        throw new Error(`Error ${callCount}`);
+      });
+      const { manager: callbackManager } = createProgressionManager({ onQuestCompleted });
+
+      expect(() => {
+        callbackManager.recordQuestComplete('nagolipoli', { time: 60, score: 1000, kills: 50 });
+        callbackManager.recordQuestComplete('monster_blues', { time: 60, score: 1000, kills: 50 });
+      }).not.toThrow();
+
+      expect(callbackManager.isQuestCompleted('nagolipoli')).toBe(true);
+      expect(callbackManager.isQuestCompleted('monster_blues')).toBe(true);
+      expect(callCount).toBe(2);
     });
   });
 });
