@@ -286,7 +286,6 @@ export interface KeyBindings {
   moveRight: string;
   fire: string;
   reload: string;
-  weaponNext: string;
-  weaponPrev: string;
+  swapWeapon: string;
   pause: string;
 }

@@ -486,6 +486,26 @@ export class InputManager {
     return this.mouse.wheel;
   }
 
+  /**
+   * Get the canvas dimensions.
+   */
+  getCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.canvas.width,
+      height: this.canvas.height,
+    };
+  }
+
+  /**
+   * Handle canvas resize - updates touch control positions.
+   * Call this after the canvas is resized.
+   */
+  handleResize(): void {
+    if (this.touchEnabled) {
+      this.setupTouchControls();
+    }
+  }
+
   setMousePos(_x: number, _y: number): void {
     // Not supported in standard browser APIs
   }

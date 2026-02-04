@@ -306,6 +306,77 @@ describe('InputManager', () => {
       expect(input.wasKeyReleased('NeverPressed')).toBe(false);
     });
   });
+
+  describe('canvas size', () => {
+    it('should get canvas size', () => {
+      const size = input.getCanvasSize();
+
+      expect(size.width).toBe(800);
+      expect(size.height).toBe(600);
+    });
+
+    it('should reflect canvas size changes', () => {
+      canvas.width = 1024;
+      canvas.height = 768;
+
+      const size = input.getCanvasSize();
+
+      expect(size.width).toBe(1024);
+      expect(size.height).toBe(768);
+    });
+  });
+
+  describe('handleResize', () => {
+    it('should update touch control positions when touch is enabled', () => {
+      input.enableTouchControls();
+
+      // Change canvas size
+      canvas.width = 1024;
+      canvas.height = 768;
+
+      // Call handleResize
+      input.handleResize();
+
+      // Touch controls should be repositioned
+      const joystick = input.getVirtualJoystick();
+      expect(joystick.x).toBeGreaterThan(0);
+      expect(joystick.y).toBeGreaterThan(0);
+    });
+
+    it('should not fail when touch is not enabled', () => {
+      canvas.width = 1024;
+      canvas.height = 768;
+
+      // Should not throw
+      expect(() => input.handleResize()).not.toThrow();
+    });
+
+    it('should update fire button position on resize', () => {
+      input.enableTouchControls();
+
+      const originalX = input.getFireButton().x;
+
+      canvas.width = 1920;
+      input.handleResize();
+
+      const newX = input.getFireButton().x;
+      // Fire button should be repositioned to right side of new canvas
+      expect(newX).toBeGreaterThan(originalX);
+    });
+
+    it('should update reload button position on resize', () => {
+      input.enableTouchControls();
+
+      const originalX = input.getReloadButton().x;
+
+      canvas.width = 1920;
+      input.handleResize();
+
+      const newX = input.getReloadButton().x;
+      // Reload button should be repositioned
+      expect(newX).not.toBe(originalX);
+    });
+  });
 });
 
 describe('KeyCode constants', () => {

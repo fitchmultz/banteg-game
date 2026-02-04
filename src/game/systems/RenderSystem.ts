@@ -309,8 +309,10 @@ export class RenderSystem extends System {
       10,
       160
     );
+    // Show swap weapon key binding dynamically
+    const swapKeyLabel = this.getSwapKeyLabel();
     this.renderer.setColor(0.5, 0.5, 0.5, 1);
-    this.renderer.drawText('[Q] Swap Weapon', 10, 175);
+    this.renderer.drawText(`[${swapKeyLabel}] Swap Weapon`, 10, 175);
 
     // Active effects (with icons)
     let yOffset = 205;
@@ -346,5 +348,38 @@ export class RenderSystem extends System {
   setCameraPosition(x: number, y: number): void {
     this.currentCameraX = x;
     this.currentCameraY = y;
+  }
+
+  /**
+   * Get the display label for the swap weapon key.
+   * Falls back to 'Q' if no input manager is available.
+   */
+  private getSwapKeyLabel(): string {
+    // Try to get from window.gameState for dynamic binding
+    // This is a bit hacky but maintains compatibility with the existing architecture
+    const gameState = (window as unknown as { gameState?: { settingsManager?: { getKeyBindings: () => { swapWeapon: string } } } }).gameState;
+    if (gameState?.settingsManager?.getKeyBindings) {
+      const binding = gameState.settingsManager.getKeyBindings().swapWeapon;
+      return this.formatKeyCode(binding);
+    }
+    return 'Q';
+  }
+
+  /**
+   * Format a key code for display (e.g., 'KeyQ' -> 'Q', 'Escape' -> 'ESC').
+   */
+  private formatKeyCode(code: string): string {
+    if (code.startsWith('Key')) {
+      return code.slice(3);
+    }
+    if (code === 'Escape') return 'ESC';
+    if (code === 'Space') return 'SPC';
+    if (code.startsWith('Arrow')) {
+      return code.slice(5).toUpperCase();
+    }
+    if (code.startsWith('Digit')) {
+      return code.slice(5);
+    }
+    return code;
   }
 }

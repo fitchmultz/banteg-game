@@ -38,6 +38,7 @@ import {
 import { PlayerFactory, BonusFactory } from './game/entities';
 import { CreatureFactory } from './game/entities';
 import { ProgressionManager } from './game/progression';
+import { SettingsManager } from './game/settings/SettingsManager';
 import { getUnlockedWeapons } from './game/data';
 import { loadGameAudio, TUNES, getDeathSample } from './game/audio';
 import {
@@ -47,11 +48,13 @@ import {
   PauseMenuUI,
   GameOverUI,
   TutorialUI,
+  OptionsMenuUI,
 } from './game/ui';
 import { type GameState, type GameMode, PerkId } from './types';
 
-const GAME_WIDTH = 1024;
-const GAME_HEIGHT = 768;
+// Default game dimensions (will be overridden by settings)
+let GAME_WIDTH = 1024;
+let GAME_HEIGHT = 768;
 const TARGET_UPS = 60;
 
 type AppState =
@@ -76,6 +79,8 @@ interface GlobalGameState {
   pauseMenuUI: PauseMenuUI | null;
   gameOverUI: GameOverUI | null;
   tutorialUI: TutorialUI | null;
+  optionsMenuUI: OptionsMenuUI | null;
+  settingsManager: SettingsManager | null;
   currentGameState: GameState | null;
   playerEntityId: number | null;
   renderSystem: RenderSystem | null;
@@ -101,6 +106,8 @@ const gameState: GlobalGameState = {
   pauseMenuUI: null,
   gameOverUI: null,
   tutorialUI: null,
+  optionsMenuUI: null,
+  settingsManager: null,
   currentGameState: null,
   playerEntityId: null,
   renderSystem: null,
@@ -122,7 +129,16 @@ async function init(): Promise<void> {
     throw new Error('Game container not found');
   }
 
-  // Initialize renderer
+  // Initialize settings manager first (loads from localStorage)
+  const settingsManager = new SettingsManager();
+  gameState.settingsManager = settingsManager;
+
+  // Apply settings to game dimensions
+  const settings = settingsManager.getConfig();
+  GAME_WIDTH = settings.resolution.width;
+  GAME_HEIGHT = settings.resolution.height;
+
+  // Initialize renderer with settings resolution
   renderer = new Renderer(container, {
     width: GAME_WIDTH,
     height: GAME_HEIGHT,
@@ -138,10 +154,10 @@ async function init(): Promise<void> {
     console.log('Touch controls enabled');
   }
 
-  // Initialize audio manager
+  // Initialize audio manager with settings volumes
   audio = new AudioManager({
-    sfxVolume: 0.7,
-    musicVolume: 0.5,
+    sfxVolume: settings.sfxVolume,
+    musicVolume: settings.musicVolume,
   });
 
   // Initialize audio and load assets on first user gesture
@@ -332,11 +348,39 @@ async function init(): Promise<void> {
   gameState.tutorialMode = tutorialMode;
 
   // Initialize UI components
+  gameState.optionsMenuUI = new OptionsMenuUI({
+    canvas: renderer.getCanvas(),
+    getInitialConfig: () => settingsManager.getConfig(),
+    onChangeConfig: (config) => {
+      // Update settings and apply them
+      settingsManager.setConfig(config);
+      settingsManager.applySettings(audio, renderer);
+      // Update touch controls layout if needed
+      input.handleResize();
+    },
+    onRequestBack: (context) => {
+      gameState.optionsMenuUI?.hide();
+      if (context === 'menu') {
+        gameState.mainMenuUI?.show();
+      } else {
+        gameState.pauseMenuUI?.show(
+          gameState.gameModeManager?.getStats() ?? {
+            score: 0,
+            kills: 0,
+            timeElapsed: 0,
+            level: 1,
+          }
+        );
+      }
+    },
+  });
+
   gameState.mainMenuUI = new MainMenuUI({
     canvas: renderer.getCanvas(),
     onSelectMode: (mode) => startGame(mode),
     onShowOptions: () => {
-      console.log('Options menu not implemented yet');
+      gameState.mainMenuUI?.hide();
+      gameState.optionsMenuUI?.show('menu');
     },
     onShowCredits: () => {
       console.log('Credits not implemented yet');
@@ -370,7 +414,8 @@ async function init(): Promise<void> {
     onRestart: restartGame,
     onMainMenu: returnToMainMenu,
     onShowOptions: () => {
-      console.log('Options menu not implemented yet');
+      gameState.pauseMenuUI?.hide();
+      gameState.optionsMenuUI?.show('pause');
     },
   });
 
@@ -513,7 +558,10 @@ function startGame(mode: GameMode): void {
   gameState.rushSpawnSystem = null;
 
   // Initialize game systems
-  const inputSystem = new InputSystem(input);
+  const inputSystem = new InputSystem(
+    input,
+    () => gameState.settingsManager?.getKeyBindings() ?? { moveUp: 'KeyW', moveDown: 'KeyS', moveLeft: 'KeyA', moveRight: 'KeyD', fire: 'MouseLeft', reload: 'KeyR', swapWeapon: 'KeyQ', pause: 'Escape' }
+  );
   const movementSystem = new MovementSystem();
   const weaponSystem = new WeaponSystem(entityManager, audio);
   const aiSystem = new AiSystem(entityManager);
@@ -807,6 +855,9 @@ function pauseGame(): void {
 
   gameState.pauseMenuUI?.show(stats);
   gameState.appState = { type: 'PAUSED', gameLoop };
+
+  // Start pause loop for overlay rendering
+  startPauseLoop();
 }
 
 function resumeGame(): void {
@@ -814,6 +865,7 @@ function resumeGame(): void {
 
   const { gameLoop } = gameState.appState;
   gameState.pauseMenuUI?.hide();
+  gameState.optionsMenuUI?.hide();
   gameState.appState = { type: 'PLAYING', gameLoop };
   gameLoop.start();
 
@@ -901,8 +953,45 @@ function cleanup(): void {
   gameState.pauseMenuUI?.destroy();
   gameState.gameOverUI?.destroy();
   gameState.tutorialUI?.destroy();
+  gameState.optionsMenuUI?.destroy();
   systemManager.clear();
   entityManager.clear();
+}
+
+/**
+ * Start the pause overlay loop.
+ * Renders pause menu UI and options menu UI while paused.
+ */
+let pauseLoopId: number | null = null;
+function startPauseLoop(): void {
+  if (pauseLoopId !== null) return;
+
+  let lastTime = performance.now();
+
+  function pauseLoop(currentTime: number): void {
+    if (gameState.appState.type !== 'PAUSED') {
+      pauseLoopId = null;
+      return;
+    }
+
+    const dt = Math.min((currentTime - lastTime) / 1000, 0.1);
+    lastTime = currentTime;
+
+    // Only render UI if options menu is shown (pause menu is static)
+    if (gameState.optionsMenuUI?.isShown()) {
+      // Draw a snapshot of the game state behind the options menu
+      // The game loop has stopped, so we just draw the last frame with a dark overlay
+      renderer.clearBlack();
+
+      // Update and render options menu
+      gameState.optionsMenuUI.update(dt);
+      gameState.optionsMenuUI.render();
+    }
+
+    pauseLoopId = requestAnimationFrame(pauseLoop);
+  }
+
+  pauseLoopId = requestAnimationFrame(pauseLoop);
 }
 
 // Handle keyboard input
@@ -913,14 +1002,19 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  // Handle pause
-  if (e.code === 'Escape') {
+  // Handle pause with configured key binding
+  const pauseKey = gameState.settingsManager?.getKeyBindings().pause ?? 'Escape';
+  if (e.code === pauseKey) {
+    // Don't pause if in options menu (ESC should go back instead)
     if (gameState.appState.type === 'PLAYING') {
       if (!gameState.perkSelectUI?.isShown()) {
         pauseGame();
       }
     } else if (gameState.appState.type === 'PAUSED') {
-      resumeGame();
+      // Only resume if options menu is not shown
+      if (!gameState.optionsMenuUI?.isShown()) {
+        resumeGame();
+      }
     }
     return;
   }
