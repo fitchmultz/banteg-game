@@ -16,6 +16,7 @@ import {
   SpriteAtlas,
   generateSpriteAtlas,
 } from './engine';
+import { TerrainGenerator } from './engine/TerrainGenerator';
 import { TUNES, getDeathSample, loadGameAudio } from './game/audio';
 import { getUnlockedWeapons } from './game/data';
 import { BonusFactory, PlayerFactory } from './game/entities';
@@ -793,6 +794,11 @@ function startGame(mode: GameMode): void {
   const lifetimeSystem = new LifetimeSystem(entityManager);
   const renderSystem = new RenderSystem(entityManager, renderer, assetManager, spriteAtlas, input);
   gameState.renderSystem = renderSystem;
+
+  // Generate terrain texture and set it on the render system
+  const terrainGenerator = new TerrainGenerator();
+  const terrainTexture = terrainGenerator.generateTerrainTexture();
+  renderSystem.setTerrain(terrainTexture);
 
   // Create perk system for this game session
   const perkSystem = new PerkSystem(entityManager, {

@@ -32,3 +32,10 @@ export {
   saveGeneratedSprites,
   type GeneratedSpriteAtlas,
 } from './SpriteGenerator';
+export {
+  TerrainGenerator,
+  generateTerrainTexture,
+  createTerrainPattern,
+  type TerrainTheme,
+  DEFAULT_TERRAIN_THEME,
+} from './TerrainGenerator';

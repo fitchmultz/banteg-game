@@ -2,10 +2,12 @@
  * Render System
  *
  * Renders all visible entities and UI.
- * Now supports co-op mode with shared camera and two-player HUD.
+ * Now supports co-op mode with shared camera and two-player HUD,
+ * and procedurally generated terrain backgrounds.
  * Priority: 200 (last to run)
  *
  * Responsibilities:
+ * - Render procedurally generated terrain background with UV scrolling
  * - Render all game entities (players, creatures, projectiles, bonuses)
  * - Manage camera position and zoom (shared camera for co-op)
  * - Render UI elements including HUD for all players
@@ -16,11 +18,13 @@
  * - Does not handle input processing
  * - Does not manage game state
  * - Does not handle touch controls rendering (handled by InputManager)
+ * - Does not generate terrain (handled by TerrainGenerator)
  *
  * Assumptions:
  * - Renderer is initialized with valid canvas
  * - EntityManager contains valid entities with required components
  * - Camera smoothing and zoom limits are tuned for gameplay
+ * - Terrain texture is set via setTerrain() before rendering
  */
 
 import type { EntityManager } from '../../core/ecs/EntityManager';
@@ -32,6 +36,7 @@ import {
   type Renderer,
   type SpriteAtlas,
 } from '../../engine';
+import { TerrainGenerator, type TerrainTheme } from '../../engine/TerrainGenerator';
 import { getWeaponData } from '../data';
 
 // Camera constants for co-op mode
@@ -50,6 +55,8 @@ export class RenderSystem extends System {
   private inputManager: InputManager | null = null;
   private assetManager: AssetManager | null = null;
   private spriteAtlas: SpriteAtlas | null = null;
+  private terrainCanvas: HTMLCanvasElement | null = null;
+  private terrainPattern: CanvasPattern | null = null;
 
   // Camera follow settings
   private cameraSmoothing = 0.1;
@@ -110,8 +117,8 @@ export class RenderSystem extends System {
     // Update particles
     this.particleSystem.update(context.dt);
 
-    // Clear screen
-    this.renderer.clearBlack();
+    // Render terrain background
+    this.renderTerrain();
 
     // Update camera (with screen shake)
     this.updateCamera();
@@ -151,6 +158,57 @@ export class RenderSystem extends System {
       this.frameCount = 0;
       this.lastFpsTime = 0;
     }
+  }
+
+  /**
+   * Set the terrain texture to use for background rendering.
+   */
+  setTerrain(terrainCanvas: HTMLCanvasElement): void {
+    this.terrainCanvas = terrainCanvas;
+    // Create pattern from terrain canvas for efficient repeating
+    const ctx = this.renderer.getContext();
+    this.terrainPattern = ctx.createPattern(terrainCanvas, 'repeat');
+  }
+
+  /**
+   * Generate terrain with a specific theme.
+   */
+  generateTerrain(theme?: TerrainTheme): void {
+    const generator = new TerrainGenerator(theme);
+    const canvas = generator.generateTerrainTexture();
+    this.setTerrain(canvas);
+  }
+
+  /**
+   * Render the terrain background with UV scrolling based on camera position.
+   */
+  private renderTerrain(): void {
+    if (!this.terrainCanvas || !this.terrainPattern) {
+      // Fallback to black if no terrain set
+      this.renderer.clearBlack();
+      return;
+    }
+
+    const ctx = this.renderer.getContext();
+    const canvas = this.renderer.getCanvas();
+    const terrainWidth = this.terrainCanvas.width;
+    const terrainHeight = this.terrainCanvas.height;
+
+    // Calculate UV offset from camera position for infinite scrolling
+    const offsetX = -(this.currentCameraX % terrainWidth);
+    const offsetY = -(this.currentCameraY % terrainHeight);
+
+    // Draw terrain covering the viewport with offset for seamless tiling
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.fillStyle = this.terrainPattern;
+    ctx.fillRect(
+      -terrainWidth,
+      -terrainHeight,
+      canvas.width + terrainWidth * 2,
+      canvas.height + terrainHeight * 2
+    );
+    ctx.restore();
   }
 
   private updateCamera(): void {
