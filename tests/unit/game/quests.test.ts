@@ -18,26 +18,64 @@ import { type QuestId, CreatureTypeId } from '../../../src/types';
 describe('Quest Data', () => {
   it('should have quest data for all quest IDs', () => {
     const questIds: QuestId[] = [
+      // Tutorial / Early Game (Tier 1)
       'nagolipoli',
       'monster_blues',
       'the_gathering',
       'army_of_three',
+      // Tier 1-2 Missing Quests
+      'target_practice',
+      'frontline_assault',
+      'spider_wave_syndrome',
+      'the_random_factor',
+      'everred_pastures',
+      'spider_spawns',
+      'two_fronts',
+      'sweep_stakes',
+      'evil_zombies_at_large',
+      'survival_of_the_fastest',
+      // Zombie Heavy (Tier 1-2)
       'knee_deep_in_the_dead',
       'the_gang_wars',
       'the_fortress',
       'cross_fire',
+      // Fast and Furious (Tier 2)
       'the_beating',
       'hidden_evil',
       'land_hostile',
       'minor_alien_breach',
+      // Mixed Enemies (Tier 2-3)
       'alien_squads',
       'zombie_masters',
       '8_legged_terror',
       'ghost_patrols',
+      // Advanced Challenges (Tier 3)
       'nesting_grounds',
       'alien_dens',
       'arachnoid_farm',
       'gauntlet',
+      // Tier 3-4 Missing Quests
+      'the_blighting',
+      'the_killing',
+      'surrounded_by_reptiles',
+      'the_lizquidation',
+      'spiders_inc',
+      'deja_vu',
+      'major_alien_breach',
+      'zombie_time',
+      'the_collaboration',
+      'the_massacre',
+      'the_unblitzkrieg',
+      // Lizard Quests (Tier 2-4)
+      'land_of_lizards',
+      'lizard_kings',
+      'lizard_raze',
+      'lizard_zombie_pact',
+      // Tier 5 Bonus Quests
+      'the_annihilation',
+      'the_end_of_all',
+      'the_spanking_of_the_dead',
+      'spideroids',
       'syntax_terror',
     ];
 
@@ -86,6 +124,11 @@ describe('Quest Data', () => {
     expect(stats.total).toBe(ALL_QUESTS.length);
     expect(stats.mainQuests + stats.bonusQuests).toBe(stats.total);
     expect(stats.mainQuests).toBeGreaterThan(0);
+  });
+
+  it('should have all 50 quests', () => {
+    expect(ALL_QUESTS.length).toBe(50);
+    expect(getQuestStats().total).toBe(50);
   });
 });
 

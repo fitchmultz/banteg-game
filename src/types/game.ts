@@ -184,6 +184,7 @@ export enum PerkId {
 }
 
 export type QuestId =
+  // Tutorial / Early Game (Tier 1)
   | 'nagolipoli'
   | 'monster_blues'
   | 'the_gathering'
@@ -208,7 +209,35 @@ export type QuestId =
   | 'lizard_kings'
   | 'lizard_raze'
   | 'lizard_zombie_pact'
-  | 'syntax_terror';
+  | 'syntax_terror'
+  // Tier 1-2 Missing Quests
+  | 'target_practice'
+  | 'frontline_assault'
+  | 'spider_wave_syndrome'
+  | 'the_random_factor'
+  | 'everred_pastures'
+  | 'spider_spawns'
+  | 'two_fronts'
+  | 'sweep_stakes'
+  | 'evil_zombies_at_large'
+  | 'survival_of_the_fastest'
+  // Tier 3-4 Missing Quests
+  | 'the_blighting'
+  | 'the_killing'
+  | 'surrounded_by_reptiles'
+  | 'the_lizquidation'
+  | 'spiders_inc'
+  | 'deja_vu'
+  | 'major_alien_breach'
+  | 'zombie_time'
+  | 'the_collaboration'
+  | 'the_massacre'
+  | 'the_unblitzkrieg'
+  // Tier 5 Bonus Quests
+  | 'the_annihilation'
+  | 'the_end_of_all'
+  | 'the_spanking_of_the_dead'
+  | 'spideroids';
 
 export enum BonusType {
   HEALTH = 0,
