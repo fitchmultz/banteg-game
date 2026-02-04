@@ -9,11 +9,15 @@
 import type { EntityManager } from '../../core/ecs';
 import { System, type UpdateContext } from '../../core/ecs/System';
 import type { EntityId } from '../../types';
-import { AiMode } from '../../types';
+import { AiMode, type CreatureTypeId } from '../../types';
 import { getCreatureData, getWeaponData } from '../data';
 import { BonusFactory } from '../entities';
 import { damageEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
+import type { ParticleSystem } from '../../engine/ParticleSystem';
+import type { SettingsManager } from '../settings/SettingsManager';
+import { createCorpse, createLifetime, createSprite, createTransform } from '../components';
+import { CREATURE_TEXTURES } from '../entities/CreatureFactory';
 
 // Track entity health states
 interface HealthState {
@@ -21,6 +25,8 @@ interface HealthState {
   isDead: boolean;
   // Track time-slow cooldown to prevent spam
   lastTimeSlowTrigger: number;
+  // Track last damage source for kill attribution
+  lastDamageSourceId: EntityId | null;
 }
 
 const healthStates = new Map<EntityId, HealthState>();
@@ -39,6 +45,8 @@ export class HealthSystem extends System {
   private entityManager: EntityManager;
   private callbacks: GameStateCallbacks;
   private perkSystem: PerkSystem | null = null;
+  private particleSystem: ParticleSystem | null = null;
+  private settingsManager: SettingsManager | null = null;
   private score = 0;
 
   // Hit flash duration
@@ -49,13 +57,21 @@ export class HealthSystem extends System {
   constructor(
     entityManager: EntityManager,
     callbacks: GameStateCallbacks = {},
-    perkSystem?: PerkSystem
+    perkSystem?: PerkSystem,
+    particleSystem?: ParticleSystem,
+    settingsManager?: SettingsManager
   ) {
     super();
     this.entityManager = entityManager;
     this.callbacks = callbacks;
     if (perkSystem) {
       this.perkSystem = perkSystem;
+    }
+    if (particleSystem) {
+      this.particleSystem = particleSystem;
+    }
+    if (settingsManager) {
+      this.settingsManager = settingsManager;
     }
   }
 
@@ -64,6 +80,20 @@ export class HealthSystem extends System {
    */
   setPerkSystem(perkSystem: PerkSystem): void {
     this.perkSystem = perkSystem;
+  }
+
+  /**
+   * Set the particle system for emitting effects
+   */
+  setParticleSystem(particleSystem: ParticleSystem): void {
+    this.particleSystem = particleSystem;
+  }
+
+  /**
+   * Set the settings manager for accessing game settings
+   */
+  setSettingsManager(settingsManager: SettingsManager): void {
+    this.settingsManager = settingsManager;
   }
 
   update(_entityManager: EntityManager, context: UpdateContext): void {
@@ -118,7 +148,7 @@ export class HealthSystem extends System {
         creature.aiMode = AiMode.DEAD;
 
         if (transform) {
-          this.handleCreatureDeath(entity.id, creature, transform);
+          this.handleCreatureDeath(entity.id, creature, transform, state.lastDamageSourceId);
         }
       }
     }
@@ -183,6 +213,8 @@ export class HealthSystem extends System {
     } else if (creature) {
       creature.health -= finalDamage;
       state.hitFlashTimer = this.hitFlashDuration;
+      // Track damage source for kill attribution
+      state.lastDamageSourceId = event.sourceId;
 
       // Apply regression bullets (ammo refund on hit)
       if (this.perkSystem?.hasRegressionBullets(event.sourceId)) {
@@ -217,8 +249,9 @@ export class HealthSystem extends System {
 
   private handleCreatureDeath(
     entityId: EntityId,
-    creature: { creatureTypeId: number; rewardValue: number },
-    transform: { x: number; y: number }
+    creature: { creatureTypeId: CreatureTypeId; rewardValue: number; tint: { r: number; g: number; b: number; a: number }; size: number },
+    transform: { x: number; y: number },
+    killerId: EntityId | null = null
   ): void {
     const data = getCreatureData(creature.creatureTypeId);
 
@@ -233,17 +266,44 @@ export class HealthSystem extends System {
       BonusFactory.createRandom(this.entityManager, transform.x, transform.y);
     }
 
+    // Get gore intensity from settings and Bloody Mess perk
+    const goreSetting = this.settingsManager?.getConfig().goreIntensity ?? 1;
+    // Use killer's Bloody Mess perk if available, otherwise default to 1x
+    const bloodyMessRank = killerId !== null
+      ? this.perkSystem?.getGoreIntensity(killerId) ?? 1
+      : 1;
+    const intensityMultiplier = bloodyMessRank; // 1x, 2x, 3x, 4x based on rank
+    const totalIntensity = goreSetting * intensityMultiplier;
+
+    // Emit blood particles if gore is enabled
+    if (totalIntensity > 0 && this.particleSystem) {
+      this.particleSystem.emitBloodSplatter(transform.x, transform.y, 0, totalIntensity);
+    }
+
+    // Create corpse entity with the creature's original texture
+    const corpseEntity = this.entityManager.createEntity();
+    const textureName = CREATURE_TEXTURES[creature.creatureTypeId] ?? 'zombie';
+    corpseEntity.addComponent(createTransform(transform.x, transform.y, Math.random() * Math.PI * 2));
+    corpseEntity.addComponent(createSprite(textureName, 32, 32));
+    corpseEntity.addComponent(createCorpse(
+      creature.creatureTypeId,
+      creature.tint,
+      creature.size,
+      Math.random() * Math.PI * 2
+    ));
+    corpseEntity.addComponent(createLifetime(30)); // 30 second lifetime
+
     // Notify callback
     this.callbacks.onCreatureDeath?.(creature.creatureTypeId, transform);
 
-    // Destroy entity
+    // Destroy original creature entity
     this.entityManager.destroyEntity(entityId);
   }
 
   private getOrCreateHealthState(entityId: EntityId): HealthState {
     let state = healthStates.get(entityId);
     if (!state) {
-      state = { hitFlashTimer: 0, isDead: false, lastTimeSlowTrigger: -999 };
+      state = { hitFlashTimer: 0, isDead: false, lastTimeSlowTrigger: -999, lastDamageSourceId: null };
       healthStates.set(entityId, state);
     }
     return state;

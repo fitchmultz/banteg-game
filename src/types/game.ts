@@ -180,6 +180,7 @@ export enum PerkId {
   PERK_EXPERT = 41,
   PERK_MASTER = 42,
   BONUS_ECONOMIST = 43,
+  BLOODY_MESS = 44,
 }
 
 export type QuestId =
@@ -286,6 +287,7 @@ export interface GameConfig {
   fullscreen: boolean;
   controls: KeyBindings;
   controlsP2?: KeyBindings;
+  goreIntensity: number; // 0 = off, 1 = normal, 2 = high
 }
 
 export interface KeyBindings {

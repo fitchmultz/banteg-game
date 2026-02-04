@@ -123,14 +123,20 @@ export class ParticleSystem {
   /**
    * Emit blood splatter particles
    */
-  emitBloodSplatter(x: number, y: number, direction: number, count = 8): void {
+  emitBloodSplatter(x: number, y: number, direction: number, intensity = 1): void {
+    // Skip if intensity is 0 (gore disabled)
+    if (intensity <= 0) return;
+
+    const count = Math.floor(8 * intensity);
+    const sizeMultiplier = Math.min(intensity, 2); // Cap size increase at 2x
+
     const options: ParticleEmitterOptions = {
       x,
       y,
       count,
       color: { r: 0.8, g: 0.1, b: 0.1, a: 1 },
-      minSize: 2,
-      maxSize: 5,
+      minSize: 2 * sizeMultiplier,
+      maxSize: 5 * sizeMultiplier,
       minSpeed: 20,
       maxSpeed: 100,
       minLife: 0.5,

@@ -316,6 +316,30 @@ export function createEffect(effectType: string, duration: number): Effect {
   };
 }
 
+// Corpse Component
+export interface Corpse extends Component {
+  type: 'corpse';
+  creatureTypeId: CreatureTypeId;
+  tint: Color;
+  size: number;
+  rotation: number;
+}
+
+export function createCorpse(
+  creatureTypeId: CreatureTypeId,
+  tint: Color,
+  size: number,
+  rotation: number
+): Corpse {
+  return {
+    type: 'corpse',
+    creatureTypeId,
+    tint,
+    size,
+    rotation,
+  };
+}
+
 export type GameComponent =
   | Transform
   | Velocity
@@ -327,7 +351,8 @@ export type GameComponent =
   | Bonus
   | WeaponPickup
   | Lifetime
-  | Effect;
+  | Effect
+  | Corpse;
 
 // Component type mapping for type-safe lookups
 export interface ComponentTypeMap {
@@ -342,4 +367,5 @@ export interface ComponentTypeMap {
   weaponPickup: WeaponPickup;
   lifetime: Lifetime;
   effect: Effect;
+  corpse: Corpse;
 }

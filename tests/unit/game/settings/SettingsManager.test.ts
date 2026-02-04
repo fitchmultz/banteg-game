@@ -172,6 +172,7 @@ describe('SettingsManager', () => {
         resolution: { width: 1920, height: 1080 },
         fullscreen: true,
         controls: { ...DEFAULT_GAME_CONFIG.controls },
+        goreIntensity: 1,
       };
 
       manager.setConfig(newConfig);

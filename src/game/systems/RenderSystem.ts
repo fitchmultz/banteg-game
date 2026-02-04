@@ -267,6 +267,46 @@ export class RenderSystem extends System {
       }
     }
 
+    // Render corpses (dead enemies)
+    const corpses = this.entityManager.query(['corpse', 'transform', 'sprite']);
+    for (const entity of corpses) {
+      const transform = entity.getComponent<'transform'>('transform');
+      const corpse = entity.getComponent<'corpse'>('corpse');
+      const sprite = entity.getComponent<'sprite'>('sprite');
+      if (!transform || !corpse || !sprite) continue;
+
+      // Darken the tint for dead appearance
+      const darkTint = {
+        r: corpse.tint.r * 0.5,
+        g: corpse.tint.g * 0.5,
+        b: corpse.tint.b * 0.5,
+        a: corpse.tint.a * 0.8,
+      };
+
+      const image = this.assetManager?.getImage('creatures');
+      if (image && this.spriteAtlas) {
+        // Use a static frame for corpses (frame 0)
+        const frameName = `${sprite.textureName}_0`;
+        const frame = this.spriteAtlas.getFrame(frameName);
+
+        if (frame) {
+          this.renderer.drawSprite(image, frame, transform.x, transform.y, {
+            rotation: corpse.rotation,
+            scale: corpse.size,
+            opacity: darkTint.a,
+          });
+        } else {
+          // Fallback to darkened circle
+          this.renderer.setColor(darkTint.r, darkTint.g, darkTint.b, darkTint.a);
+          this.renderer.drawCircle(transform.x, transform.y, 16 * corpse.size);
+        }
+      } else {
+        // Fallback if image not loaded
+        this.renderer.setColor(darkTint.r, darkTint.g, darkTint.b, darkTint.a);
+        this.renderer.drawCircle(transform.x, transform.y, 16 * corpse.size);
+      }
+    }
+
     // Render players
     const players = this.entityManager.query(['player', 'transform']);
     for (const entity of players) {

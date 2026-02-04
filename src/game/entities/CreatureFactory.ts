@@ -24,7 +24,7 @@ export interface CreatureCreateOptions {
 }
 
 // Creature texture names mapped from types
-const CREATURE_TEXTURES: Record<CreatureTypeId, string> = {
+export const CREATURE_TEXTURES: Record<CreatureTypeId, string> = {
   [CreatureTypeId.ZOMBIE]: 'zombie',
   [CreatureTypeId.ZOMBIE_FAST]: 'zombie_fast',
   [CreatureTypeId.ZOMBIE_TANK]: 'zombie_tank',

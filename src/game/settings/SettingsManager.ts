@@ -73,6 +73,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   resolution: { width: 1024, height: 768 },
   fullscreen: false,
   controls: { ...DEFAULT_KEY_BINDINGS },
+  goreIntensity: 1,
 };
 
 // Settings storage envelope for versioning
@@ -185,6 +186,11 @@ export function validateGameConfig(candidate: unknown): GameConfig {
     }
 
     result.controlsP2 = validatedControlsP2;
+  }
+
+  // Validate goreIntensity (clamp to 0-2)
+  if (typeof obj.goreIntensity === 'number' && !Number.isNaN(obj.goreIntensity)) {
+    result.goreIntensity = Math.max(0, Math.min(2, obj.goreIntensity));
   }
 
   return result;

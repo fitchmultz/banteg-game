@@ -46,7 +46,8 @@ export interface PerkEffect {
     | 'special_highlander'
     | 'special_plaguebearer'
     | 'special_bonus_magnet'
-    | 'special_bandage';
+    | 'special_bandage'
+    | 'special_gore_intensity';
   value: number;
 }
 
@@ -155,6 +156,14 @@ const COMBAT_PERKS: PerkData[] = [
     category: 'combat',
     maxRank: 1,
     effects: [{ type: 'special_random_weapon', value: 1 }],
+  },
+  {
+    id: PerkId.BLOODY_MESS,
+    name: 'Bloody Mess',
+    description: 'Increases blood and gore effects. More blood splatter on enemy death.',
+    category: 'combat',
+    maxRank: 3,
+    effects: [{ type: 'special_gore_intensity', value: 1 }],
   },
 ];
 

@@ -719,6 +719,15 @@ export class PerkSystem {
   }
 
   /**
+   * Get gore intensity multiplier from Bloody Mess perk
+   * Returns 1-4 based on rank (0-3)
+   */
+  getGoreIntensity(entityId: EntityId): number {
+    const rank = this.getPerkRank(entityId, PerkId.BLOODY_MESS);
+    return 1 + rank; // Returns 1-4 based on rank (0-3)
+  }
+
+  /**
    * Refill both weapon clips (for Ammo Maniac perk)
    */
   refillWeaponClips(player: Player): void {
