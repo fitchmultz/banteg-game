@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { join, dirname } from 'node:path';
+import { join } from 'node:path';
 
 // ============================================================================
 // Types
@@ -476,12 +476,12 @@ function extractBonusData(content: string): CanonicalData['bonuses'] {
         // Duration can be negative (-1 = unlimited)
         duration = val > 0x7fffffff ? val - 0x100000000 : val;
       } else {
-        duration = Number.parseInt(hexDuration);
+        duration = Number.parseInt(hexDuration, 10);
       }
     }
 
     if (hexRarity) {
-      rarity = hexRarity.startsWith('0x') ? hexToInt(hexRarity) : Number.parseInt(hexRarity);
+      rarity = hexRarity.startsWith('0x') ? hexToInt(hexRarity) : Number.parseInt(hexRarity, 10);
     }
 
     bonuses.push({
@@ -523,7 +523,7 @@ const CREATURE_SPEED_MULTIPLIER = 30; // move_speed * 30 ≈ game speed
  * Creature stats are randomized based on size, so we calculate average values
  * using the typical size ranges from the decompiled formulas.
  */
-function extractCreatureData(content: string): CanonicalData['creatures'] {
+function extractCreatureData(_content: string): CanonicalData['creatures'] {
   type TemplateFormula = {
     typeId: number;
     sizeRange: [number, number]; // min, max size from rand() % range + offset
@@ -767,11 +767,11 @@ function extractCreatureData(content: string): CanonicalData['creatures'] {
  *
  * Perk IDs 0-57 (0x39) with names extracted from string literals.
  */
-function extractPerkData(content: string): CanonicalData['perks'] {
+function extractPerkData(_content: string): CanonicalData['perks'] {
   // Extract perk names from string literal references
   // Pattern: s_Name_00XXXXXX or perk_id_name = value
 
-  const perks: CanonicalData['perks'] = [];
+  const _perks: CanonicalData['perks'] = [];
 
   // Perk names extracted from the decompiled string literals
   // Order matches the perk IDs from the decompile

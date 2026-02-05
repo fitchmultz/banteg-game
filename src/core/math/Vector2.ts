@@ -26,12 +26,30 @@ export class Vector2 implements IVector2 {
     return new Vector2(a.x + b.x, a.y + b.y);
   }
 
+  add(v: IVector2): this {
+    this.x += v.x;
+    this.y += v.y;
+    return this;
+  }
+
   static sub(a: IVector2, b: IVector2): Vector2 {
     return new Vector2(a.x - b.x, a.y - b.y);
   }
 
+  sub(v: IVector2): this {
+    this.x -= v.x;
+    this.y -= v.y;
+    return this;
+  }
+
   static scale(v: IVector2, s: number): Vector2 {
     return new Vector2(v.x * s, v.y * s);
+  }
+
+  scale(s: number): this {
+    this.x *= s;
+    this.y *= s;
+    return this;
   }
 
   static dot(a: IVector2, b: IVector2): number {
@@ -62,32 +80,6 @@ export class Vector2 implements IVector2 {
     return new Vector2(v.x / len, v.y / len);
   }
 
-  static length(v: IVector2): number {
-    return Math.sqrt(v.x * v.x + v.y * v.y);
-  }
-
-  static lengthSq(v: IVector2): number {
-    return v.x * v.x + v.y * v.y;
-  }
-
-  add(v: IVector2): this {
-    this.x += v.x;
-    this.y += v.y;
-    return this;
-  }
-
-  sub(v: IVector2): this {
-    this.x -= v.x;
-    this.y -= v.y;
-    return this;
-  }
-
-  scale(s: number): this {
-    this.x *= s;
-    this.y *= s;
-    return this;
-  }
-
   normalize(): this {
     const len = Math.sqrt(this.x * this.x + this.y * this.y);
     if (len > 0) {
@@ -97,8 +89,16 @@ export class Vector2 implements IVector2 {
     return this;
   }
 
+  static length(v: IVector2): number {
+    return Math.sqrt(v.x * v.x + v.y * v.y);
+  }
+
   length(): number {
     return Math.sqrt(this.x * this.x + this.y * this.y);
+  }
+
+  static lengthSq(v: IVector2): number {
+    return v.x * v.x + v.y * v.y;
   }
 
   lengthSq(): number {

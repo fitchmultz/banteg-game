@@ -22,9 +22,6 @@ export class RushSpawnSystem extends System {
   readonly priority = 85;
 
   private entityManager: EntityManager;
-  // Options reserved for future spawn configuration
-  // @ts-expect-error - unused for now but part of consistent interface
-  private _options: Required<RushSpawnSystemOptions>;
 
   // Pending spawns to process this frame
   private pendingSpawns: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }> = [];
@@ -35,13 +32,8 @@ export class RushSpawnSystem extends System {
   constructor(entityManager: EntityManager, options: RushSpawnSystemOptions = {}) {
     super();
     this.entityManager = entityManager;
-    // Store options for future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this._options = {
-      mapWidth: 2048,
-      mapHeight: 2048,
-      ...options,
-    };
+    // Options parameter reserved for future use
+    void options;
   }
 
   update(_entityManager: EntityManager, _context: UpdateContext): void {

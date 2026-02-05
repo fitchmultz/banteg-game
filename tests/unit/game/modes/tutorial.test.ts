@@ -11,19 +11,22 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { TutorialMode } from '../../../../src/game/modes/TutorialMode';
 import { EntityManager } from '../../../../src/core/ecs';
 import type { BonusType } from '../../../../src/types';
+import type { TutorialModeCallbacks, TutorialStage } from '../../../../src/game/modes/TutorialMode';
+import type { CreatureTypeId } from '../../../../src/types';
 
 describe('TutorialMode', () => {
   let entityManager: EntityManager;
   let tutorialMode: TutorialMode;
-  let callbacks: {
-    onStageChange: ReturnType<typeof vi.fn>;
-    onComplete: ReturnType<typeof vi.fn>;
-    onRequestPerkSelection: ReturnType<typeof vi.fn>;
-    onSpawnBonuses: ReturnType<typeof vi.fn>;
-    onSpawnEnemies: ReturnType<typeof vi.fn>;
+  let callbacks: TutorialModeCallbacks & {
+    onStageChange: Mock<(stage: TutorialStage, previousStage: TutorialStage) => void>;
+    onComplete: Mock<() => void>;
+    onRequestPerkSelection: Mock<() => void>;
+    onSpawnBonuses: Mock<(bonuses: Array<{ type: BonusType; x: number; y: number; value?: number }>) => void>;
+    onSpawnEnemies: Mock<(enemies: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }>) => void>;
   };
 
   beforeEach(() => {
@@ -132,7 +135,7 @@ describe('TutorialMode', () => {
       tutorialMode.checkStageProgression({ hasMovementInput: true });
       expect(callbacks.onSpawnBonuses).toHaveBeenCalled();
 
-      const bonuses = (callbacks.onSpawnBonuses.mock.calls[0]?.[0] ?? []) as Array<{
+      const bonuses = ((callbacks.onSpawnBonuses.mock.calls[0]?.[0] ?? []) as unknown) as Array<{
         type: BonusType;
         x: number;
         y: number;

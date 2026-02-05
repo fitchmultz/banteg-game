@@ -112,9 +112,9 @@ describe('loadGameAudio', () => {
     });
 
     it('should use single-flight pattern for concurrent calls', async () => {
-      let callCount = 0;
+      let _callCount = 0;
       global.fetch = vi.fn().mockImplementation(() => {
-        callCount++;
+        _callCount++;
         return Promise.resolve({
           ok: true,
           arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),

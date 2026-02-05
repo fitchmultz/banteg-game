@@ -24,10 +24,18 @@ export class Rectangle implements IRectangle {
     return p.x >= r.x && p.x < r.x + r.width && p.y >= r.y && p.y < r.y + r.height;
   }
 
+  contains(x: number, y: number): boolean {
+    return x >= this.x && x < this.right && y >= this.y && y < this.bottom;
+  }
+
   static intersects(a: IRectangle, b: IRectangle): boolean {
     return (
       a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
     );
+  }
+
+  intersects(other: IRectangle): boolean {
+    return Rectangle.intersects(this, other);
   }
 
   static center(r: IRectangle): { x: number; y: number } {
@@ -59,14 +67,6 @@ export class Rectangle implements IRectangle {
 
   get centerY(): number {
     return this.y + this.height / 2;
-  }
-
-  contains(x: number, y: number): boolean {
-    return x >= this.x && x < this.right && y >= this.y && y < this.bottom;
-  }
-
-  intersects(other: IRectangle): boolean {
-    return Rectangle.intersects(this, other);
   }
 
   copy(): Rectangle {

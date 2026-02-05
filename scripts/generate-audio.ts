@@ -90,7 +90,7 @@ function applyLowpass(buffer: Float32Array, cutoff: number, sampleRate: number):
 }
 
 // Utility: Mix multiple buffers
-function mixBuffers(buffers: Float32Array[]): Float32Array {
+function _mixBuffers(buffers: Float32Array[]): Float32Array {
   const maxLength = Math.max(...buffers.map((b) => b.length));
   const output = new Float32Array(maxLength);
 

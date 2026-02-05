@@ -18,7 +18,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 
 const VERSION = '1.0.0';

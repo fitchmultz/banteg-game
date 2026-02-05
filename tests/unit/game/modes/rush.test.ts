@@ -9,16 +9,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { RushMode } from '../../../../src/game/modes/RushMode';
 import { EntityManager } from '../../../../src/core/ecs';
+import type { RushModeCallbacks } from '../../../../src/game/modes/RushMode';
 
 describe('RushMode', () => {
   let entityManager: EntityManager;
   let rushMode: RushMode;
-  let callbacks: {
-    onStart: ReturnType<typeof vi.fn>;
-    onGameOver: ReturnType<typeof vi.fn>;
-    onSpawn: ReturnType<typeof vi.fn>;
+  let callbacks: RushModeCallbacks & {
+    onStart: Mock<() => void>;
+    onGameOver: Mock<() => void>;
+    onSpawn: Mock<(creatureTypeId: number, x: number, y: number) => void>;
   };
 
   beforeEach(() => {

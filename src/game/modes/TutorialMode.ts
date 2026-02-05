@@ -58,9 +58,6 @@ export interface TutorialModeOptions {
 export class TutorialMode {
   private entityManager: EntityManager;
   private callbacks: TutorialModeCallbacks;
-  // Progression manager - reserved for future use
-  // @ts-expect-error - unused for now but part of consistent mode interface
-  private _progressionManager: ProgressionManager | undefined;
   private options: Required<TutorialModeOptions>;
 
   // Stage state
@@ -95,9 +92,8 @@ export class TutorialMode {
   ) {
     this.entityManager = entityManager;
     this.callbacks = callbacks;
-    // Store progression manager for future use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    this._progressionManager = progressionManager;
+    // Progression manager parameter reserved for future use
+    void progressionManager;
     this.options = {
       introDurationMs: 6000,
       practiceLoopCount: 8,

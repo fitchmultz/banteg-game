@@ -3,9 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Mock } from 'vitest';
 import { GameLoop } from '../../src/core/GameLoop';
 import { EntityManager } from '../../src/core/ecs/EntityManager';
 import { System, SystemManager, type UpdateContext } from '../../src/core/ecs/System';
+import type { RenderCallback } from '../../src/core/GameLoop';
 
 // Time tracking for mocks - start at non-zero to avoid first-frame special case
 let mockTime = 1000;
@@ -41,7 +43,7 @@ function runFrame(time: number): void {
 describe('GameLoop', () => {
   let entityManager: EntityManager;
   let systemManager: SystemManager;
-  let renderCallback: ReturnType<typeof vi.fn>;
+  let renderCallback: Mock<RenderCallback>;
   let gameLoop: GameLoop;
 
   beforeEach(() => {
@@ -51,7 +53,7 @@ describe('GameLoop', () => {
 
     entityManager = new EntityManager();
     systemManager = new SystemManager();
-    renderCallback = vi.fn();
+    renderCallback = vi.fn() as Mock<RenderCallback>;
 
     gameLoop = new GameLoop(entityManager, systemManager, renderCallback);
   });
@@ -162,7 +164,7 @@ describe('GameLoop', () => {
 
       runFrame(1010); // Half a frame at 60fps
 
-      const [interpolation] = renderCallback.mock.calls[0] as [number];
+      const [interpolation] = (renderCallback.mock.calls[0] ?? [0]) as unknown as [number];
       expect(interpolation).toBeGreaterThanOrEqual(0);
       expect(interpolation).toBeLessThanOrEqual(1);
     });
@@ -283,7 +285,7 @@ describe('GameLoop', () => {
 describe('GameLoop time scale', () => {
   let entityManager: EntityManager;
   let systemManager: SystemManager;
-  let renderCallback: ReturnType<typeof vi.fn>;
+  let renderCallback: Mock<RenderCallback>;
   let gameLoop: GameLoop;
 
   beforeEach(() => {
@@ -293,7 +295,7 @@ describe('GameLoop time scale', () => {
 
     entityManager = new EntityManager();
     systemManager = new SystemManager();
-    renderCallback = vi.fn();
+    renderCallback = vi.fn() as Mock<RenderCallback>;
 
     gameLoop = new GameLoop(entityManager, systemManager, renderCallback);
   });
