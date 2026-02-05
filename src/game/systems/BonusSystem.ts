@@ -258,7 +258,7 @@ export class BonusSystem extends System {
     const pistolCount = 4 + Math.floor(Math.random() * 4);
     for (let i = 0; i < pistolCount; i++) {
       // Random angle: decompiled uses (rand % 0x274) * 0.01 = 0-628 * 0.01 = 0-6.28 radians
-      const angle = (Math.random() * 628) * 0.01;
+      const angle = Math.random() * 628 * 0.01;
       const projectile = createProjectileEntity(
         this.entityManager,
         ProjectileTypeId.PISTOL,
@@ -279,7 +279,7 @@ export class BonusSystem extends System {
 
     // Spawn 2 gauss gun projectiles
     for (let i = 0; i < 2; i++) {
-      const angle = (Math.random() * 628) * 0.01;
+      const angle = Math.random() * 628 * 0.01;
       createProjectileEntity(
         this.entityManager,
         ProjectileTypeId.GAUSS_GUN,

@@ -14,7 +14,10 @@ import type { AudioManager } from '../../../../src/engine';
 import { SAMPLES } from '../../../../src/game/audio/catalog';
 import { BonusType, ProjectileTypeId } from '../../../../src/types';
 import { CollisionSystem } from '../../../../src/game/systems/CollisionSystem';
-import { setShockChainState, clearShockChainState } from '../../../../src/game/systems/ShockChainState';
+import {
+  setShockChainState,
+  clearShockChainState,
+} from '../../../../src/game/systems/ShockChainState';
 import { createProjectileEntity } from '../../../../src/game/entities/ProjectileFactory';
 
 // Mock AudioManager

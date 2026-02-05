@@ -48,9 +48,7 @@ const GOLDEN_SCENARIOS: ReplayScenario[] = [
     seed: 10004,
     durationFrames: 60,
     initialState: { playerPosition: { x: 0, y: 0 }, gameMode: 'survival' },
-    inputs: [
-      { frameNumber: 10, type: 'selectPerk', data: { perkId: 42 } },
-    ],
+    inputs: [{ frameNumber: 10, type: 'selectPerk', data: { perkId: 42 } }],
   },
   {
     name: 'movement_sequence',

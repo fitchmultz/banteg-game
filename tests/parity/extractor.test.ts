@@ -12,7 +12,9 @@ const canonical = JSON.parse(readFileSync('tests/parity/canonical-data.json', 'u
 
 describe('Extractor Sanity - Weapons', () => {
   it('should have contiguous weapon IDs 0-39', () => {
-    const ids = canonical.weapons.map((w: { id: number }) => w.id).sort((a: number, b: number) => a - b);
+    const ids = canonical.weapons
+      .map((w: { id: number }) => w.id)
+      .sort((a: number, b: number) => a - b);
     expect(ids).toEqual(Array.from({ length: 40 }, (_, i) => i));
   });
 
@@ -50,7 +52,9 @@ describe('Extractor Sanity - Weapons', () => {
 
 describe('Extractor Sanity - Creatures', () => {
   it('should have contiguous creature IDs 0-10', () => {
-    const ids = canonical.creatures.map((c: { id: number }) => c.id).sort((a: number, b: number) => a - b);
+    const ids = canonical.creatures
+      .map((c: { id: number }) => c.id)
+      .sort((a: number, b: number) => a - b);
     expect(ids).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
@@ -85,7 +89,9 @@ describe('Extractor Sanity - Creatures', () => {
 
 describe('Extractor Sanity - Perks', () => {
   it('should have contiguous perk IDs 0-57', () => {
-    const ids = canonical.perks.map((p: { id: number }) => p.id).sort((a: number, b: number) => a - b);
+    const ids = canonical.perks
+      .map((p: { id: number }) => p.id)
+      .sort((a: number, b: number) => a - b);
     expect(ids).toEqual(Array.from({ length: 58 }, (_, i) => i));
   });
 
@@ -104,7 +110,15 @@ describe('Extractor Sanity - Perks', () => {
   });
 
   it('should have valid perk categories', () => {
-    const validCategories = ['combat', 'defense', 'utility', 'movement', 'gamble', 'special', 'meta'];
+    const validCategories = [
+      'combat',
+      'defense',
+      'utility',
+      'movement',
+      'gamble',
+      'special',
+      'meta',
+    ];
     for (const p of canonical.perks) {
       expect(validCategories, `Perk ${p.id} (${p.name}) category`).toContain(p.category);
     }
@@ -154,7 +168,9 @@ describe('Extractor Sanity - Quests', () => {
 
 describe('Extractor Sanity - Bonuses', () => {
   it('should have contiguous bonus IDs 0-13', () => {
-    const ids = canonical.bonuses.map((b: { id: number }) => b.id).sort((a: number, b: number) => a - b);
+    const ids = canonical.bonuses
+      .map((b: { id: number }) => b.id)
+      .sort((a: number, b: number) => a - b);
     expect(ids).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
   });
 

@@ -202,7 +202,8 @@ export class QuestMode {
       switch (objective.type) {
         case 'kill_count':
           if (objective.creatureTypeId !== undefined) {
-            complete = (this.killCountsByType.get(objective.creatureTypeId) ?? 0) >= objective.target;
+            complete =
+              (this.killCountsByType.get(objective.creatureTypeId) ?? 0) >= objective.target;
           } else {
             complete = this.killCount >= objective.target;
           }
@@ -267,14 +268,20 @@ export class QuestMode {
     }
 
     // State 2: At 800ms, play questhit SFX and jump to 851ms
-    if (this.transitionTimerMs > this.TRANSITION_SFX_THRESHOLD && this.transitionTimerMs < this.TRANSITION_SFX_JUMP_TO) {
+    if (
+      this.transitionTimerMs > this.TRANSITION_SFX_THRESHOLD &&
+      this.transitionTimerMs < this.TRANSITION_SFX_JUMP_TO
+    ) {
       this.callbacks.onPlaySfx?.('questhit');
       this.transitionTimerMs = dtMs + this.TRANSITION_SFX_JUMP_TO;
       return;
     }
 
     // State 3: At 2000ms, start victory music and jump to 2051ms
-    if (this.transitionTimerMs > this.TRANSITION_MUSIC_THRESHOLD && this.transitionTimerMs < this.TRANSITION_MUSIC_JUMP_TO) {
+    if (
+      this.transitionTimerMs > this.TRANSITION_MUSIC_THRESHOLD &&
+      this.transitionTimerMs < this.TRANSITION_MUSIC_JUMP_TO
+    ) {
       this.transitionTimerMs = this.TRANSITION_MUSIC_JUMP_TO;
       this.callbacks.onPlayMusic?.('crimsonquest');
       this.transitionTimerMs += dtMs;
@@ -636,7 +643,10 @@ export class QuestMode {
             const dx = this.playerX - objective.x;
             const dy = this.playerY - objective.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            current = distance <= objective.target ? objective.target : Math.max(0, objective.target - distance);
+            current =
+              distance <= objective.target
+                ? objective.target
+                : Math.max(0, objective.target - distance);
             complete = distance <= objective.target;
           }
           break;

@@ -623,9 +623,7 @@ export class PerkSystem {
     const effects = this.dotEffects.get(playerEntityId) ?? [];
 
     // Check if creature already has this type of DoT
-    const existingIndex = effects.findIndex(
-      (e) => e.creatureId === creatureId && e.type === type
-    );
+    const existingIndex = effects.findIndex((e) => e.creatureId === creatureId && e.type === type);
 
     if (existingIndex >= 0) {
       // Refresh duration (stacking behavior)

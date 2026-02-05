@@ -5,8 +5,6 @@
  * These functions convert raw engine values to gameplay values.
  */
 
-
-
 /** Weapon categories for type-specific conversions */
 export type WeaponCategory =
   | 'pistol'

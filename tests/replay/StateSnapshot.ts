@@ -244,23 +244,17 @@ export function compareSnapshots(
 
   // Compare frame numbers
   if (expected.frameNumber !== actual.frameNumber) {
-    differences.push(
-      `frameNumber: expected ${expected.frameNumber}, got ${actual.frameNumber}`
-    );
+    differences.push(`frameNumber: expected ${expected.frameNumber}, got ${actual.frameNumber}`);
   }
 
   // Compare game times
   if (Math.abs(expected.gameTime - actual.gameTime) > tolerance) {
-    differences.push(
-      `gameTime: expected ${expected.gameTime}, got ${actual.gameTime}`
-    );
+    differences.push(`gameTime: expected ${expected.gameTime}, got ${actual.gameTime}`);
   }
 
   // Compare entity counts
   if (expected.entityCount !== actual.entityCount) {
-    differences.push(
-      `entityCount: expected ${expected.entityCount}, got ${actual.entityCount}`
-    );
+    differences.push(`entityCount: expected ${expected.entityCount}, got ${actual.entityCount}`);
   }
 
   // Compare entities
@@ -288,11 +282,7 @@ export function compareSnapshots(
   }
 
   // Compare system state
-  const systemDiffs = compareSystemState(
-    expected.systemState,
-    actual.systemState,
-    tolerance
-  );
+  const systemDiffs = compareSystemState(expected.systemState, actual.systemState, tolerance);
   differences.push(...systemDiffs);
 
   return differences;
@@ -322,15 +312,15 @@ function compareEntitySnapshots(
   }
 
   if (Math.abs(expected.rotation - actual.rotation) > tolerance) {
-    differences.push(`Entity ${id}: rotation expected ${expected.rotation}, got ${actual.rotation}`);
+    differences.push(
+      `Entity ${id}: rotation expected ${expected.rotation}, got ${actual.rotation}`
+    );
   }
 
   // Compare health if present in both
   if (expected.health !== undefined && actual.health !== undefined) {
     if (Math.abs(expected.health - actual.health) > tolerance) {
-      differences.push(
-        `Entity ${id}: health expected ${expected.health}, got ${actual.health}`
-      );
+      differences.push(`Entity ${id}: health expected ${expected.health}, got ${actual.health}`);
     }
   }
 

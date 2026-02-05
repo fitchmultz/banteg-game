@@ -9,10 +9,7 @@
  */
 
 import { AiMode, CreatureTypeId } from '../../types';
-import {
-  convertCreatureStats,
-  CREATURE_TYPE_TO_TEMPLATE,
-} from './creature-conversions';
+import { convertCreatureStats, CREATURE_TYPE_TO_TEMPLATE } from './creature-conversions';
 
 export interface CreatureData {
   /** Creature display name */

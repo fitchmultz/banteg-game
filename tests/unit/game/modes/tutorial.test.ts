@@ -25,8 +25,12 @@ describe('TutorialMode', () => {
     onStageChange: Mock<(stage: TutorialStage, previousStage: TutorialStage) => void>;
     onComplete: Mock<() => void>;
     onRequestPerkSelection: Mock<() => void>;
-    onSpawnBonuses: Mock<(bonuses: Array<{ type: BonusType; x: number; y: number; value?: number }>) => void>;
-    onSpawnEnemies: Mock<(enemies: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }>) => void>;
+    onSpawnBonuses: Mock<
+      (bonuses: Array<{ type: BonusType; x: number; y: number; value?: number }>) => void
+    >;
+    onSpawnEnemies: Mock<
+      (enemies: Array<{ creatureTypeId: CreatureTypeId; x: number; y: number }>) => void
+    >;
   };
 
   beforeEach(() => {
@@ -135,7 +139,7 @@ describe('TutorialMode', () => {
       tutorialMode.checkStageProgression({ hasMovementInput: true });
       expect(callbacks.onSpawnBonuses).toHaveBeenCalled();
 
-      const bonuses = ((callbacks.onSpawnBonuses.mock.calls[0]?.[0] ?? []) as unknown) as Array<{
+      const bonuses = (callbacks.onSpawnBonuses.mock.calls[0]?.[0] ?? []) as unknown as Array<{
         type: BonusType;
         x: number;
         y: number;

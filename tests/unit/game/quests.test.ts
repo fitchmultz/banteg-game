@@ -399,7 +399,7 @@ describe('QuestMode Transition State Machine', () => {
   it('should not start transition until all objectives are complete', () => {
     // monster_blues requires 50 kills - with no kills, objectives aren't complete
     questMode.startQuest('monster_blues');
-    
+
     // Update with no progress
     questMode.update(0.016);
 
@@ -410,7 +410,7 @@ describe('QuestMode Transition State Machine', () => {
   it('should start transition when objectives complete with empty spawn table', () => {
     // Use monster_blues which requires 50 kills
     questMode.startQuest('monster_blues');
-    
+
     // Complete all 50 kills needed
     for (let i = 0; i < 50; i++) {
       questMode.recordKill(undefined, 10, false);
@@ -422,12 +422,12 @@ describe('QuestMode Transition State Machine', () => {
     // Should have started transition (timer >= 0) since spawn table is empty (no spawns processed)
     // Note: objectives are complete but spawn table may have entries, so transition may not start
     // This test verifies the objective checking works
-    expect(questMode.getObjectiveStatus().every(obj => obj.complete)).toBe(true);
+    expect(questMode.getObjectiveStatus().every((obj) => obj.complete)).toBe(true);
   });
 
   it('should track transition timer state correctly', () => {
     questMode.startQuest('monster_blues');
-    
+
     // Complete objectives
     for (let i = 0; i < 50; i++) {
       questMode.recordKill(undefined, 10, false);
@@ -435,30 +435,30 @@ describe('QuestMode Transition State Machine', () => {
 
     // Get transition state
     const state = questMode.getTransitionState();
-    
+
     // Verify all objectives are complete
     expect(state.allObjectivesComplete).toBe(true);
-    
+
     // Verify no creatures active (none spawned in test)
     expect(state.creaturesNoneActive).toBe(true);
-    
+
     // Spawn table may not be empty due to quest spawn entries
     // This documents the actual behavior
   });
 
   it('should transition from inactive to starting state', () => {
     questMode.startQuest('monster_blues');
-    
+
     // Initially timer should be -1 (inactive)
     expect(questMode.getTransitionTimerMs()).toBe(-1);
-    
+
     // Complete objectives
     for (let i = 0; i < 50; i++) {
       questMode.recordKill(undefined, 10, false);
     }
-    
+
     // Objectives should be complete
-    expect(questMode.getObjectiveStatus().every(obj => obj.complete)).toBe(true);
+    expect(questMode.getObjectiveStatus().every((obj) => obj.complete)).toBe(true);
   });
 
   it('should pass hardcore mode status through callbacks', () => {
@@ -466,7 +466,7 @@ describe('QuestMode Transition State Machine', () => {
     questMode = new QuestMode(entityManager, mockCallbacks);
 
     questMode.startQuest('monster_blues');
-    
+
     // Complete objectives
     for (let i = 0; i < 50; i++) {
       questMode.recordKill(undefined, 10, false);
@@ -591,9 +591,7 @@ describe('QuestSpawnSystem Empty Check', () => {
       name: 'Test Quest',
       description: 'Test',
       objectives: [],
-      spawnEntries: [
-        { creatureTypeId: 1, x: 0, y: 0, triggerTimeMs: 0, count: 1 },
-      ],
+      spawnEntries: [{ creatureTypeId: 1, x: 0, y: 0, triggerTimeMs: 0, count: 1 }],
     };
 
     spawnSystem.startQuest(mockQuest);

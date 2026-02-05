@@ -24,22 +24,10 @@ describe('Deterministic Behavior Parity', () => {
   describe('SeededRNG', () => {
     it('should produce identical sequences with same seed', () => {
       mockRandomWithSeed(12345);
-      const seq1 = [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ];
+      const seq1 = [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()];
 
       mockRandomWithSeed(12345);
-      const seq2 = [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ];
+      const seq2 = [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()];
 
       restoreRandom();
       expect(seq1).toEqual(seq2);
@@ -113,23 +101,11 @@ describe('Deterministic Behavior Parity', () => {
     it('should produce different RNG sequences with different seeds', () => {
       // Directly test that the seeded RNG produces different values
       mockRandomWithSeed(12345);
-      const values1 = [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ];
+      const values1 = [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()];
       restoreRandom();
 
       mockRandomWithSeed(54321);
-      const values2 = [
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-        Math.random(),
-      ];
+      const values2 = [Math.random(), Math.random(), Math.random(), Math.random(), Math.random()];
       restoreRandom();
 
       // Different seeds should produce different sequences

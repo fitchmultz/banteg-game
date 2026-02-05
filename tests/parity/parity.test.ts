@@ -22,15 +22,15 @@ const canonical = JSON.parse(readFileSync('tests/parity/canonical-data.json', 'u
 
 /**
  * NOTE ON STAT CONVERSIONS:
- * 
+ *
  * Many stats have significant deviations because the decompiled values
  * use different units than the gameplay values:
- * 
+ *
  * - Damage: Raw * 100 ≈ gameplay (but varies by weapon type)
  * - Fire Rate: Different units (shots/sec vs sec/shot), high variance expected
- * - Reload Time: Engine frames vs seconds, high variance expected  
+ * - Reload Time: Engine frames vs seconds, high variance expected
  * - Clip Size: Engine ammo vs magazine, often unrelated
- * 
+ *
  * The parity tests validate that values are in reasonable ranges
  * rather than enforcing exact numeric parity, which would require
  * implementing the full grim.dll runtime conversion logic.
@@ -78,9 +78,7 @@ describe('Weapon Parity', () => {
 
         // Check that gameplay damage is reasonable (1 to 500)
         if (tsWeapon.damage < 1 || tsWeapon.damage > 500) {
-          badDamage.push(
-            `${canonicalWeapon.name}: ts=${tsWeapon.damage} (should be 1-500)`
-          );
+          badDamage.push(`${canonicalWeapon.name}: ts=${tsWeapon.damage} (should be 1-500)`);
         }
       }
       if (badDamage.length > 0) {
@@ -98,7 +96,9 @@ describe('Weapon Parity', () => {
         if (!tsWeapon || canonicalWeapon.damage === 0) continue;
 
         const ratio = tsWeapon.damage / canonicalWeapon.damage;
-        ratios.push(`${canonicalWeapon.name}: canonical=${canonicalWeapon.damage.toFixed(1)}, ts=${tsWeapon.damage}, ratio=${ratio.toFixed(2)}`);
+        ratios.push(
+          `${canonicalWeapon.name}: canonical=${canonicalWeapon.damage.toFixed(1)}, ts=${tsWeapon.damage}, ratio=${ratio.toFixed(2)}`
+        );
       }
       console.log('Weapon damage conversion reference:', ratios);
       expect(ratios.length).toBeGreaterThan(0); // Always pass - just for reference
@@ -159,9 +159,7 @@ describe('Weapon Parity', () => {
 
         // Check that gameplay clipSize is reasonable (1 to 200)
         if (tsWeapon.clipSize < 1 || tsWeapon.clipSize > 200) {
-          badClips.push(
-            `${canonicalWeapon.name}: ts=${tsWeapon.clipSize} (should be 1-200)`
-          );
+          badClips.push(`${canonicalWeapon.name}: ts=${tsWeapon.clipSize} (should be 1-200)`);
         }
       }
       if (badClips.length > 0) {

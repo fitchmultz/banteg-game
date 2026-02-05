@@ -113,12 +113,18 @@ export class ReplayHarness {
       });
       this.systemManager.addSystem(this.spawnSystem);
     } else if (scenario.initialState.gameMode === 'quest' && scenario.initialState.questId) {
-      this.questSpawnSystem = new QuestSpawnSystem(this.entityManager, {}, {
-        mapWidth: 2048,
-        mapHeight: 2048,
-        spawnRadius: 800,
-      });
-      const quest = getQuestData(scenario.initialState.questId as import('../../src/types').QuestId);
+      this.questSpawnSystem = new QuestSpawnSystem(
+        this.entityManager,
+        {},
+        {
+          mapWidth: 2048,
+          mapHeight: 2048,
+          spawnRadius: 800,
+        }
+      );
+      const quest = getQuestData(
+        scenario.initialState.questId as import('../../src/types').QuestId
+      );
       if (quest) {
         this.questSpawnSystem.startQuest(quest);
       }
@@ -126,13 +132,18 @@ export class ReplayHarness {
 
     // Add perk system
     this.perkSystem = new PerkSystem(this.entityManager, {});
-    this.systemManager.addSystem(this.perkSystem as unknown as import('../../src/core/ecs/System').System);
+    this.systemManager.addSystem(
+      this.perkSystem as unknown as import('../../src/core/ecs/System').System
+    );
 
     // Add AI system
     this.systemManager.addSystem(new AiSystem(this.entityManager));
 
     // Add weapon system (with mock audio)
-    const weaponSystem = new WeaponSystem(this.entityManager, mockAudio as unknown as import('../../src/engine').AudioManager);
+    const weaponSystem = new WeaponSystem(
+      this.entityManager,
+      mockAudio as unknown as import('../../src/engine').AudioManager
+    );
     weaponSystem.setPerkSystem(this.perkSystem);
     this.systemManager.addSystem(weaponSystem);
 
@@ -140,7 +151,11 @@ export class ReplayHarness {
     this.systemManager.addSystem(new ProjectileSystem(this.entityManager));
 
     // Add collision system
-    this.collisionSystem = new CollisionSystem(this.entityManager, mockAudio as unknown as import('../../src/engine').AudioManager, this.perkSystem);
+    this.collisionSystem = new CollisionSystem(
+      this.entityManager,
+      mockAudio as unknown as import('../../src/engine').AudioManager,
+      this.perkSystem
+    );
     this.systemManager.addSystem(this.collisionSystem);
 
     // Add health system

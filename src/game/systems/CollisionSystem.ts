@@ -22,11 +22,7 @@ import { createProjectileEntity } from '../entities/ProjectileFactory';
 import type { PerkSystem } from './PerkSystem';
 import type { AudioManager } from '../../engine';
 import { SAMPLES } from '../audio';
-import {
-  getShockChainState,
-  updateShockChainState,
-  clearShockChainState,
-} from './ShockChainState';
+import { getShockChainState, updateShockChainState, clearShockChainState } from './ShockChainState';
 
 export interface DamageEvent {
   targetId: EntityId;

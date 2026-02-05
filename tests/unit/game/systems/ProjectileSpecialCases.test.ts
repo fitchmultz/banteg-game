@@ -56,19 +56,10 @@ describe('Projectile Special Cases', () => {
       const enemy = entityManager.createEntity();
       enemy.addComponent(createTransform(100, 100));
       enemy.addComponent(createCollider(16, CollisionLayer.ENEMY));
-      enemy.addComponent(
-        createCreature(CreatureTypeId.ZOMBIE, { size: 32, health: 100 })
-      );
+      enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE, { size: 32, health: 100 }));
 
       // Create shrinkifier projectile
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.SHRINKIFIER,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.SHRINKIFIER, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());
@@ -83,19 +74,10 @@ describe('Projectile Special Cases', () => {
       const enemy = entityManager.createEntity();
       enemy.addComponent(createTransform(100, 100));
       enemy.addComponent(createCollider(16, CollisionLayer.ENEMY));
-      enemy.addComponent(
-        createCreature(CreatureTypeId.ZOMBIE, { size: 20, health: 100 })
-      );
+      enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE, { size: 20, health: 100 }));
 
       // Create shrinkifier projectile
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.SHRINKIFIER,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.SHRINKIFIER, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());
@@ -110,19 +92,10 @@ describe('Projectile Special Cases', () => {
       const enemy = entityManager.createEntity();
       enemy.addComponent(createTransform(100, 100));
       enemy.addComponent(createCollider(16, CollisionLayer.ENEMY));
-      enemy.addComponent(
-        createCreature(CreatureTypeId.ZOMBIE, { size: 32, health: 100 })
-      );
+      enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE, { size: 32, health: 100 }));
 
       // Create shrinkifier projectile
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.SHRINKIFIER,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.SHRINKIFIER, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());
@@ -142,14 +115,7 @@ describe('Projectile Special Cases', () => {
       enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE, { health: 100 }));
 
       // Create splitter gun projectile at 0 degrees
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.SPLITTER_GUN,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.SPLITTER_GUN, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());
@@ -175,14 +141,7 @@ describe('Projectile Special Cases', () => {
       );
 
       // Create plague spreader projectile
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.PLAGUE_SPREADER,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.PLAGUE_SPREADER, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());
@@ -202,14 +161,7 @@ describe('Projectile Special Cases', () => {
       enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE, { health: 100 }));
 
       // Create pulse gun projectile moving right (0 degrees)
-      createProjectileEntity(
-        entityManager,
-        ProjectileTypeId.PULSE_GUN,
-        100,
-        100,
-        0,
-        1
-      );
+      createProjectileEntity(entityManager, ProjectileTypeId.PULSE_GUN, 100, 100, 0, 1);
 
       // Run collision detection
       collisionSystem.update(entityManager, createUpdateContext());

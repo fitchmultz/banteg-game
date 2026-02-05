@@ -51,11 +51,7 @@ export class CreditsUI {
   private readonly creditsSections: Array<{ title: string; lines: string[] }> = [
     {
       title: 'Original Game',
-      lines: [
-        'Crimsonland (2003)',
-        'Created by 10tons Ltd',
-        'Original design by Tero Alatalo',
-      ],
+      lines: ['Crimsonland (2003)', 'Created by 10tons Ltd', 'Original design by Tero Alatalo'],
     },
     {
       title: 'Remake',
@@ -386,12 +382,7 @@ export class CreditsUI {
     const y = e.clientY - rect.top;
 
     const btn = this.button;
-    if (
-      x >= btn.x &&
-      x <= btn.x + btn.width &&
-      y >= btn.y &&
-      y <= btn.y + btn.height
-    ) {
+    if (x >= btn.x && x <= btn.x + btn.width && y >= btn.y && y <= btn.y + btn.height) {
       this.goBack();
     }
   }
@@ -404,11 +395,7 @@ export class CreditsUI {
     const y = e.clientY - rect.top;
 
     const btn = this.button;
-    btn.hovered =
-      x >= btn.x &&
-      x <= btn.x + btn.width &&
-      y >= btn.y &&
-      y <= btn.y + btn.height;
+    btn.hovered = x >= btn.x && x <= btn.x + btn.width && y >= btn.y && y <= btn.y + btn.height;
   }
 
   private handleWheel(e: WheelEvent): void {

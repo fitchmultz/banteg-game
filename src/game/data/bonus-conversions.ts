@@ -118,10 +118,7 @@ export function convertBonusStats(
  * Get canonical bonus values as extracted from decompile.
  * These are the raw values before conversion.
  */
-export const CANONICAL_BONUS_VALUES: Record<
-  BonusType,
-  { duration: number; rarity: number }
-> = {
+export const CANONICAL_BONUS_VALUES: Record<BonusType, { duration: number; rarity: number }> = {
   [BonusType.POINTS]: { duration: 12, rarity: 500 },
   [BonusType.WEAPON]: { duration: -1, rarity: 3 },
   [BonusType.ATOMIC]: { duration: 1, rarity: 0 },
