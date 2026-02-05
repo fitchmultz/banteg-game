@@ -29,9 +29,5 @@ export default defineConfig({
       '@types': resolve(__dirname, 'src/types'),
     },
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    include: ['tests/**/*.{test,spec}.{ts,js}'],
-  },
+
 });
