@@ -21,7 +21,7 @@
  * - Console is rendered in screen space (not world space)
  */
 
-import type { InputManager } from '../engine/InputManager';
+import type { InputManager } from '../engine/input/InputManager';
 import type { Renderer } from '../engine/Renderer';
 import { commandRegistry } from './CommandRegistry';
 import { cvarRegistry } from './Cvar';

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { InputManager, KeyCode } from '../../src/engine/InputManager';
+import { InputManager, KeyCode } from '../../src/engine/input/InputManager';
 
 describe('InputManager', () => {
   let canvas: HTMLCanvasElement;
