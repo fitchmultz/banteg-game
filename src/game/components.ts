@@ -147,6 +147,8 @@ export interface Creature extends Component {
   frame: number;
   frameTime: number;
   animRate: number;
+  // Plague spreader collision flag (decompiled line 331)
+  collisionFlag?: boolean;
 }
 
 export function createCreature(
@@ -169,6 +171,7 @@ export function createCreature(
     rewardValue: options.rewardValue ?? 10,
     frame: options.frame ?? 0,
     frameTime: options.frameTime ?? 0,
+    collisionFlag: options.collisionFlag ?? false,
   };
 }
 
@@ -180,6 +183,9 @@ export interface Projectile extends Component {
   lifetime: number;
   ownerId: number;
   pierceCount: number;
+  // Shock chain tracking (decompiled lines 273-290)
+  shockChainLinksLeft?: number | undefined; // Remaining chain jumps (starts at 32)
+  isShockChainActive?: boolean | undefined; // Whether this is part of a chain sequence
 }
 
 export function createProjectile(
@@ -195,6 +201,9 @@ export function createProjectile(
     lifetime,
     ownerId,
     pierceCount: 0,
+    // Shock chain fields are undefined by default (not active)
+    shockChainLinksLeft: undefined,
+    isShockChainActive: undefined,
   };
 }
 

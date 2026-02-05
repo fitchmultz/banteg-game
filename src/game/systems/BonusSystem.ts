@@ -13,6 +13,7 @@ import { getWeaponData } from '../data';
 import { collectEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
 import { createProjectileEntity } from '../entities/ProjectileFactory';
+import { setShockChainState, SHOCK_CHAIN_MAX_LINKS } from './ShockChainState';
 
 // Special owner ID for environmental/projectile damage (no XP/kill credit)
 const ENVIRONMENTAL_OWNER_ID = -100;
@@ -339,7 +340,7 @@ export class BonusSystem extends System {
       // Decompiled: angle - π/2 - π (coordinate system adjustment)
       const adjustedAngle = angle - Math.PI / 2 - Math.PI;
 
-      createProjectileEntity(
+      const projectile = createProjectileEntity(
         this.entityManager,
         ProjectileTypeId.ION_RIFLE,
         x,
@@ -349,14 +350,21 @@ export class BonusSystem extends System {
         { damage: 30 }
       );
 
-      // TODO: Set shock_chain_links_left = 32 for chain continuation
-      // TODO: Track shock_chain_projectile_id for chain logic
+      // Initialize shock chain state for chain continuation
+      const projComponent = projectile.getComponent<'projectile'>('projectile');
+      if (projComponent) {
+        projComponent.isShockChainActive = true;
+        projComponent.shockChainLinksLeft = SHOCK_CHAIN_MAX_LINKS;
+      }
+
+      // Set global shock chain state (CollisionSystem will use this)
+      setShockChainState(projectile.id, SHOCK_CHAIN_MAX_LINKS);
+
+      // TODO: Play sfx_shock_hit_01
     }
 
     // Release spawn guard
     BonusSystem.spawnGuard = false;
-
-    // TODO: Play sfx_shock_hit_01
   }
 
   /**
