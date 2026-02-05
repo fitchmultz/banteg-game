@@ -208,6 +208,25 @@ export class QuestSpawnSystem {
   }
 
   /**
+   * Check if spawn table is empty (no pending spawns)
+   * Mirrors quest_spawn_table_empty() from decompiled source @ 00434220
+   * Returns true when quest_spawn_count is 0 or all entries have count <= 0
+   */
+  isSpawnTableEmpty(): boolean {
+    if (!this.questData) return true;
+
+    // Check if all remaining entries have count <= 0
+    for (let i = this.nextSpawnIndex; i < this.questData.spawnEntries.length; i++) {
+      const entry = this.questData.spawnEntries[i];
+      if (entry && entry.count > 0) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
    * Get time until next spawn in milliseconds
    */
   getTimeUntilNextSpawn(): number | null {

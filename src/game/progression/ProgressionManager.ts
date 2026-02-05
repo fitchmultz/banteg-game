@@ -47,6 +47,9 @@ export interface PlayerProgression {
   // Quest progress
   completedQuests: QuestId[];
   questHighScores: Partial<Record<QuestId, QuestHighScore>>;
+  // Quest unlock indices (from decompiled quest_unlock_index, quest_unlock_index_full)
+  questUnlockIndex: number; // Normal mode unlock progress
+  questUnlockIndexFull: number; // Hardcore mode unlock progress
   // Survival progress
   survivalHighScore: SurvivalHighScore;
   // Statistics
@@ -88,6 +91,8 @@ function createDefaultProgression(): PlayerProgression {
     version: SAVE_VERSION,
     completedQuests: [],
     questHighScores: {},
+    questUnlockIndex: 0, // NEW: Quest unlock progress
+    questUnlockIndexFull: 0, // NEW: Hardcore mode unlock progress
     survivalHighScore: { ...DEFAULT_SURVIVAL_HIGH_SCORE },
     statistics: { ...DEFAULT_STATISTICS },
     unlockedFeatures: [],
@@ -263,6 +268,35 @@ export class ProgressionManager {
       total: totalMainQuests,
       percentage: Math.round((mainQuests.length / totalMainQuests) * 100),
     };
+  }
+
+  /**
+   * Update quest unlock index (from decompiled quest_mode_update)
+   * @param index The new unlock index
+   * @param isHardcore Whether this is for hardcore mode
+   */
+  updateQuestUnlockIndex(index: number, isHardcore: boolean): void {
+    if (index > this.data.questUnlockIndex) {
+      this.data.questUnlockIndex = index;
+      this.markDirty();
+    }
+
+    if (isHardcore && index > this.data.questUnlockIndexFull) {
+      this.data.questUnlockIndexFull = index;
+      this.markDirty();
+    }
+  }
+
+  /**
+   * Get current quest unlock index
+   * @param isHardcore Whether to get hardcore mode index
+   * @returns The current unlock index
+   */
+  getQuestUnlockIndex(isHardcore = false): number {
+    if (isHardcore) {
+      return this.data.questUnlockIndexFull;
+    }
+    return this.data.questUnlockIndex;
   }
 
   // ============================================================================
