@@ -4,12 +4,14 @@
  * Manages perk application, stat calculations, and special perk effects.
  * Integrates with the ECS to apply perks to player entities.
  * Uses deterministic gameTime-based timing for all timed effects.
+ *
+ * This is now an orchestrator that delegates to specialized handlers.
  */
 
 import type { EntityManager, UpdateContext } from '../../core/ecs';
 import type { EntityId } from '../../types';
-import { PerkId, WeaponId } from '../../types';
-import type { Player, WeaponSlot } from '../components';
+import { PerkId, type WeaponId } from '../../types';
+import type { Player } from '../components';
 import {
   getPerkData,
   isPerkCompatible,
@@ -25,34 +27,16 @@ import {
   calculateClipSizeBonus,
   type PerkData,
 } from '../data/perks';
-import { getWeaponData } from '../data';
+import type { PerkSystemCallbacks, ActivePerkEffect } from './perks/types';
+import {
+  RadioactiveHandler,
+  EvilEyesHandler,
+  DotHandler,
+  JinxedHandler,
+  WeaponHandler,
+} from './perks/handlers';
 
-export interface PerkSystemCallbacks {
-  onPerkApplied?: (entityId: EntityId, perkId: PerkId, newRank: number) => void;
-  onFatalLottery?: (entityId: EntityId, survived: boolean, xpGained: number) => void;
-  onInfernalContract?: (entityId: EntityId, levelsGained: number) => void;
-  onGrimDeal?: (entityId: EntityId, xpConverted: number) => void;
-}
-
-export interface ActivePerkEffect {
-  perkId: PerkId;
-  endsAtGameTime: number; // Deterministic: uses context.gameTime
-  duration: number;
-}
-
-export interface JinxState {
-  nextTriggerTime: number;
-  interval: number;
-}
-
-export interface DotEffect {
-  creatureId: EntityId;
-  damagePerTick: number;
-  remainingDuration: number;
-  tickInterval: number;
-  timeUntilNextTick: number;
-  type: 'uranium' | 'poison';
-}
+export type { PerkSystemCallbacks, ActivePerkEffect } from './perks/types';
 
 export class PerkSystem {
   readonly name = 'PerkSystem';
@@ -62,27 +46,29 @@ export class PerkSystem {
   private entityManager: EntityManager;
   private callbacks: PerkSystemCallbacks;
 
+  // Handler instances
+  private radioactiveHandler: RadioactiveHandler;
+  private evilEyesHandler: EvilEyesHandler;
+  private dotHandler: DotHandler;
+  private jinxedHandler: JinxedHandler;
+  private weaponHandler: WeaponHandler;
+
   // Track active timed effects per entity (deterministic gameTime-based)
   private activeEffects: Map<EntityId, ActivePerkEffect[]> = new Map();
 
   // Track death clock timer per entity
   private deathClockTimers: Map<EntityId, number> = new Map();
 
-  // Track jinxed state per entity
-  private jinxStates: Map<EntityId, JinxState> = new Map();
-
-  // Track Evil Eyes target creature per entity (from decompiled: evil_eyes_target_creature)
-  private evilEyesTargetCreature: Map<EntityId, EntityId | null> = new Map();
-
-  // Track active DoT effects per entity
-  private dotEffects: Map<EntityId, DotEffect[]> = new Map();
-
-  // Radioactive aura radius (in world units)
-  private readonly RADIOACTIVE_AURA_RADIUS = 150;
-
   constructor(entityManager: EntityManager, callbacks: PerkSystemCallbacks = {}) {
     this.entityManager = entityManager;
     this.callbacks = callbacks;
+
+    // Initialize handlers
+    this.radioactiveHandler = new RadioactiveHandler(entityManager);
+    this.evilEyesHandler = new EvilEyesHandler(entityManager);
+    this.dotHandler = new DotHandler(entityManager);
+    this.jinxedHandler = new JinxedHandler(entityManager);
+    this.weaponHandler = new WeaponHandler();
   }
 
   /**
@@ -170,24 +156,16 @@ export class PerkSystem {
           break;
         }
 
-        case 'special_highlander': {
-          // Mark for highlander mode (handled by spawn system)
-          break;
-        }
-
-        case 'special_plaguebearer': {
-          // Mark for plaguebearer mode (handled by death system)
-          break;
-        }
-
+        case 'special_highlander':
+        case 'special_plaguebearer':
         case 'special_monster_vision': {
-          // Enable monster vision (handled by render system)
+          // These are handled by other systems checking perk counts
           break;
         }
 
         case 'special_random_weapon': {
           // Grant a random weapon immediately
-          this.grantRandomWeapon(player);
+          this.weaponHandler.grantRandomWeapon(player);
           break;
         }
 
@@ -199,138 +177,17 @@ export class PerkSystem {
 
         case 'special_jinxed': {
           // Initialize jinx state
-          this.jinxStates.set(entityId, {
-            nextTriggerTime: gameTime + 2 + Math.random() * 2,
-            interval: 2 + Math.random() * 2,
-          });
+          this.jinxedHandler.initializeJinx(entityId, gameTime);
           break;
         }
 
-        case 'special_fire_bullets':
-        case 'special_infinite_ammo_window':
-        case 'special_ammo_refill_on_pickup':
-        case 'special_shield_on_hit':
-        case 'special_regression_bullets':
-        case 'special_time_slow_on_hit':
-        case 'special_radioactive_aura':
-        case 'special_evil_eyes':
-        case 'special_uranium_dot':
-        case 'special_poison_dot':
-        case 'special_dodger':
-        case 'special_final_revenge':
-        case 'special_veins_of_poison':
-        case 'special_toxic_avenger':
-        case 'special_ninja':
-        case 'special_ion_gun_master':
-        case 'special_angry_reloader':
-        case 'special_stationary_reloader':
-        case 'special_man_bomb':
-        case 'special_fire_caugh':
-        case 'special_living_fortress':
-        case 'special_tough_reloader':
-        case 'special_alternate_weapon':
-        case 'special_gore_intensity':
-        case 'special_bonus_magnet': {
-          // These are handled by other systems checking perk counts
+        default: {
+          // Other special perks are handled by other systems or the default case
           break;
         }
-
-        default:
-          // Standard stat modifiers handled separately
-          break;
       }
     }
     return true;
-  }
-
-  /**
-   * Grant a random weapon to the player (helper for special_random_weapon)
-   */
-  private grantRandomWeapon(player: Player): void {
-    // Get all available weapon IDs
-    const allWeaponIds = Object.values(WeaponId).filter(
-      (id): id is WeaponId => typeof id === 'number'
-    );
-
-    // Filter out current weapon and pistol if possible
-    const availableWeapons = allWeaponIds.filter((id) => {
-      if (id === player.currentWeapon.weaponId) return false;
-      // Keep pistol as fallback option
-      return true;
-    });
-
-    // If no alternatives, allow pistol
-    const candidateWeapons = availableWeapons.length > 0 ? availableWeapons : allWeaponIds;
-
-    // Pick random weapon
-    const randomIndex = Math.floor(Math.random() * candidateWeapons.length);
-    const selectedWeaponId = candidateWeapons[randomIndex];
-
-    if (selectedWeaponId === undefined) return;
-
-    // Apply the weapon pickup using shared helper logic
-    const weaponData = getWeaponData(selectedWeaponId);
-    const pickupAmmo = Math.max(weaponData.clipSize * 3, 60);
-
-    this.applyWeaponPickupToPlayer(player, selectedWeaponId, pickupAmmo);
-  }
-
-  /**
-   * Apply a weapon pickup to a player (shared helper for consistency)
-   * Mirrors the logic in WeaponPickupSystem
-   */
-  applyWeaponPickupToPlayer(player: Player, pickupWeaponId: WeaponId, pickupAmmo: number): void {
-    const weaponData = getWeaponData(pickupWeaponId);
-
-    // Check if player already has this weapon equipped
-    if (player.currentWeapon.weaponId === pickupWeaponId) {
-      // Add ammo to current weapon
-      player.currentWeapon.ammo += pickupAmmo;
-      return;
-    }
-
-    if (player.alternateWeapon.weaponId === pickupWeaponId) {
-      // Add ammo to alternate weapon and swap to it
-      player.alternateWeapon.ammo += pickupAmmo;
-      this.swapWeaponSlots(player);
-      return;
-    }
-
-    // Check if current weapon is the default pistol (and we have an alternate)
-    // If so, replace the alternate with the new weapon
-    if (
-      player.currentWeapon.weaponId === WeaponId.PISTOL &&
-      player.alternateWeapon.weaponId !== WeaponId.PISTOL
-    ) {
-      // Replace alternate with new weapon, keep pistol as fallback
-      player.alternateWeapon = {
-        weaponId: pickupWeaponId,
-        clipSize: Math.min(weaponData.clipSize, pickupAmmo),
-        ammo: Math.max(0, pickupAmmo - weaponData.clipSize),
-      };
-      // Swap to the new weapon
-      this.swapWeaponSlots(player);
-      return;
-    }
-
-    // Default: Replace alternate weapon with new weapon, swap to it
-    player.alternateWeapon = {
-      weaponId: pickupWeaponId,
-      clipSize: Math.min(weaponData.clipSize, pickupAmmo),
-      ammo: Math.max(0, pickupAmmo - weaponData.clipSize),
-    };
-
-    // Swap to the new weapon
-    this.swapWeaponSlots(player);
-  }
-
-  /**
-   * Swap current and alternate weapon slots
-   */
-  private swapWeaponSlots(player: Player): void {
-    const temp: WeaponSlot = { ...player.currentWeapon };
-    player.currentWeapon = { ...player.alternateWeapon };
-    player.alternateWeapon = temp;
   }
 
   /**
@@ -341,8 +198,6 @@ export class PerkSystem {
     const eligibleCreatures = creatures.filter((entity) => {
       const creature = entity.getComponent<'creature'>('creature');
       if (!creature) return false;
-      // Skip invulnerable creatures
-      // CreatureFlags.INVULNERABLE check would go here if we had flags access
       return creature.health > 0;
     });
 
@@ -372,7 +227,6 @@ export class PerkSystem {
 
         case 'clip_size_bonus': {
           // Clip size bonus is applied dynamically by weapon system
-          // calculateClipSizeBonus(player.perkCounts) is called when needed
           break;
         }
       }
@@ -398,220 +252,54 @@ export class PerkSystem {
       }
 
       // Handle death clock
-      const deathClockTime = this.deathClockTimers.get(entityId);
-      if (deathClockTime !== undefined) {
-        const newTime = deathClockTime - dt;
-        if (newTime <= 0) {
-          // Death clock expired - player dies
-          player.health = 0;
-          this.deathClockTimers.delete(entityId);
-        } else {
-          this.deathClockTimers.set(entityId, newTime);
-          // Grant massive regen during death clock
-          player.health = Math.min(player.maxHealth, player.health + 20 * dt);
-        }
-      }
+      this.updateDeathClock(entityId, player, dt);
 
       // Handle radioactive aura damage
       if (this.hasPerk(entityId, PerkId.RADIOACTIVE)) {
-        this.applyRadioactiveAura(entityId, dt);
+        this.radioactiveHandler.applyRadioactiveAura(entityId, dt);
       }
 
-      // Update Evil Eyes targeting (from decompiled: creature_find_in_radius)
-      this.updateEvilEyesTarget(entityId, player);
+      // Update Evil Eyes targeting
+      this.evilEyesHandler.updateEvilEyesTarget(entityId, this.hasPerk(entityId, PerkId.EVIL_EYES));
 
       // Handle jinxed perk
-      this.updateJinxed(entityId, player, gameTime, dt);
+      this.jinxedHandler.updateJinxed(
+        entityId,
+        player,
+        gameTime,
+        dt,
+        this.hasPerk(entityId, PerkId.JINXED)
+      );
 
       // Update active effects (clean up expired)
       this.updateActiveEffects(entityId, gameTime);
     }
 
     // Update DoT effects globally
-    this.updateDotEffects(dt);
+    this.dotHandler.updateDotEffects(dt);
   }
 
   /**
-   * Update jinxed perk effects
+   * Update death clock timer
    */
-  private updateJinxed(entityId: EntityId, player: Player, gameTime: number, dt: number): void {
-    if (!this.hasPerk(entityId, PerkId.JINXED)) {
-      // Clean up jinx state if perk was removed
-      this.jinxStates.delete(entityId);
-      return;
-    }
-
-    let jinxState = this.jinxStates.get(entityId);
-    if (!jinxState) {
-      // Initialize jinx state
-      jinxState = {
-        nextTriggerTime: gameTime + 2 + Math.random() * 2,
-        interval: 2 + Math.random() * 2,
-      };
-      this.jinxStates.set(entityId, jinxState);
-    }
-
-    // Check if it's time for a jinx effect
-    if (gameTime >= jinxState.nextTriggerTime) {
-      this.triggerJinxEffect(entityId, player, dt);
-
-      // Schedule next trigger
-      jinxState.interval = 2 + Math.random() * 2;
-      jinxState.nextTriggerTime = gameTime + jinxState.interval;
-    }
-  }
-
-  /**
-   * Trigger a jinx effect (random helpful or harmful outcome)
-   */
-  private triggerJinxEffect(_entityId: EntityId, player: Player, _dt: number): void {
-    // 10% chance to damage player (downside)
-    if (Math.random() < 0.1) {
-      player.health = Math.max(0, player.health - 5);
-    }
-
-    // Kill a random creature (upside)
-    const creatures = this.entityManager.query(['creature']);
-    if (creatures.length > 0) {
-      const randomIndex = Math.floor(Math.random() * creatures.length);
-      const targetCreature = creatures[randomIndex]?.getComponent<'creature'>('creature');
-      if (targetCreature) {
-        targetCreature.health = 0;
+  private updateDeathClock(entityId: EntityId, player: Player, dt: number): void {
+    const deathClockTime = this.deathClockTimers.get(entityId);
+    if (deathClockTime !== undefined) {
+      const newTime = deathClockTime - dt;
+      if (newTime <= 0) {
+        // Death clock expired - player dies
+        player.health = 0;
+        this.deathClockTimers.delete(entityId);
+      } else {
+        this.deathClockTimers.set(entityId, newTime);
+        // Grant massive regen during death clock
+        player.health = Math.min(player.maxHealth, player.health + 20 * dt);
       }
     }
   }
 
-  // ============================================================================
-  // Radioactive Aura (RADIOACTIVE perk)
-  // ============================================================================
-
   /**
-   * Apply radioactive aura damage to nearby creatures
-   * From decompiled: radiation damage aura around player
-   */
-  private applyRadioactiveAura(playerEntityId: EntityId, dt: number): void {
-    const player = this.entityManager.getComponent<'player'>(playerEntityId, 'player');
-    if (!player) return;
-
-    // Get player position from transform component
-    const playerEntity = this.entityManager.getEntity(playerEntityId);
-    if (!playerEntity) return;
-
-    const playerTransform = playerEntity.getComponent<'transform'>('transform');
-    if (!playerTransform) return;
-
-    const creatures = this.entityManager.query(['creature', 'transform']);
-
-    for (const creatureEntity of creatures) {
-      const creature = creatureEntity.getComponent<'creature'>('creature');
-      const creatureTransform = creatureEntity.getComponent<'transform'>('transform');
-      if (!creature || !creatureTransform || creature.health <= 0) continue;
-
-      // Check distance
-      const dx = playerTransform.x - creatureTransform.x;
-      const dy = playerTransform.y - creatureTransform.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance <= this.RADIOACTIVE_AURA_RADIUS) {
-        // Apply radiation damage per second (10 damage/sec from perk data)
-        creature.health -= 10 * dt;
-      }
-    }
-  }
-
-  // ============================================================================
-  // Evil Eyes Targeting
-  // ============================================================================
-
-  /**
-   * Update Evil Eyes target creature
-   * From decompiled: creature_find_in_radius(&player_state_table.aim_x, 12.0, 0)
-   * Finds creature within 12 units of aim direction
-   */
-  private updateEvilEyesTarget(entityId: EntityId, _player: Player): void {
-    if (!this.hasPerk(entityId, PerkId.EVIL_EYES)) {
-      this.evilEyesTargetCreature.delete(entityId);
-      return;
-    }
-
-    // Get player position and aim direction
-    const playerEntity = this.entityManager.getEntity(entityId);
-    if (!playerEntity) {
-      this.evilEyesTargetCreature.delete(entityId);
-      return;
-    }
-
-    const playerTransform = playerEntity.getComponent<'transform'>('transform');
-    if (!playerTransform) {
-      this.evilEyesTargetCreature.delete(entityId);
-      return;
-    }
-
-    // Find creature in aim direction within 12 units (from decompiled code)
-    const targetCreature = this.findCreatureInAimDirection(playerTransform, 12);
-    this.evilEyesTargetCreature.set(entityId, targetCreature);
-  }
-
-  /**
-   * Find a creature in the player's aim direction within specified radius
-   * Simplified: finds nearest creature to aim direction
-   */
-  private findCreatureInAimDirection(
-    playerTransform: { x: number; y: number; rotation?: number },
-    radius: number
-  ): EntityId | null {
-    const creatures = this.entityManager.query(['creature', 'transform']);
-    let nearestCreature: EntityId | null = null;
-    let nearestDistance = radius;
-
-    for (const creatureEntity of creatures) {
-      const creature = creatureEntity.getComponent<'creature'>('creature');
-      const creatureTransform = creatureEntity.getComponent<'transform'>('transform');
-      if (!creature || !creatureTransform || creature.health <= 0) continue;
-
-      // Calculate distance to creature
-      const dx = creatureTransform.x - playerTransform.x;
-      const dy = creatureTransform.y - playerTransform.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestCreature = creatureEntity.id;
-      }
-    }
-
-    return nearestCreature;
-  }
-
-  /**
-   * Check if Evil Eyes damage bonus should apply
-   */
-  hasEvilEyesBonus(entityId: EntityId): boolean {
-    const target = this.evilEyesTargetCreature.get(entityId);
-    return target !== null && target !== undefined;
-  }
-
-  /**
-   * Get damage multiplier including Evil Eyes if applicable
-   * From decompiled: 25% bonus when targeting enemy
-   */
-  getDamageMultiplierWithEvilEyes(entityId: EntityId): number {
-    const baseMultiplier = this.getDamageMultiplier(entityId);
-
-    if (this.hasEvilEyesBonus(entityId)) {
-      return baseMultiplier * 1.25; // 25% bonus from decompiled
-    }
-
-    return baseMultiplier;
-  }
-
-  // ============================================================================
-  // Damage over Time (DoT) Effects
-  // ============================================================================
-
-  /**
-   * Apply a DoT effect to a creature
-   * Called by CollisionSystem when bullets with uranium/poison hit
+   * Apply a DoT effect to a creature (delegated to DotHandler)
    */
   applyDotEffect(
     playerEntityId: EntityId,
@@ -620,87 +308,7 @@ export class PerkSystem {
     damagePerTick: number,
     duration: number
   ): void {
-    const effects = this.dotEffects.get(playerEntityId) ?? [];
-
-    // Check if creature already has this type of DoT
-    const existingIndex = effects.findIndex((e) => e.creatureId === creatureId && e.type === type);
-
-    if (existingIndex >= 0) {
-      // Refresh duration (stacking behavior)
-      const existingEffect = effects[existingIndex];
-      if (existingEffect) {
-        existingEffect.remainingDuration = duration;
-      }
-    } else {
-      // Add new DoT
-      effects.push({
-        creatureId,
-        damagePerTick,
-        remainingDuration: duration,
-        tickInterval: 0.5, // Tick every 0.5 seconds
-        timeUntilNextTick: 0,
-        type,
-      });
-    }
-
-    this.dotEffects.set(playerEntityId, effects);
-  }
-
-  /**
-   * Update all active DoT effects
-   */
-  private updateDotEffects(dt: number): void {
-    for (const [playerId, effects] of this.dotEffects) {
-      const remainingEffects: DotEffect[] = [];
-
-      for (const effect of effects) {
-        effect.timeUntilNextTick -= dt;
-        effect.remainingDuration -= dt;
-
-        if (effect.timeUntilNextTick <= 0) {
-          // Apply damage tick
-          const creatureEntity = this.entityManager.getEntity(effect.creatureId);
-          if (creatureEntity) {
-            const creature = creatureEntity.getComponent<'creature'>('creature');
-            if (creature && creature.health > 0) {
-              creature.health -= effect.damagePerTick;
-            }
-          }
-          effect.timeUntilNextTick = effect.tickInterval;
-        }
-
-        // Keep effect if duration remains and creature is alive
-        if (effect.remainingDuration > 0) {
-          const creatureEntity = this.entityManager.getEntity(effect.creatureId);
-          if (creatureEntity) {
-            const creature = creatureEntity.getComponent<'creature'>('creature');
-            if (creature && creature.health > 0) {
-              remainingEffects.push(effect);
-            }
-          }
-        }
-      }
-
-      if (remainingEffects.length === 0) {
-        this.dotEffects.delete(playerId);
-      } else {
-        this.dotEffects.set(playerId, remainingEffects);
-      }
-    }
-  }
-
-  /**
-   * Check if player has uranium bullets perk
-   */
-  hasUraniumBullets(entityId: EntityId): boolean {
-    return this.hasPerk(entityId, PerkId.URANIUM_FILLED_BULLETS);
-  }
-
-  /**
-   * Check if player has poison bullets perk
-   */
-  hasPoisonBullets(entityId: EntityId): boolean {
-    return this.hasPerk(entityId, PerkId.POISON_BULLETS);
+    this.dotHandler.applyDotEffect(playerEntityId, creatureId, type, damagePerTick, duration);
   }
 
   /**
@@ -720,6 +328,10 @@ export class PerkSystem {
       this.activeEffects.set(entityId, remainingEffects);
     }
   }
+
+  // ============================================================================
+  // Perk Queries
+  // ============================================================================
 
   /**
    * Generate perk choices for level up
@@ -800,14 +412,12 @@ export class PerkSystem {
 
   /**
    * Calculate reload speed multiplier for an entity
-   * Returns time multiplier (higher = faster reload)
    */
   getReloadSpeedMultiplier(entityId: EntityId): number {
     const player = this.entityManager.getComponent<'player'>(entityId, 'player');
     if (!player) return 1;
 
-    const multiplier = calculateReloadSpeedMultiplier(player.perkCounts);
-    return multiplier; // This is already a speed multiplier (>1 = faster)
+    return calculateReloadSpeedMultiplier(player.perkCounts);
   }
 
   /**
@@ -918,7 +528,6 @@ export class PerkSystem {
 
   /**
    * Start infinite ammo window (deterministic gameTime-based)
-   * Called by WeaponSystem when reload completes
    */
   startInfiniteAmmoWindow(entityId: EntityId, gameTime: number, durationSeconds = 3): void {
     if (!this.hasPerk(entityId, PerkId.AMMUNITION_WITHIN)) {
@@ -994,40 +603,58 @@ export class PerkSystem {
   }
 
   /**
-   * Get gore intensity multiplier from Bloody Mess perk (ID 1: BLOODY_MESS_QUICK_LEARNER)
-   * Returns 1-4 based on rank (0-3)
+   * Get gore intensity multiplier from Bloody Mess perk
    */
   getGoreIntensity(entityId: EntityId): number {
     const rank = this.getPerkRank(entityId, PerkId.BLOODY_MESS_QUICK_LEARNER);
-    return 1 + rank; // Returns 1-4 based on rank (0-3)
+    return 1 + rank;
   }
 
   /**
    * Refill both weapon clips (for Ammo Maniac perk)
    */
   refillWeaponClips(player: Player): void {
-    const currentWeaponData = getWeaponData(player.currentWeapon.weaponId);
-    const alternateWeaponData = getWeaponData(player.alternateWeapon.weaponId);
+    this.weaponHandler.refillWeaponClips(player);
+  }
 
-    const clipBonus = calculateClipSizeBonus(player.perkCounts);
+  /**
+   * Apply a weapon pickup to a player (delegated to WeaponHandler)
+   */
+  applyWeaponPickupToPlayer(player: Player, pickupWeaponId: WeaponId, pickupAmmo: number): void {
+    this.weaponHandler.applyWeaponPickupToPlayer(player, pickupWeaponId, pickupAmmo);
+  }
 
-    // Refill current weapon clip
-    const currentMaxClip = currentWeaponData.clipSize + clipBonus;
-    const currentReloadAmount = Math.min(
-      currentMaxClip - player.currentWeapon.clipSize,
-      player.currentWeapon.ammo
-    );
-    player.currentWeapon.clipSize += currentReloadAmount;
-    player.currentWeapon.ammo -= currentReloadAmount;
+  // ============================================================================
+  // DoT and Evil Eyes Accessors (delegated to handlers)
+  // ============================================================================
 
-    // Refill alternate weapon clip
-    const alternateMaxClip = alternateWeaponData.clipSize + clipBonus;
-    const alternateReloadAmount = Math.min(
-      alternateMaxClip - player.alternateWeapon.clipSize,
-      player.alternateWeapon.ammo
-    );
-    player.alternateWeapon.clipSize += alternateReloadAmount;
-    player.alternateWeapon.ammo -= alternateReloadAmount;
+  /**
+   * Check if player has uranium bullets perk
+   */
+  hasUraniumBullets(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.URANIUM_FILLED_BULLETS);
+  }
+
+  /**
+   * Check if player has poison bullets perk
+   */
+  hasPoisonBullets(entityId: EntityId): boolean {
+    return this.hasPerk(entityId, PerkId.POISON_BULLETS);
+  }
+
+  /**
+   * Check if Evil Eyes damage bonus should apply
+   */
+  hasEvilEyesBonus(entityId: EntityId): boolean {
+    return this.evilEyesHandler.hasEvilEyesBonus(entityId);
+  }
+
+  /**
+   * Get damage multiplier including Evil Eyes if applicable
+   */
+  getDamageMultiplierWithEvilEyes(entityId: EntityId): number {
+    const baseMultiplier = this.getDamageMultiplier(entityId);
+    return this.evilEyesHandler.getDamageMultiplierWithEvilEyes(baseMultiplier, entityId);
   }
 
   /**
@@ -1040,7 +667,7 @@ export class PerkSystem {
     player.perkCounts.clear();
     this.activeEffects.delete(entityId);
     this.deathClockTimers.delete(entityId);
-    this.jinxStates.delete(entityId);
+    this.cleanupEntity(entityId);
   }
 
   /**
@@ -1049,8 +676,11 @@ export class PerkSystem {
   cleanupEntity(entityId: EntityId): void {
     this.activeEffects.delete(entityId);
     this.deathClockTimers.delete(entityId);
-    this.jinxStates.delete(entityId);
-    this.evilEyesTargetCreature.delete(entityId);
-    this.dotEffects.delete(entityId);
+    this.evilEyesHandler.cleanupEntity(entityId);
+    this.jinxedHandler.cleanupEntity(entityId);
+    this.dotHandler.cleanupEntity(entityId);
   }
 }
+
+// Re-export WeaponId for backward compatibility in imports
+export { WeaponId } from '../../types';
