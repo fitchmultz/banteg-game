@@ -14,6 +14,9 @@ import { collectEvents } from './CollisionSystem';
 import type { PerkSystem } from './PerkSystem';
 import { createProjectileEntity } from '../entities/ProjectileFactory';
 import { setShockChainState, SHOCK_CHAIN_MAX_LINKS } from './ShockChainState';
+import type { RenderSystem } from './RenderSystem';
+import type { AudioManager } from '../../engine';
+import { SAMPLES } from '../audio/catalog';
 
 // Special owner ID for environmental/projectile damage (no XP/kill credit)
 const ENVIRONMENTAL_OWNER_ID = -100;
@@ -24,6 +27,8 @@ export class BonusSystem extends System {
 
   private entityManager: EntityManager;
   private perkSystem: PerkSystem | null = null;
+  private renderSystem: RenderSystem | null = null;
+  private audioManager: AudioManager | null = null;
 
   // Base effect durations (seconds)
   private readonly weaponPowerUpDuration = 10;
@@ -34,12 +39,33 @@ export class BonusSystem extends System {
   // Spawn guard - prevents certain bonuses from spawning during effects
   private static spawnGuard = false;
 
-  constructor(entityManager: EntityManager, perkSystem?: PerkSystem) {
+  constructor(
+    entityManager: EntityManager,
+    perkSystem?: PerkSystem,
+    renderSystem?: RenderSystem,
+    audioManager?: AudioManager
+  ) {
     super();
     this.entityManager = entityManager;
     if (perkSystem) {
       this.perkSystem = perkSystem;
     }
+    this.renderSystem = renderSystem ?? null;
+    this.audioManager = audioManager ?? null;
+  }
+
+  /**
+   * Set the render system for triggering visual effects
+   */
+  setRenderSystem(renderSystem: RenderSystem): void {
+    this.renderSystem = renderSystem;
+  }
+
+  /**
+   * Set the audio manager for playing SFX
+   */
+  setAudioManager(audioManager: AudioManager): void {
+    this.audioManager = audioManager;
   }
 
   /**
@@ -285,9 +311,25 @@ export class BonusSystem extends System {
       }
     }
 
-    // TODO: Trigger camera shake (20 pulses, ~0.2s timer)
-    // TODO: Spawn explosion burst effect
-    // TODO: Play sfx_explosion_large and sfx_shockwave
+    // Trigger camera shake (20 pulses, ~0.2s timer)
+    // Decompiled: camera_shake_pulses = 0x14 (20), _camera_shake_timer = 0x3e4ccccd (~0.2s)
+    if (this.renderSystem) {
+      this.renderSystem.shake(20, 0.2);
+    }
+
+    // Spawn explosion burst particle effect
+    // Decompiled: effect_spawn_explosion_burst(pfVar8, 1.0)
+    const particleSystem = this.renderSystem?.getParticleSystem();
+    if (particleSystem) {
+      particleSystem.emitExplosion(x, y, 30, { r: 1, g: 0.5, b: 0.2, a: 1 }, 1.5);
+    }
+
+    // Play sfx_explosion_large and sfx_shockwave
+    // Decompiled lines 254-255: sfx_play_panned(sfx_explosion_large); sfx_play_panned(sfx_shockwave);
+    if (this.audioManager) {
+      this.audioManager.playSample(SAMPLES.EXPLOSION_LARGE);
+      this.audioManager.playSample(SAMPLES.SHOCKWAVE);
+    }
 
     // Release spawn guard after effect completes
     BonusSystem.spawnGuard = false;
@@ -360,7 +402,11 @@ export class BonusSystem extends System {
       // Set global shock chain state (CollisionSystem will use this)
       setShockChainState(projectile.id, SHOCK_CHAIN_MAX_LINKS);
 
-      // TODO: Play sfx_shock_hit_01
+      // Play sfx_shock_hit_01
+      // Decompiled line 166: sfx_play_panned(sfx_shock_hit_01);
+      if (this.audioManager) {
+        this.audioManager.playSample(SAMPLES.SHOCK_HIT);
+      }
     }
 
     // Release spawn guard
@@ -406,6 +452,10 @@ export class BonusSystem extends System {
     // Release spawn guard
     BonusSystem.spawnGuard = false;
 
-    // TODO: Play sfx_explosion_medium
+    // Play sfx_explosion_medium
+    // Decompiled line 183: sfx_play_panned(sfx_explosion_medium);
+    if (this.audioManager) {
+      this.audioManager.playSample(SAMPLES.EXPLOSION_MEDIUM);
+    }
   }
 }

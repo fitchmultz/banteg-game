@@ -28,7 +28,11 @@ export type SampleName =
   | 'death_player'
   | 'pickup_bonus'
   | 'pickup_weapon'
-  | 'explosion';
+  | 'explosion'
+  | 'explosion_large'
+  | 'shockwave'
+  | 'shock_hit'
+  | 'explosion_medium';
 
 /** All available music track names */
 export type TuneName = 'music_game_loop';
@@ -46,6 +50,10 @@ export const SAMPLES = {
   PICKUP_BONUS: 'pickup_bonus' as const,
   PICKUP_WEAPON: 'pickup_weapon' as const,
   EXPLOSION: 'explosion' as const,
+  EXPLOSION_LARGE: 'explosion_large' as const,
+  SHOCKWAVE: 'shockwave' as const,
+  SHOCK_HIT: 'shock_hit' as const,
+  EXPLOSION_MEDIUM: 'explosion_medium' as const,
 };
 
 /** Tune name constants */
@@ -165,6 +173,10 @@ export const ALL_SFX_SAMPLES: SampleName[] = [
   SAMPLES.PICKUP_BONUS,
   SAMPLES.PICKUP_WEAPON,
   SAMPLES.EXPLOSION,
+  SAMPLES.EXPLOSION_LARGE,
+  SAMPLES.SHOCKWAVE,
+  SAMPLES.SHOCK_HIT,
+  SAMPLES.EXPLOSION_MEDIUM,
 ];
 
 /** All music tracks that should be loaded */

@@ -196,8 +196,8 @@ describe('loadGameAudio', () => {
 
     it('should still return loaded samples even with some failures', async () => {
       global.fetch = vi.fn().mockImplementation((url: string) => {
-        // Fail only one sample
-        if (url.includes('explosion')) {
+        // Fail only one sample (use shockwave which is unique)
+        if (url.includes('shockwave')) {
           return Promise.resolve({
             ok: false,
             status: 404,

@@ -30,6 +30,10 @@ describe('Audio Catalog', () => {
       expect(SAMPLES.PICKUP_BONUS).toBe('pickup_bonus');
       expect(SAMPLES.PICKUP_WEAPON).toBe('pickup_weapon');
       expect(SAMPLES.EXPLOSION).toBe('explosion');
+      expect(SAMPLES.EXPLOSION_LARGE).toBe('explosion_large');
+      expect(SAMPLES.SHOCKWAVE).toBe('shockwave');
+      expect(SAMPLES.SHOCK_HIT).toBe('shock_hit');
+      expect(SAMPLES.EXPLOSION_MEDIUM).toBe('explosion_medium');
     });
 
     it('should have music tune constants', () => {
@@ -48,7 +52,11 @@ describe('Audio Catalog', () => {
       expect(ALL_SFX_SAMPLES).toContain(SAMPLES.PICKUP_BONUS);
       expect(ALL_SFX_SAMPLES).toContain(SAMPLES.PICKUP_WEAPON);
       expect(ALL_SFX_SAMPLES).toContain(SAMPLES.EXPLOSION);
-      expect(ALL_SFX_SAMPLES.length).toBe(11);
+      expect(ALL_SFX_SAMPLES).toContain(SAMPLES.EXPLOSION_LARGE);
+      expect(ALL_SFX_SAMPLES).toContain(SAMPLES.SHOCKWAVE);
+      expect(ALL_SFX_SAMPLES).toContain(SAMPLES.SHOCK_HIT);
+      expect(ALL_SFX_SAMPLES).toContain(SAMPLES.EXPLOSION_MEDIUM);
+      expect(ALL_SFX_SAMPLES.length).toBe(15);
     });
 
     it('ALL_TUNES should include game music', () => {

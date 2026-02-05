@@ -4,7 +4,7 @@
  * Tests for ATOMIC, SHOCK_CHAIN, FIREBLAST, and POINTS bonus effects.
  */
 
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { UpdateContext } from '../../../src/core/ecs/System';
 import { EntityManager } from '../../../src/core/ecs/EntityManager';
 import { BonusSystem } from '../../../src/game/systems/BonusSystem';
@@ -12,6 +12,26 @@ import { BonusType, ProjectileTypeId, CreatureTypeId } from '../../../src/types'
 import { createPlayer, createCreature, createTransform } from '../../../src/game/components';
 import { createBonusEntity } from '../../../src/game/entities/BonusFactory';
 import { collectEvents } from '../../../src/game/systems/CollisionSystem';
+import { SAMPLES } from '../../../src/game/audio/catalog';
+
+// Create mock render system
+function createMockRenderSystem() {
+  const particleSystemMock = {
+    emitExplosion: vi.fn(),
+  };
+  return {
+    shake: vi.fn(),
+    getParticleSystem: vi.fn(() => particleSystemMock),
+    particleSystemMock,
+  };
+}
+
+// Create mock audio manager
+function createMockAudioManager() {
+  return {
+    playSample: vi.fn(),
+  };
+}
 
 // Helper to create a valid UpdateContext for tests
 function createUpdateContext(overrides: Partial<UpdateContext> = {}): UpdateContext {
@@ -445,5 +465,180 @@ describe('Bonus Spawn Guard', () => {
 
     // After effect, spawn guard should be released
     expect(BonusSystem.isSpawnGuardActive()).toBe(false);
+  });
+});
+
+describe('ATOMIC Bonus Effect - Camera Shake and SFX', () => {
+  let entityManager: EntityManager;
+  let bonusSystem: BonusSystem;
+  let mockRenderSystem: ReturnType<typeof createMockRenderSystem>;
+  let mockAudioManager: ReturnType<typeof createMockAudioManager>;
+
+  beforeEach(() => {
+    entityManager = new EntityManager();
+    mockRenderSystem = createMockRenderSystem();
+    mockAudioManager = createMockAudioManager();
+    bonusSystem = new BonusSystem(
+      entityManager,
+      undefined,
+      mockRenderSystem as unknown as Parameters<typeof BonusSystem.prototype.setRenderSystem>[0],
+      mockAudioManager as unknown as Parameters<typeof BonusSystem.prototype.setAudioManager>[0]
+    );
+    collectEvents.length = 0;
+  });
+
+  it('should trigger camera shake when ATOMIC is collected', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(100, 100));
+
+    const bonus = createBonusEntity(entityManager, BonusType.ATOMIC, 100, 100);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.ATOMIC,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockRenderSystem.shake).toHaveBeenCalledWith(20, 0.2);
+  });
+
+  it('should spawn explosion burst particles when ATOMIC is collected', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(100, 100));
+
+    const bonus = createBonusEntity(entityManager, BonusType.ATOMIC, 100, 100);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.ATOMIC,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockRenderSystem.particleSystemMock.emitExplosion).toHaveBeenCalled();
+  });
+
+  it('should play explosion_large and shockwave SFX when ATOMIC is collected', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(100, 100));
+
+    const bonus = createBonusEntity(entityManager, BonusType.ATOMIC, 100, 100);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.ATOMIC,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockAudioManager.playSample).toHaveBeenCalledWith(SAMPLES.EXPLOSION_LARGE);
+    expect(mockAudioManager.playSample).toHaveBeenCalledWith(SAMPLES.SHOCKWAVE);
+  });
+});
+
+describe('SHOCK_CHAIN Bonus Effect - SFX', () => {
+  let entityManager: EntityManager;
+  let bonusSystem: BonusSystem;
+  let mockRenderSystem: ReturnType<typeof createMockRenderSystem>;
+  let mockAudioManager: ReturnType<typeof createMockAudioManager>;
+
+  beforeEach(() => {
+    entityManager = new EntityManager();
+    mockRenderSystem = createMockRenderSystem();
+    mockAudioManager = createMockAudioManager();
+    bonusSystem = new BonusSystem(
+      entityManager,
+      undefined,
+      mockRenderSystem as unknown as Parameters<typeof BonusSystem.prototype.setRenderSystem>[0],
+      mockAudioManager as unknown as Parameters<typeof BonusSystem.prototype.setAudioManager>[0]
+    );
+    collectEvents.length = 0;
+  });
+
+  it('should play shock_hit SFX when SHOCK_CHAIN is collected', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(0, 0));
+
+    // Need an enemy for shock chain to target
+    const enemy = entityManager.createEntity();
+    enemy.addComponent(createCreature(CreatureTypeId.ZOMBIE));
+    enemy.addComponent(createTransform(100, 0));
+
+    const bonus = createBonusEntity(entityManager, BonusType.SHOCK_CHAIN, 0, 0);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.SHOCK_CHAIN,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockAudioManager.playSample).toHaveBeenCalledWith(SAMPLES.SHOCK_HIT);
+  });
+
+  it('should not play SFX when no enemy exists for SHOCK_CHAIN', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(0, 0));
+
+    // No enemy - shock chain should not spawn or play sound
+    const bonus = createBonusEntity(entityManager, BonusType.SHOCK_CHAIN, 0, 0);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.SHOCK_CHAIN,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockAudioManager.playSample).not.toHaveBeenCalled();
+  });
+});
+
+describe('FIREBLAST Bonus Effect - SFX', () => {
+  let entityManager: EntityManager;
+  let bonusSystem: BonusSystem;
+  let mockRenderSystem: ReturnType<typeof createMockRenderSystem>;
+  let mockAudioManager: ReturnType<typeof createMockAudioManager>;
+
+  beforeEach(() => {
+    entityManager = new EntityManager();
+    mockRenderSystem = createMockRenderSystem();
+    mockAudioManager = createMockAudioManager();
+    bonusSystem = new BonusSystem(
+      entityManager,
+      undefined,
+      mockRenderSystem as unknown as Parameters<typeof BonusSystem.prototype.setRenderSystem>[0],
+      mockAudioManager as unknown as Parameters<typeof BonusSystem.prototype.setAudioManager>[0]
+    );
+    collectEvents.length = 0;
+  });
+
+  it('should play explosion_medium SFX when FIREBLAST is collected', () => {
+    const player = entityManager.createEntity();
+    player.addComponent(createPlayer(0));
+    player.addComponent(createTransform(100, 100));
+
+    const bonus = createBonusEntity(entityManager, BonusType.FIREBLAST, 100, 100);
+    collectEvents.push({
+      playerId: player.id,
+      bonusId: bonus.id,
+      bonusType: BonusType.FIREBLAST,
+      value: 0,
+    });
+
+    bonusSystem.update(entityManager, createUpdateContext());
+
+    expect(mockAudioManager.playSample).toHaveBeenCalledWith(SAMPLES.EXPLOSION_MEDIUM);
   });
 });

@@ -965,12 +965,15 @@ function startGame(mode: GameMode): void {
     },
   });
 
-  const bonusSystem = new BonusSystem(entityManager);
+  // Create render system first (needed for bonus effects)
+  const renderSystem = new RenderSystem(entityManager, renderer, assetManager, spriteAtlas, input);
+  gameState.renderSystem = renderSystem;
+
+  // Create bonus system with render and audio dependencies
+  const bonusSystem = new BonusSystem(entityManager, undefined, renderSystem, audio);
   const weaponPickupSystem = new WeaponPickupSystem(entityManager);
   const effectSystem = new EffectSystem(entityManager);
   const lifetimeSystem = new LifetimeSystem(entityManager);
-  const renderSystem = new RenderSystem(entityManager, renderer, assetManager, spriteAtlas, input);
-  gameState.renderSystem = renderSystem;
 
   // Generate terrain texture and set it on the render system
   const terrainGenerator = new TerrainGenerator();
