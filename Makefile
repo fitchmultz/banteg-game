@@ -56,9 +56,9 @@ format-check:
 dev:
 	pnpm run dev
 
-# Clean build artifacts and dependencies
+# Clean build artifacts, dependencies, lock files, and logs
 clean:
-	rm -rf dist node_modules
+	rm -rf dist node_modules pnpm-lock.yaml .ralph/logs *.log
 
 # Deploy to GitHub Pages locally using gh-pages CLI
 deploy: build
