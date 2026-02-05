@@ -19,8 +19,8 @@ build:
 test:
 	bash scripts/test.sh
 
-# CI gate: lint + type-check + test + replay tests + build
-ci: lint type-check test replay-test build parity-check
+# CI gate: format + lint + type-check + test + replay tests + build + parity-check
+ci: format lint type-check test replay-test build parity-check
 
 # Parity audit: extract canonical data and run parity tests
 parity-check:
