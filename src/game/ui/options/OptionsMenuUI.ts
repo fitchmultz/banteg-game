@@ -3,32 +3,37 @@
  *
  * Displays settings for audio, display, and controls.
  * Accessible from both main menu and pause menu.
+ *
+ * Responsibilities:
+ * - Coordinate rendering of option sections
+ * - Handle input and delegate to appropriate section handlers
+ * - Manage overall UI state (visibility, animation, section selection)
+ *
+ * Non-responsibilities:
+ * - Specific option item definitions (see section modules)
+ * - Section-specific value manipulation (delegated to sections)
  */
 
-import type { GameConfig, KeyBindings } from '../../types';
-import { VALID_RESOLUTIONS, DEFAULT_GAME_CONFIG } from '../settings/SettingsManager';
+import type { GameConfig, KeyBindings } from '../../../types';
+import { DEFAULT_GAME_CONFIG } from '../../settings/SettingsManager';
+import type { OptionsSection, OptionsMenuContext, OptionsMenuUIOptions, OptionItem } from './types';
+import { AUDIO_SECTION, buildAudioItems, updateAudioConfig } from './AudioOptionsSection';
+import {
+  DISPLAY_SECTION,
+  buildDisplayItems,
+  updateDisplayConfig,
+  toggleFullscreen,
+} from './DisplayOptionsSection';
+import {
+  CONTROLS_SECTION,
+  buildControlsItems,
+  getActionFromBindingId,
+  updateKeyBinding,
+  formatKeyCode,
+  formatActionName,
+} from './ControlsOptionsSection';
 
-export type OptionsSection = 'AUDIO' | 'DISPLAY' | 'CONTROLS';
-export type OptionsMenuContext = 'menu' | 'pause';
-
-export interface OptionsMenuUIOptions {
-  canvas: HTMLCanvasElement;
-  onChangeConfig: (config: GameConfig) => void;
-  onRequestBack: (context: OptionsMenuContext) => void;
-  getInitialConfig: () => GameConfig;
-  getIsFullscreen?: () => boolean;
-}
-
-interface OptionItem {
-  id: string;
-  label: string;
-  type: 'slider' | 'toggle' | 'cycle' | 'binding' | 'button';
-  section: OptionsSection;
-  value?: number | boolean | string;
-  min?: number;
-  max?: number;
-  options?: string[];
-}
+export type { OptionsSection, OptionsMenuContext, OptionsMenuUIOptions } from './types';
 
 export class OptionsMenuUI {
   private canvas: HTMLCanvasElement;
@@ -40,7 +45,7 @@ export class OptionsMenuUI {
   private currentConfig: GameConfig;
   private context: OptionsMenuContext = 'menu';
   private selectedIndex = 0;
-  private currentSection: OptionsSection = 'AUDIO';
+  private currentSection: OptionsSection = AUDIO_SECTION;
   private rebindingAction: keyof KeyBindings | null = null;
   private animationProgress = 0;
 
@@ -78,118 +83,18 @@ export class OptionsMenuUI {
   }
 
   private buildItems(): void {
+    const audio = buildAudioItems(this.currentConfig);
+    const display = buildDisplayItems(this.currentConfig);
+    const controls = buildControlsItems(this.currentConfig);
+
     this.items = [
-      // AUDIO section
-      { id: 'section_audio', label: 'AUDIO', type: 'button', section: 'AUDIO' },
-      {
-        id: 'sfxVolume',
-        label: 'SFX Volume',
-        type: 'slider',
-        section: 'AUDIO',
-        value: Math.round(this.currentConfig.sfxVolume * 100),
-        min: 0,
-        max: 100,
-      },
-      {
-        id: 'musicVolume',
-        label: 'Music Volume',
-        type: 'slider',
-        section: 'AUDIO',
-        value: Math.round(this.currentConfig.musicVolume * 100),
-        min: 0,
-        max: 100,
-      },
-
-      // DISPLAY section
-      { id: 'section_display', label: 'DISPLAY', type: 'button', section: 'DISPLAY' },
-      {
-        id: 'resolution',
-        label: 'Resolution',
-        type: 'cycle',
-        section: 'DISPLAY',
-        value: this.getResolutionIndex(),
-        options: VALID_RESOLUTIONS.map((r) => `${r.width}x${r.height}`),
-      },
-      {
-        id: 'fullscreen',
-        label: 'Fullscreen',
-        type: 'toggle',
-        section: 'DISPLAY',
-        value: this.currentConfig.fullscreen,
-      },
-
-      // CONTROLS section
-      { id: 'section_controls', label: 'CONTROLS', type: 'button', section: 'CONTROLS' },
-      {
-        id: 'bind_moveUp',
-        label: 'Move Up',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.moveUp,
-      },
-      {
-        id: 'bind_moveDown',
-        label: 'Move Down',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.moveDown,
-      },
-      {
-        id: 'bind_moveLeft',
-        label: 'Move Left',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.moveLeft,
-      },
-      {
-        id: 'bind_moveRight',
-        label: 'Move Right',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.moveRight,
-      },
-      {
-        id: 'bind_reload',
-        label: 'Reload',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.reload,
-      },
-      {
-        id: 'bind_swapWeapon',
-        label: 'Swap Weapon',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.swapWeapon,
-      },
-      {
-        id: 'bind_pause',
-        label: 'Pause',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.pause,
-      },
-      {
-        id: 'bind_fire',
-        label: 'Fire',
-        type: 'binding',
-        section: 'CONTROLS',
-        value: this.currentConfig.controls.fire,
-      },
-
-      // Action buttons
-      { id: 'reset', label: 'Reset to Defaults', type: 'button', section: 'AUDIO' },
-      { id: 'back', label: 'Back', type: 'button', section: 'AUDIO' },
+      ...audio.items,
+      ...display.items,
+      ...controls.items,
+      // Action buttons (always shown in AUDIO section)
+      { id: 'reset', label: 'Reset to Defaults', type: 'button', section: AUDIO_SECTION },
+      { id: 'back', label: 'Back', type: 'button', section: AUDIO_SECTION },
     ];
-  }
-
-  private getResolutionIndex(): number {
-    const index = VALID_RESOLUTIONS.findIndex(
-      (r) =>
-        r.width === this.currentConfig.resolution.width &&
-        r.height === this.currentConfig.resolution.height
-    );
-    return index >= 0 ? index : 1; // Default to 1024x768 (index 1)
   }
 
   /**
@@ -199,7 +104,7 @@ export class OptionsMenuUI {
     this.context = context;
     this.isVisible = true;
     this.selectedIndex = 0;
-    this.currentSection = 'AUDIO';
+    this.currentSection = AUDIO_SECTION;
     this.rebindingAction = null;
     this.animationProgress = 0;
     this.currentConfig = this.options.getInitialConfig();
@@ -334,7 +239,7 @@ export class OptionsMenuUI {
   }
 
   private drawSectionTabs(width: number): void {
-    const sections: OptionsSection[] = ['AUDIO', 'DISPLAY', 'CONTROLS'];
+    const sections: OptionsSection[] = [AUDIO_SECTION, DISPLAY_SECTION, CONTROLS_SECTION];
     const tabWidth = 120;
     const tabHeight = 36;
     const startX = width / 2 - (sections.length * tabWidth) / 2;
@@ -470,7 +375,7 @@ export class OptionsMenuUI {
 
       case 'binding': {
         const keyCode = (item.value as string) ?? '';
-        const displayKey = this.formatKeyCode(keyCode);
+        const displayKey = formatKeyCode(keyCode);
 
         // Binding box
         this.ctx.fillStyle = isSelected ? '#660000' : '#2a2a3e';
@@ -555,7 +460,7 @@ export class OptionsMenuUI {
     this.ctx.fillStyle = '#FFFFFF';
     this.ctx.fillText('Press any key...', width / 2, dialogY + 60);
 
-    const actionName = this.rebindingAction ? this.formatActionName(this.rebindingAction) : '';
+    const actionName = this.rebindingAction ? formatActionName(this.rebindingAction) : '';
     this.ctx.font = '16px Arial';
     this.ctx.fillStyle = '#AAAAAA';
     this.ctx.fillText(`Binding: ${actionName}`, width / 2, dialogY + 100);
@@ -574,7 +479,7 @@ export class OptionsMenuUI {
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
 
     let instructions = 'Arrow Keys: Navigate | Enter: Select/Change';
-    if (this.currentSection === 'CONTROLS') {
+    if (this.currentSection === CONTROLS_SECTION) {
       instructions += ' | Enter: Rebind Key';
     }
     instructions += ' | ESC: Back';
@@ -651,12 +556,12 @@ export class OptionsMenuUI {
     // Tab navigation
     if (e.key === 'Tab') {
       e.preventDefault();
-      const sections: OptionsSection[] = ['AUDIO', 'DISPLAY', 'CONTROLS'];
+      const sections: OptionsSection[] = [AUDIO_SECTION, DISPLAY_SECTION, CONTROLS_SECTION];
       const currentSectionIndex = sections.indexOf(this.currentSection);
       const nextIndex = e.shiftKey
         ? (currentSectionIndex - 1 + sections.length) % sections.length
         : (currentSectionIndex + 1) % sections.length;
-      this.currentSection = sections[nextIndex] ?? 'AUDIO';
+      this.currentSection = sections[nextIndex] ?? AUDIO_SECTION;
       this.selectedIndex = this.items.findIndex((item) => item.section === this.currentSection);
     }
   }
@@ -669,7 +574,7 @@ export class OptionsMenuUI {
     const y = e.clientY - rect.top;
 
     // Check section tabs
-    const sections: OptionsSection[] = ['AUDIO', 'DISPLAY', 'CONTROLS'];
+    const sections: OptionsSection[] = [AUDIO_SECTION, DISPLAY_SECTION, CONTROLS_SECTION];
     const tabWidth = 120;
     const tabHeight = 36;
     const startX = this.canvas.width / 2 - (sections.length * tabWidth) / 2;
@@ -678,7 +583,7 @@ export class OptionsMenuUI {
     for (let i = 0; i < sections.length; i++) {
       const sectionX = startX + i * tabWidth;
       if (x >= sectionX && x <= sectionX + tabWidth && y >= tabY && y <= tabY + tabHeight) {
-        this.currentSection = sections[i] ?? 'AUDIO';
+        this.currentSection = sections[i] ?? AUDIO_SECTION;
         this.selectedIndex = this.items.findIndex((item) => item.section === this.currentSection);
         return;
       }
@@ -743,14 +648,12 @@ export class OptionsMenuUI {
     const newValue = Math.max(min, Math.min(max, currentValue + delta));
     item.value = newValue;
 
-    // Update config
-    if (item.id === 'sfxVolume') {
-      this.currentConfig.sfxVolume = newValue / 100;
-    } else if (item.id === 'musicVolume') {
-      this.currentConfig.musicVolume = newValue / 100;
+    // Update config using section module
+    const update = updateAudioConfig(item.id, newValue, this.currentConfig);
+    if (update) {
+      Object.assign(this.currentConfig, update);
+      this.notifyConfigChange();
     }
-
-    this.notifyConfigChange();
   }
 
   private cycleOption(item: OptionItem, direction: number): void {
@@ -759,44 +662,31 @@ export class OptionsMenuUI {
     const newIndex = (currentIndex + direction + options.length) % options.length;
     item.value = newIndex;
 
-    // Update config
-    if (item.id === 'resolution') {
-      const resolution = VALID_RESOLUTIONS[newIndex];
-      if (resolution) {
-        this.currentConfig.resolution = { ...resolution };
-      }
+    // Update config using section module
+    const update = updateDisplayConfig(item.id, newIndex, this.currentConfig);
+    if (update) {
+      Object.assign(this.currentConfig, update);
+      this.notifyConfigChange();
     }
-
-    this.notifyConfigChange();
   }
 
   private toggleOption(item: OptionItem): void {
     const currentValue = item.value as boolean;
     item.value = !currentValue;
 
-    // Update config
+    // Update config using section module
     if (item.id === 'fullscreen') {
-      this.currentConfig.fullscreen = !currentValue;
-      this.toggleFullscreen();
-    }
-
-    this.notifyConfigChange();
-  }
-
-  private toggleFullscreen(): void {
-    if (this.currentConfig.fullscreen) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.warn('Failed to enter fullscreen:', err);
-        this.currentConfig.fullscreen = false;
-        this.buildItems();
-      });
-    } else {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err) => {
-          console.warn('Failed to exit fullscreen:', err);
-        });
+      const update = updateDisplayConfig(item.id, !currentValue, this.currentConfig);
+      if (update) {
+        Object.assign(this.currentConfig, update);
+        this.toggleFullscreenAndNotify();
       }
     }
+  }
+
+  private toggleFullscreenAndNotify(): void {
+    toggleFullscreen(this.currentConfig.fullscreen);
+    this.notifyConfigChange();
   }
 
   private activateItem(item: OptionItem): void {
@@ -814,8 +704,10 @@ export class OptionsMenuUI {
         break;
 
       case 'binding': {
-        const action = item.id.replace('bind_', '') as keyof KeyBindings;
-        this.rebindingAction = action;
+        const action = getActionFromBindingId(item.id);
+        if (action) {
+          this.rebindingAction = action;
+        }
         break;
       }
 
@@ -830,7 +722,8 @@ export class OptionsMenuUI {
   }
 
   private applyKeyBinding(action: keyof KeyBindings, code: string): void {
-    this.currentConfig.controls[action] = code;
+    const update = updateKeyBinding(action, code, this.currentConfig);
+    Object.assign(this.currentConfig, update);
 
     // Update item value
     const item = this.items.find((it) => it.id === `bind_${action}`);
@@ -855,38 +748,6 @@ export class OptionsMenuUI {
 
   private notifyConfigChange(): void {
     this.options.onChangeConfig({ ...this.currentConfig });
-  }
-
-  private formatKeyCode(code: string): string {
-    if (code.startsWith('Key')) {
-      return code.slice(3);
-    }
-    if (code === 'Escape') return 'ESC';
-    if (code === 'Space') return 'SPC';
-    if (code.startsWith('Arrow')) {
-      return code.slice(5).toUpperCase();
-    }
-    if (code.startsWith('Digit')) {
-      return code.slice(5);
-    }
-    if (code.startsWith('Numpad')) {
-      return `N${code.slice(6)}`;
-    }
-    return code;
-  }
-
-  private formatActionName(action: keyof KeyBindings): string {
-    const names: Record<keyof KeyBindings, string> = {
-      moveUp: 'Move Up',
-      moveDown: 'Move Down',
-      moveLeft: 'Move Left',
-      moveRight: 'Move Right',
-      fire: 'Fire',
-      reload: 'Reload',
-      swapWeapon: 'Swap Weapon',
-      pause: 'Pause',
-    };
-    return names[action] ?? action;
   }
 
   private roundRect(x: number, y: number, width: number, height: number, radius: number): void {

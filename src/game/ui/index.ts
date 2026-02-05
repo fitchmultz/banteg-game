@@ -10,6 +10,6 @@ export * from './MainMenuUI';
 export * from './PauseMenuUI';
 export * from './GameOverUI';
 export * from './TutorialUI';
-export * from './OptionsMenuUI';
+export * from './options';
 export * from './highscores';
 export * from './CreditsUI';
