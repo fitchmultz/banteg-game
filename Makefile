@@ -19,14 +19,22 @@ build:
 test:
 	bash scripts/test.sh
 
-# CI gate: lint + type-check + test + build
-ci: lint type-check test build parity-check
+# CI gate: lint + type-check + test + replay tests + build
+ci: lint type-check test replay-test build parity-check
 
 # Parity audit: extract canonical data and run parity tests
 parity-check:
 	@echo "Running parity audit..."
 	pnpm run extract:parity
 	pnpm run test:parity
+
+# Run replay tests
+replay-test:
+	pnpm run test:replay
+
+# Update golden files
+replay-update:
+	UPDATE_GOLDEN=1 pnpm run test:replay
 
 # Lint and auto-fix issues
 lint:

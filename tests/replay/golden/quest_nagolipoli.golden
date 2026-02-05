@@ -1,0 +1,42 @@
+[
+  {
+    "frame": 30,
+    "snapshot": "{\"frameNumber\":30,\"gameTime\":0.5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":500.0000000000002,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 60,
+    "snapshot": "{\"frameNumber\":60,\"gameTime\":1,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":999.9999999999991,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 90,
+    "snapshot": "{\"frameNumber\":90,\"gameTime\":1.5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":1500.0000000000011,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 120,
+    "snapshot": "{\"frameNumber\":120,\"gameTime\":2,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":2000.0000000000034,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 150,
+    "snapshot": "{\"frameNumber\":150,\"gameTime\":2.5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":2499.9999999999995,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 180,
+    "snapshot": "{\"frameNumber\":180,\"gameTime\":3,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":2999.999999999995,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 210,
+    "snapshot": "{\"frameNumber\":210,\"gameTime\":3.5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":3499.9999999999905,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 240,
+    "snapshot": "{\"frameNumber\":240,\"gameTime\":4,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":3999.999999999986,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 270,
+    "snapshot": "{\"frameNumber\":270,\"gameTime\":4.5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":4499.999999999993,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  },
+  {
+    "frame": 300,
+    "snapshot": "{\"frameNumber\":300,\"gameTime\":5,\"entityCount\":1,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12}],\"systemState\":{\"questSpawnSystem\":{\"timelineMs\":5000.000000000002,\"remainingSpawns\":5,\"isActive\":true},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":21978799758}"
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "frame": 30,
+    "snapshot": "{\"frameNumber\":30,\"gameTime\":0.5,\"entityCount\":2,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12},{\"id\":2,\"type\":\"creature\",\"x\":512,\"y\":-1124,\"vx\":-12.850579180917006,\"vy\":28.21103710810686,\"rotation\":1.9982278937232913,\"health\":72,\"maxHealth\":72,\"aiMode\":1,\"creatureTypeId\":0}],\"systemState\":{\"spawnSystem\":{\"wave\":1,\"waveTimer\":0.02,\"spawnedThisWave\":1,\"targetEnemies\":10,\"activeEnemies\":1},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":10989404882}"
+  },
+  {
+    "frame": 60,
+    "snapshot": "{\"frameNumber\":60,\"gameTime\":1,\"entityCount\":2,\"entities\":[{\"id\":1,\"type\":\"player\",\"x\":0,\"y\":0,\"vx\":0,\"vy\":0,\"rotation\":0,\"health\":100,\"maxHealth\":100,\"currentWeaponId\":0,\"ammo\":48,\"clipSize\":12},{\"id\":2,\"type\":\"creature\",\"x\":512,\"y\":-1124,\"vx\":-12.850579180917006,\"vy\":28.21103710810686,\"rotation\":1.9982278937232913,\"health\":72,\"maxHealth\":72,\"aiMode\":1,\"creatureTypeId\":0}],\"systemState\":{\"spawnSystem\":{\"wave\":1,\"waveTimer\":0.03,\"spawnedThisWave\":1,\"targetEnemies\":10,\"activeEnemies\":1},\"perkSystem\":{\"activeEffectCount\":0,\"deathClockCount\":0,\"jinxStateCount\":0,\"dotEffectCount\":0}},\"rngState\":10989404882}"
+  }
+]

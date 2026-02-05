@@ -10,6 +10,8 @@
     "test": "bash scripts/test.sh",
     "test:watch": "vitest",
     "test:parity": "vitest run tests/parity/",
+    "test:replay": "vitest run tests/replay/",
+    "test:replay:update": "UPDATE_GOLDEN=1 vitest run tests/replay/",
     "extract:parity": "tsx scripts/parity-extractor.ts",
     "parity:update": "npm run extract:parity && npm run test:parity",
     "lint": "biome lint --write .",
@@ -17,7 +19,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "type-check": "tsc --noEmit",
-    "ci": "biome ci . && tsc --noEmit && bash scripts/test.sh && vite build"
+    "ci": "biome ci . && tsc --noEmit && bash scripts/test.sh && vitest run tests/replay/ && vite build"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.14",
