@@ -945,459 +945,350 @@
     {
       "id": "land_hostile",
       "name": "Land Hostile",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 120000,
       "startWeaponId": 1
     },
     {
       "id": "minor_alien_breach",
       "name": "Minor Alien Breach",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 120000,
       "startWeaponId": 1
     },
     {
       "id": "target_practice",
       "name": "Target Practice",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 65000,
       "startWeaponId": 1
     },
     {
       "id": "frontline_assault",
       "name": "Frontline Assault",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "alien_dens",
       "name": "Alien Dens",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "the_random_factor",
       "name": "The Random Factor",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "spider_wave_syndrome",
       "name": "Spider Wave Syndrome",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 240000,
       "startWeaponId": 1
     },
     {
       "id": "alien_squads",
       "name": "Alien Squads",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "nesting_grounds",
       "name": "Nesting Grounds",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 240000,
       "startWeaponId": 1
     },
     {
       "id": "8_legged_terror",
       "name": "8 Legged Terror",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 240000,
       "startWeaponId": 1
     },
     {
       "id": "everred_pastures",
       "name": "Everred Pastures",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "spider_spawns",
       "name": "Spider Spawns",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "arachnoid_farm",
       "name": "Arachnoid Farm",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 240000,
       "startWeaponId": 1
     },
     {
       "id": "two_fronts",
       "name": "Two Fronts",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 240000,
       "startWeaponId": 1
     },
     {
       "id": "sweep_stakes",
       "name": "Sweep Stakes",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time"
-      ],
+      "objectiveTypes": ["kill_count", "survive_time"],
       "timeLimitMs": 35000,
       "startWeaponId": 6
     },
     {
       "id": "evil_zombies_at_large",
       "name": "Evil Zombies At Large",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "survival_of_the_fastest",
       "name": "Survival Of The Fastest",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time"
-      ],
+      "objectiveTypes": ["kill_count", "survive_time"],
       "timeLimitMs": 120000,
       "startWeaponId": 5
     },
     {
       "id": "land_of_lizards",
       "name": "Land Of Lizards",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "ghost_patrols",
       "name": "Ghost Patrols",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "spideroids",
       "name": "Spideroids",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 360000,
       "startWeaponId": 1
     },
     {
       "id": "the_blighting",
       "name": "The Blighting",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "lizard_kings",
       "name": "Lizard Kings",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 180000,
       "startWeaponId": 1
     },
     {
       "id": "the_killing",
       "name": "The Killing",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "hidden_evil",
       "name": "Hidden Evil",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "surrounded_by_reptiles",
       "name": "Surrounded By Reptiles",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "the_lizquidation",
       "name": "The Lizquidation",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "spiders_inc",
       "name": "Spiders Inc",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 11
     },
     {
       "id": "lizard_raze",
       "name": "Lizard Raze",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "deja_vu",
       "name": "Deja Vu",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 120000,
       "startWeaponId": 6
     },
     {
       "id": "zombie_masters",
       "name": "Zombie Masters",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "major_alien_breach",
       "name": "Major Alien Breach",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 18
     },
     {
       "id": "zombie_time",
       "name": "Zombie Time",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "lizard_zombie_pact",
       "name": "Lizard Zombie Pact",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "the_collaboration",
       "name": "The Collaboration",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 360000,
       "startWeaponId": 1
     },
     {
       "id": "the_massacre",
       "name": "The Massacre",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "the_unblitzkrieg",
       "name": "The Unblitzkrieg",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 600000,
       "startWeaponId": 1
     },
     {
       "id": "gauntlet",
       "name": "Gauntlet",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time"
-      ],
+      "objectiveTypes": ["kill_count", "survive_time"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "syntax_terror",
       "name": "Syntax Terror",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "the_annihilation",
       "name": "The Annihilation",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 300000,
       "startWeaponId": 1
     },
     {
       "id": "the_end_of_all",
       "name": "The End Of All",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "the_beating",
       "name": "The Beating",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "the_spanking_of_the_dead",
       "name": "The Spanking Of The Dead",
-      "objectiveTypes": [
-        "kill_count",
-        "kill_bosses"
-      ],
+      "objectiveTypes": ["kill_count", "kill_bosses"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "the_fortress",
       "name": "The Fortress",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "the_gang_wars",
       "name": "The Gang Wars",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "knee_deep_in_the_dead",
       "name": "Knee Deep In The Dead",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "cross_fire",
       "name": "Cross Fire",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "army_of_three",
       "name": "Army Of Three",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "monster_blues",
       "name": "Monster Blues",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "nagolipoli",
       "name": "Nagolipoli",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     },
     {
       "id": "the_gathering",
       "name": "The Gathering",
-      "objectiveTypes": [
-        "kill_count"
-      ],
+      "objectiveTypes": ["kill_count"],
       "timeLimitMs": 480000,
       "startWeaponId": 1
     }

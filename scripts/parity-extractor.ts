@@ -13,6 +13,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { join } from 'node:path';
+import { execSync } from 'node:child_process';
 import {
   convertDamage,
   convertFireRate,
@@ -1232,6 +1233,14 @@ function main(): void {
   // Write output
   const json = JSON.stringify(data, null, 2);
   writeFileSync(outputPath, json);
+
+  // Format the output with Biome to match project standards
+  try {
+    execSync(`biome format --write "${outputPath}"`, { stdio: 'ignore' });
+  } catch {
+    // Biome not available or formatting failed - the JSON is still valid
+    // This is a best-effort formatting step
+  }
 
   console.log(`Canonical data extracted to ${outputPath}`);
   console.log(`  - ${data.weapons.length} weapons`);
