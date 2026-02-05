@@ -513,33 +513,33 @@
     {
       "id": 1,
       "name": "Fast Zombie",
-      "health": 25,
-      "speed": 100,
-      "damage": 8,
+      "health": 50,
+      "speed": 96,
+      "damage": 0,
       "flags": 0
     },
     {
       "id": 2,
       "name": "Tank Zombie",
-      "health": 120,
-      "speed": 30,
-      "damage": 20,
+      "health": 20,
+      "speed": 80,
+      "damage": 4,
       "flags": 0
     },
     {
       "id": 3,
       "name": "Small Spider",
-      "health": 20,
-      "speed": 80,
+      "health": 70,
+      "speed": 88,
       "damage": 5,
       "flags": 0
     },
     {
       "id": 4,
       "name": "Large Spider",
-      "health": 60,
-      "speed": 50,
-      "damage": 15,
+      "health": 70,
+      "speed": 104,
+      "damage": 0,
       "flags": 0
     },
     {
@@ -547,31 +547,31 @@
       "name": "Alien Trooper",
       "health": 50,
       "speed": 70,
-      "damage": 12,
+      "damage": 10,
       "flags": 0
     },
     {
       "id": 6,
       "name": "Alien Elite",
-      "health": 80,
-      "speed": 60,
-      "damage": 18,
-      "flags": 0
+      "health": 400,
+      "speed": 80,
+      "damage": 17,
+      "flags": 8
     },
     {
       "id": 7,
       "name": "Ghost",
-      "health": 30,
-      "speed": 90,
-      "damage": 8,
+      "health": 53,
+      "speed": 68,
+      "damage": 0,
       "flags": 0
     },
     {
       "id": 8,
       "name": "Lizard",
-      "health": 83,
-      "speed": 110,
-      "damage": 12,
+      "health": 50,
+      "speed": 70,
+      "damage": 5,
       "flags": 0
     },
     {
@@ -579,15 +579,15 @@
       "name": "Lizard King",
       "health": 1500,
       "speed": 126,
-      "damage": 35,
-      "flags": 2
+      "damage": 150,
+      "flags": 0
     },
     {
       "id": 10,
       "name": "Lizard Minion",
-      "health": 73,
-      "speed": 110,
-      "damage": 10,
+      "health": 50,
+      "speed": 70,
+      "damage": 5,
       "flags": 0
     }
   ],
@@ -943,313 +943,101 @@
   ],
   "quests": [
     {
-      "id": "nagolipoli",
-      "name": "Nagolipoli",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "monster_blues",
-      "name": "Monster Blues",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_gathering",
-      "name": "The Gathering",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "army_of_three",
-      "name": "Army Of Three",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "knee_deep_in_the_dead",
-      "name": "Knee Deep In The Dead",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_gang_wars",
-      "name": "The Gang Wars",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_fortress",
-      "name": "The Fortress",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "cross_fire",
-      "name": "Cross Fire",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_beating",
-      "name": "The Beating",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_spanking_of_the_dead",
-      "name": "The Spanking Of The Dead",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "hidden_evil",
-      "name": "Hidden Evil",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
       "id": "land_hostile",
       "name": "Land Hostile",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
       "id": "minor_alien_breach",
       "name": "Minor Alien Breach",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "alien_squads",
-      "name": "Alien Squads",
+      "id": "target_practice",
+      "name": "Target Practice",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "zombie_masters",
-      "name": "Zombie Masters",
+      "id": "frontline_assault",
+      "name": "Frontline Assault",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "8_legged_terror",
-      "name": "8 Legged Terror",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "ghost_patrols",
-      "name": "Ghost Patrols",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_random_factor",
-      "name": "The Random Factor",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "spider_wave_syndrome",
-      "name": "Spider Wave Syndrome",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "nesting_grounds",
-      "name": "Nesting Grounds",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
       "id": "alien_dens",
       "name": "Alien Dens",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "arachnoid_farm",
-      "name": "Arachnoid Farm",
+      "id": "the_random_factor",
+      "name": "The Random Factor",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "gauntlet",
-      "name": "Gauntlet",
+      "id": "spider_wave_syndrome",
+      "name": "Spider Wave Syndrome",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "syntax_terror",
-      "name": "Syntax Terror",
+      "id": "alien_squads",
+      "name": "Alien Squads",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "spider_spawns",
-      "name": "Spider Spawns",
+      "id": "nesting_grounds",
+      "name": "Nesting Grounds",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "two_fronts",
-      "name": "Two Fronts",
+      "id": "8_legged_terror",
+      "name": "8 Legged Terror",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "survival_of_the_fastest",
-      "name": "Survival Of The Fastest",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "spideroids",
-      "name": "Spideroids",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "evil_zombies_at_large",
-      "name": "Evil Zombies At Large",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
       "id": "everred_pastures",
       "name": "Everred Pastures",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "lizard_kings",
-      "name": "Lizard Kings",
+      "id": "spider_spawns",
+      "name": "Spider Spawns",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
+      ]
+    },
+    {
+      "id": "arachnoid_farm",
+      "name": "Arachnoid Farm",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "two_fronts",
+      "name": "Two Fronts",
+      "objectiveTypes": [
+        "kill_count"
       ]
     },
     {
@@ -1257,118 +1045,57 @@
       "name": "Sweep Stakes",
       "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "survive_time"
       ]
     },
     {
-      "id": "deja_vu",
-      "name": "Deja Vu",
+      "id": "evil_zombies_at_large",
+      "name": "Evil Zombies At Large",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "target_practice",
-      "name": "Target Practice",
+      "id": "survival_of_the_fastest",
+      "name": "Survival Of The Fastest",
       "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "major_alien_breach",
-      "name": "Major Alien Breach",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "survive_time"
       ]
     },
     {
       "id": "land_of_lizards",
       "name": "Land Of Lizards",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "the_lizquidation",
-      "name": "The Lizquidation",
+      "id": "ghost_patrols",
+      "name": "Ghost Patrols",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "zombie_time",
-      "name": "Zombie Time",
+      "id": "spideroids",
+      "name": "Spideroids",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "frontline_assault",
-      "name": "Frontline Assault",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_collaboration",
-      "name": "The Collaboration",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
       "id": "the_blighting",
       "name": "The Blighting",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "the_annihilation",
-      "name": "The Annihilation",
+      "id": "lizard_kings",
+      "name": "Lizard Kings",
       "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_massacre",
-      "name": "The Massacre",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
         "kill_bosses"
       ]
     },
@@ -1376,39 +1103,92 @@
       "id": "the_killing",
       "name": "The Killing",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
-      "id": "lizard_zombie_pact",
-      "name": "Lizard Zombie Pact",
+      "id": "hidden_evil",
+      "name": "Hidden Evil",
       "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "lizard_raze",
-      "name": "Lizard Raze",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
+        "kill_count"
       ]
     },
     {
       "id": "surrounded_by_reptiles",
       "name": "Surrounded By Reptiles",
       "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_lizquidation",
+      "name": "The Lizquidation",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "spiders_inc",
+      "name": "Spiders Inc",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "lizard_raze",
+      "name": "Lizard Raze",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "deja_vu",
+      "name": "Deja Vu",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "zombie_masters",
+      "name": "Zombie Masters",
+      "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "major_alien_breach",
+      "name": "Major Alien Breach",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "zombie_time",
+      "name": "Zombie Time",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "lizard_zombie_pact",
+      "name": "Lizard Zombie Pact",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_collaboration",
+      "name": "The Collaboration",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_massacre",
+      "name": "The Massacre",
+      "objectiveTypes": [
+        "kill_count",
         "kill_bosses"
       ]
     },
@@ -1416,9 +1196,29 @@
       "id": "the_unblitzkrieg",
       "name": "The Unblitzkrieg",
       "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "gauntlet",
+      "name": "Gauntlet",
+      "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
+        "survive_time"
+      ]
+    },
+    {
+      "id": "syntax_terror",
+      "name": "Syntax Terror",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_annihilation",
+      "name": "The Annihilation",
+      "objectiveTypes": [
+        "kill_count",
         "kill_bosses"
       ]
     },
@@ -1427,19 +1227,78 @@
       "name": "The End Of All",
       "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
         "kill_bosses"
       ]
     },
     {
-      "id": "spiders_inc",
-      "name": "Spiders Inc",
+      "id": "the_beating",
+      "name": "The Beating",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_spanking_of_the_dead",
+      "name": "The Spanking Of The Dead",
       "objectiveTypes": [
         "kill_count",
-        "survive_time",
-        "reach_location",
         "kill_bosses"
+      ]
+    },
+    {
+      "id": "the_fortress",
+      "name": "The Fortress",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_gang_wars",
+      "name": "The Gang Wars",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "knee_deep_in_the_dead",
+      "name": "Knee Deep In The Dead",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "cross_fire",
+      "name": "Cross Fire",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "army_of_three",
+      "name": "Army Of Three",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "monster_blues",
+      "name": "Monster Blues",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "nagolipoli",
+      "name": "Nagolipoli",
+      "objectiveTypes": [
+        "kill_count"
+      ]
+    },
+    {
+      "id": "the_gathering",
+      "name": "The Gathering",
+      "objectiveTypes": [
+        "kill_count"
       ]
     }
   ]

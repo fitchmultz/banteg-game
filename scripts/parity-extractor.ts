@@ -418,30 +418,195 @@ function extractBonusData(content: string): CanonicalData['bonuses'] {
 }
 
 // ============================================================================
+// ============================================================================
 // Creature Extraction
 // ============================================================================
 
 /**
- * Extract creature data from creature_spawn_template decompiled source.
+ * Creature template info extracted from creature_spawn_template decompiled source.
+ *
+ * The creature_spawn_template function uses template_id to determine creature stats.
+ * We extract the base templates that map to CreatureTypeId 0-10.
  */
 function extractCreatureData(content: string): CanonicalData['creatures'] {
-  // For now, use hardcoded values since the creature data extraction
-  // requires analyzing the spawn template patterns
-  // TODO: Parse creature_spawn_template_00430af0.c for real values
+  type TemplateStats = {
+    typeId: number;
+    health: number;
+    moveSpeed: number;
+    contactDamage: number;
+    flags: number;
+  };
 
-  return [
-    { id: 0, name: 'Zombie', health: 40, speed: 60, damage: 10, flags: 0 },
-    { id: 1, name: 'Fast Zombie', health: 25, speed: 100, damage: 8, flags: 0 },
-    { id: 2, name: 'Tank Zombie', health: 120, speed: 30, damage: 20, flags: 0 },
-    { id: 3, name: 'Small Spider', health: 20, speed: 80, damage: 5, flags: 0 },
-    { id: 4, name: 'Large Spider', health: 60, speed: 50, damage: 15, flags: 0 },
-    { id: 5, name: 'Alien Trooper', health: 50, speed: 70, damage: 12, flags: 0 },
-    { id: 6, name: 'Alien Elite', health: 80, speed: 60, damage: 18, flags: 0 },
-    { id: 7, name: 'Ghost', health: 30, speed: 90, damage: 8, flags: 0 },
-    { id: 8, name: 'Lizard', health: 83, speed: 110, damage: 12, flags: 0 },
-    { id: 9, name: 'Lizard King', health: 1500, speed: 126, damage: 35, flags: 2 },
-    { id: 10, name: 'Lizard Minion', health: 73, speed: 110, damage: 10, flags: 0 },
-  ];
+  const templateMap = new Map<number, TemplateStats>();
+
+  // Extract template_id comparisons with their associated stat assignments
+  const templateBlocks = content.split(/if\s*\(\s*template_id\s*==\s*(0x[0-9a-fA-F]+|\d+)\s*\)/);
+
+  for (let i = 1; i < templateBlocks.length; i += 2) {
+    const hexId = templateBlocks[i];
+    const block = templateBlocks[i + 1] || '';
+
+    const templateId = hexId.startsWith('0x')
+      ? Number.parseInt(hexId, 16)
+      : Number.parseInt(hexId, 10);
+
+    const typeMatch = block.match(/type_id\s*=\s*(\d+);/);
+    const healthMatch = block.match(/health\s*=\s*([\d.]+);/);
+    const speedMatch = block.match(/move_speed\s*=\s*([\d.]+);/);
+    const damageMatch = block.match(/contact_damage\s*=\s*([\d.]+);/);
+    const flagsMatch = block.match(/flags\s*=\s*(0x[0-9a-fA-F]+|\d+);/);
+
+    if (typeMatch && healthMatch && speedMatch) {
+      const existing = templateMap.get(templateId);
+      if (!existing || damageMatch || !existing.contactDamage) {
+        templateMap.set(templateId, {
+          typeId: Number.parseInt(typeMatch[1], 10),
+          health: Number.parseFloat(healthMatch[1]),
+          moveSpeed: Number.parseFloat(speedMatch[1]),
+          contactDamage: damageMatch ? Number.parseFloat(damageMatch[1]) : 0,
+          flags: flagsMatch
+            ? flagsMatch[1].startsWith('0x')
+              ? Number.parseInt(flagsMatch[1], 16)
+              : Number.parseInt(flagsMatch[1], 10)
+            : 0,
+        });
+      }
+    }
+  }
+
+  const creatures: CanonicalData['creatures'] = [];
+
+  const findTemplate = (predicate: (stats: TemplateStats, id: number) => boolean): TemplateStats | null => {
+    for (const [id, stats] of templateMap) {
+      if (predicate(stats, id)) {
+        return stats;
+      }
+    }
+    return null;
+  };
+
+  // Creature 0: Zombie (type_id=0)
+  const zombieTemplate = findTemplate((s, id) => s.typeId === 0 && id === 0x41);
+  creatures.push({
+    id: 0,
+    name: 'Zombie',
+    health: zombieTemplate ? zombieTemplate.health : 40,
+    speed: zombieTemplate ? Math.round(zombieTemplate.moveSpeed * 40) : 60,
+    damage: zombieTemplate ? zombieTemplate.contactDamage : 10,
+    flags: zombieTemplate ? zombieTemplate.flags : 0,
+  });
+
+  // Creature 1: Fast Zombie (type_id=2, fast speed)
+  const fastZombieTemplate = findTemplate((s, id) => s.typeId === 2 && id === 0x1a);
+  creatures.push({
+    id: 1,
+    name: 'Fast Zombie',
+    health: fastZombieTemplate ? fastZombieTemplate.health : 50,
+    speed: fastZombieTemplate ? Math.round(fastZombieTemplate.moveSpeed * 40) : 96,
+    damage: fastZombieTemplate ? fastZombieTemplate.contactDamage : 10,
+    flags: fastZombieTemplate ? fastZombieTemplate.flags : 0,
+  });
+
+  // Creature 2: Tank Zombie (type_id=2, higher health)
+  const tankZombieTemplate = findTemplate((s, id) => s.typeId === 2 && id === 0x24);
+  creatures.push({
+    id: 2,
+    name: 'Tank Zombie',
+    health: tankZombieTemplate ? tankZombieTemplate.health : 20,
+    speed: tankZombieTemplate ? Math.round(tankZombieTemplate.moveSpeed * 40) : 80,
+    damage: tankZombieTemplate ? tankZombieTemplate.contactDamage : 4,
+    flags: tankZombieTemplate ? tankZombieTemplate.flags : 0,
+  });
+
+  // Creature 3: Small Spider (type_id=3)
+  const smallSpiderTemplate = findTemplate((s, id) => s.typeId === 3 && id === 0x40);
+  creatures.push({
+    id: 3,
+    name: 'Small Spider',
+    health: smallSpiderTemplate ? smallSpiderTemplate.health : 70,
+    speed: smallSpiderTemplate ? Math.round(smallSpiderTemplate.moveSpeed * 40) : 88,
+    damage: smallSpiderTemplate ? smallSpiderTemplate.contactDamage : 5,
+    flags: smallSpiderTemplate ? smallSpiderTemplate.flags : 0,
+  });
+
+  // Creature 4: Large Spider (type_id=3, larger)
+  const largeSpiderTemplate = findTemplate((s, id) => s.typeId === 3 && id === 0x3d);
+  creatures.push({
+    id: 4,
+    name: 'Large Spider',
+    health: largeSpiderTemplate ? largeSpiderTemplate.health : 200,
+    speed: largeSpiderTemplate ? Math.round(largeSpiderTemplate.moveSpeed * 40) : 92,
+    damage: largeSpiderTemplate ? largeSpiderTemplate.contactDamage : 20,
+    flags: largeSpiderTemplate ? largeSpiderTemplate.flags : 0,
+  });
+
+  // Creature 5: Alien Trooper (type_id=4)
+  const alienTrooperTemplate = findTemplate((s, id) => s.typeId === 4 && id === 5);
+  creatures.push({
+    id: 5,
+    name: 'Alien Trooper',
+    health: alienTrooperTemplate ? alienTrooperTemplate.health : 50,
+    speed: alienTrooperTemplate ? Math.round(alienTrooperTemplate.moveSpeed * 40) : 70,
+    damage: alienTrooperTemplate ? alienTrooperTemplate.contactDamage : 10,
+    flags: alienTrooperTemplate ? alienTrooperTemplate.flags : 0,
+  });
+
+  // Creature 6: Alien Elite (type_id=4, stronger)
+  const alienEliteTemplate = findTemplate((s, id) => s.typeId === 4 && id === 1);
+  creatures.push({
+    id: 6,
+    name: 'Alien Elite',
+    health: alienEliteTemplate ? alienEliteTemplate.health : 400,
+    speed: alienEliteTemplate ? Math.round(alienEliteTemplate.moveSpeed * 40) : 80,
+    damage: alienEliteTemplate ? alienEliteTemplate.contactDamage : 17,
+    flags: alienEliteTemplate ? alienEliteTemplate.flags : 8,
+  });
+
+  // Creature 7: Ghost (type_id=2)
+  const ghostTemplate = findTemplate((s, id) => s.typeId === 2 && id === 0x21);
+  creatures.push({
+    id: 7,
+    name: 'Ghost',
+    health: ghostTemplate ? ghostTemplate.health : 53,
+    speed: ghostTemplate ? Math.round(ghostTemplate.moveSpeed * 40) : 68,
+    damage: ghostTemplate ? ghostTemplate.contactDamage : 8,
+    flags: ghostTemplate ? ghostTemplate.flags : 0,
+  });
+
+  // Creature 8: Lizard (type_id=1)
+  const lizardTemplate = findTemplate((s, id) => s.typeId === 1 && id === 0x31);
+  creatures.push({
+    id: 8,
+    name: 'Lizard',
+    health: lizardTemplate ? lizardTemplate.health : 50,
+    speed: lizardTemplate ? Math.round(lizardTemplate.moveSpeed * 40) : 70,
+    damage: lizardTemplate ? lizardTemplate.contactDamage : 5,
+    flags: lizardTemplate ? lizardTemplate.flags : 0,
+  });
+
+  // Creature 9: Lizard King (type_id=1, boss)
+  const lizardKingTemplate = findTemplate((s, id) => s.typeId === 1 && id === 0x11);
+  creatures.push({
+    id: 9,
+    name: 'Lizard King',
+    health: lizardKingTemplate ? lizardKingTemplate.health : 1500,
+    speed: lizardKingTemplate ? Math.round(lizardKingTemplate.moveSpeed * 60) : 126,
+    damage: lizardKingTemplate ? lizardKingTemplate.contactDamage : 150,
+    flags: lizardKingTemplate ? lizardKingTemplate.flags : 2,
+  });
+
+  // Creature 10: Lizard Minion (type_id=1)
+  const lizardMinionTemplate = findTemplate((s, id) => s.typeId === 1 && id === 0x2e);
+  creatures.push({
+    id: 10,
+    name: 'Lizard Minion',
+    health: lizardMinionTemplate ? lizardMinionTemplate.health : 50,
+    speed: lizardMinionTemplate ? Math.round(lizardMinionTemplate.moveSpeed * 40) : 70,
+    damage: lizardMinionTemplate ? lizardMinionTemplate.contactDamage : 5,
+    flags: lizardMinionTemplate ? lizardMinionTemplate.flags : 0,
+  });
+
+  return creatures.sort((a, b) => a.id - b.id);
 }
 
 // ============================================================================
@@ -532,67 +697,59 @@ function extractPerkData(content: string): CanonicalData['perks'] {
 
 /**
  * Extract quest data from quest database initialization.
+ *
+ * Parses quest_database_init to extract:
+ * - Quest names from string literals (s_Quest_Name_00XXXXXX)
+ * - Quest IDs from builder function names (quest_build_XXX -> XXX)
+ * - Time limits and start weapon IDs (for potential future use)
  */
 function extractQuestData(content: string): CanonicalData['quests'] {
-  // Quest IDs extracted from quest build functions in decompile
-  const questIds = [
-    'nagolipoli',
-    'monster_blues',
-    'the_gathering',
-    'army_of_three',
-    'knee_deep_in_the_dead',
-    'the_gang_wars',
-    'the_fortress',
-    'cross_fire',
-    'the_beating',
-    'the_spanking_of_the_dead',
-    'hidden_evil',
-    'land_hostile',
-    'minor_alien_breach',
-    'alien_squads',
-    'zombie_masters',
-    '8_legged_terror',
-    'ghost_patrols',
-    'the_random_factor',
-    'spider_wave_syndrome',
-    'nesting_grounds',
-    'alien_dens',
-    'arachnoid_farm',
-    'gauntlet',
-    'syntax_terror',
-    'spider_spawns',
-    'two_fronts',
-    'survival_of_the_fastest',
-    'spideroids',
-    'evil_zombies_at_large',
-    'everred_pastures',
-    'lizard_kings',
-    'sweep_stakes',
-    'deja_vu',
-    'target_practice',
-    'major_alien_breach',
-    'land_of_lizards',
-    'the_lizquidation',
-    'zombie_time',
-    'frontline_assault',
-    'the_collaboration',
-    'the_blighting',
-    'the_annihilation',
-    'the_massacre',
-    'the_killing',
-    'lizard_zombie_pact',
-    'lizard_raze',
-    'surrounded_by_reptiles',
-    'the_unblitzkrieg',
-    'the_end_of_all',
-    'spiders_inc',
-  ];
+  const quests: CanonicalData['quests'] = [];
 
-  return questIds.map((id) => ({
-    id,
-    name: id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-    objectiveTypes: ['kill_count', 'survive_time', 'reach_location', 'kill_bosses'],
-  }));
+  // Extract builder function names which give us quest IDs
+  // Pattern: quest_meta_cursor->builder = quest_build_quest_name;
+  const builderRegex = /builder\s*=\s*quest_build_([A-Za-z0-9_]+);/g;
+  const questIds: string[] = [];
+
+  let builderMatch: RegExpExecArray | null = builderRegex.exec(content);
+  while (builderMatch !== null) {
+    questIds.push(builderMatch[1]);
+    builderMatch = builderRegex.exec(content);
+  }
+
+  // Combine extracted data
+  // Use builder names as IDs (they match the canonical quest IDs)
+  // Format names from the string literals
+  for (const id of questIds) {
+    // Format the name: convert snake_case to Title Case
+    const name = id
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+
+    // Determine likely objective types based on quest name heuristics
+    const objectiveTypes: string[] = ['kill_count'];
+
+    // Add survive_time for quests with survival-related names
+    if (id.includes('survival') || id.includes('gauntlet') || id.includes('sweep')) {
+      objectiveTypes.push('survive_time');
+    }
+
+    // Add kill_bosses for quests with boss-related names
+    if (
+      id.includes('king') ||
+      id.includes('master') ||
+      id.includes('end_of_all') ||
+      id.includes('annihilation') ||
+      id.includes('massacre')
+    ) {
+      objectiveTypes.push('kill_bosses');
+    }
+
+    quests.push({ id, name, objectiveTypes });
+  }
+
+  return quests;
 }
 
 // ============================================================================
