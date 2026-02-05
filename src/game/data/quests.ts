@@ -143,6 +143,7 @@ const QUEST_NAGOLIPOLI: QuestData = {
   id: 'nagolipoli',
   name: 'Nagolipoli',
   description: 'Survive the initial zombie outbreak. Tutorial level for new players.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'survive_time', target: 60, description: 'Survive for 60 seconds' }],
   spawnEntries: [
     // Initial spawn
@@ -157,6 +158,7 @@ const QUEST_MONSTER_BLUES: QuestData = {
   id: 'monster_blues',
   name: 'Monster Blues',
   description: 'Eliminate 50 zombies. Learn the basics of combat.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 50, description: 'Kill 50 zombies' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.ZOMBIE, 4, 8, 0, 3000),
@@ -169,6 +171,7 @@ const QUEST_THE_GATHERING: QuestData = {
   id: 'the_gathering',
   name: 'The Gathering',
   description: 'Face increasing waves of mixed enemies.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 100, description: 'Kill 100 enemies' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.ZOMBIE, 5, 6, 0, 4000),
@@ -182,6 +185,7 @@ const QUEST_ARMY_OF_THREE: QuestData = {
   id: 'army_of_three',
   name: 'Army of Three',
   description: 'Three powerful elite enemies await. Your first real challenge.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 3, description: 'Kill 3 tank zombies' }],
   spawnEntries: [
     { creatureTypeId: CreatureTypeId.ZOMBIE_TANK, x: 300, y: 300, triggerTimeMs: 0, count: 1 },
@@ -199,6 +203,7 @@ const QUEST_KNEE_DEEP_IN_THE_DEAD: QuestData = {
   id: 'knee_deep_in_the_dead',
   name: 'Knee Deep in the Dead',
   description: 'Kill 100 zombies in relentless waves.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 100, description: 'Kill 100 zombies' }],
   spawnEntries: [
     // Intense zombie waves
@@ -213,6 +218,7 @@ const QUEST_THE_GANG_WARS: QuestData = {
   id: 'the_gang_wars',
   name: 'The Gang Wars',
   description: 'Kill 75 mixed enemies in gang warfare.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 75, description: 'Kill 75 enemies' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.ZOMBIE, 3, 10, 0, 2500),
@@ -226,6 +232,7 @@ const QUEST_THE_FORTRESS: QuestData = {
   id: 'the_fortress',
   name: 'The Fortress',
   description: 'Survive 90 seconds in defensive positioning.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'survive_time', target: 90, description: 'Survive for 90 seconds' }],
   spawnEntries: [
     // Corner spawns for defensive feel
@@ -242,6 +249,7 @@ const QUEST_CROSS_FIRE: QuestData = {
   id: 'cross_fire',
   name: 'Cross Fire',
   description: 'Kill 50 enemies attacking from 4 corners simultaneously.',
+  timeLimitMs: 480000,
   objectives: [{ type: 'kill_count', target: 50, description: 'Kill 50 enemies' }],
   spawnEntries: [
     ...createCornerSpawns(CreatureTypeId.ZOMBIE, 2, 0, 200),
@@ -261,6 +269,7 @@ const QUEST_THE_BEATING: QuestData = {
   id: 'the_beating',
   name: 'The Beating',
   description: 'Survive 60 seconds against fast zombies. Keep moving!',
+  timeLimitMs: 480000,
   objectives: [{ type: 'survive_time', target: 60, description: 'Survive for 60 seconds' }],
   spawnEntries: [
     // Mostly fast zombies
@@ -275,6 +284,7 @@ const QUEST_HIDDEN_EVIL: QuestData = {
   id: 'hidden_evil',
   name: 'Hidden Evil',
   description: 'Kill 30 ghosts that appear in waves. Watch your back!',
+  timeLimitMs: 300000,
   objectives: [
     {
       type: 'kill_count',
@@ -308,6 +318,7 @@ const QUEST_MINOR_ALIEN_BREACH: QuestData = {
   id: 'minor_alien_breach',
   name: 'Minor Alien Breach',
   description: 'Kill 40 alien troopers before they overwhelm you.',
+  timeLimitMs: 120000,
   objectives: [
     {
       type: 'kill_count',
@@ -332,6 +343,7 @@ const QUEST_ALIEN_SQUADS: QuestData = {
   id: 'alien_squads',
   name: 'Alien Squads',
   description: 'Kill 80 mixed aliens in coordinated squads.',
+  timeLimitMs: 180000,
   objectives: [{ type: 'kill_count', target: 80, description: 'Kill 80 mixed aliens' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.ALIEN_TROOPER, 4, 10, 0, 2500),
@@ -345,6 +357,7 @@ const QUEST_ZOMBIE_MASTERS: QuestData = {
   id: 'zombie_masters',
   name: 'Zombie Masters',
   description: 'Kill 3 elite zombie masters (boss fight).',
+  timeLimitMs: 300000,
   objectives: [{ type: 'kill_count', target: 3, description: 'Kill 3 tank zombies' }],
   spawnEntries: [
     // Boss-style encounter with minions
@@ -362,6 +375,7 @@ const QUEST_8_LEGGED_TERROR: QuestData = {
   id: '8_legged_terror',
   name: '8-Legged Terror',
   description: 'Kill 50 spiders before they swarm you.',
+  timeLimitMs: 240000,
   objectives: [
     {
       type: 'kill_count',
@@ -382,6 +396,7 @@ const QUEST_GHOST_PATROLS: QuestData = {
   id: 'ghost_patrols',
   name: 'Ghost Patrols',
   description: 'Survive 120 seconds with constant ghost spawns.',
+  timeLimitMs: 180000,
   objectives: [{ type: 'survive_time', target: 120, description: 'Survive for 120 seconds' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.GHOST, 3, 15, 0, 4000),
@@ -400,6 +415,7 @@ const QUEST_NESTING_GROUNDS: QuestData = {
   id: 'nesting_grounds',
   name: 'Nesting Grounds',
   description: 'Kill 60 spiders with increasing difficulty.',
+  timeLimitMs: 240000,
   objectives: [{ type: 'kill_count', target: 60, description: 'Kill 60 spiders' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.SPIDER_SMALL, 4, 5, 0, 3000),
@@ -414,6 +430,7 @@ const QUEST_ALIEN_DENS: QuestData = {
   id: 'alien_dens',
   name: 'Alien Dens',
   description: 'Clear 3 alien nests (location-based challenge).',
+  timeLimitMs: 180000,
   objectives: [{ type: 'kill_count', target: 50, description: 'Clear the alien dens' }],
   spawnEntries: [
     // Nest 1
@@ -432,6 +449,7 @@ const QUEST_ARACHNOID_FARM: QuestData = {
   id: 'arachnoid_farm',
   name: 'Arachnoid Farm',
   description: 'Kill 100 spiders in massive waves.',
+  timeLimitMs: 240000,
   objectives: [{ type: 'kill_count', target: 100, description: 'Kill 100 spiders' }],
   spawnEntries: [
     ...createWaveSpawns(CreatureTypeId.SPIDER_SMALL, 6, 10, 0, 2000),
@@ -446,6 +464,7 @@ const QUEST_GAUNTLET: QuestData = {
   id: 'gauntlet',
   name: 'Gauntlet',
   description: 'Endurance challenge: survive 300 seconds.',
+  timeLimitMs: 300000,
   objectives: [{ type: 'survive_time', target: 300, description: 'Survive for 300 seconds' }],
   spawnEntries: [
     // Early waves - zombies
@@ -1205,7 +1224,7 @@ const QUEST_SPIDERS_INC: QuestData = {
   name: 'Spiders Inc.',
   description: 'Spider corporation sends waves from top. 5 minute survival.',
   timeLimitMs: 300000,
-  startingWeapon: 12, // Blade Gun
+  startingWeapon: 11, // Blade Gun
   objectives: [{ type: 'kill_count', target: 150, description: 'Kill 150 spiders' }],
   spawnEntries: [
     // Spider spawns from top
@@ -1357,7 +1376,7 @@ const QUEST_MAJOR_ALIEN_BREACH: QuestData = {
   name: 'Major Alien Breach',
   description: 'Major alien invasion from corners. 5 minute defense.',
   timeLimitMs: 300000,
-  startingWeapon: 19, // Ion Cannon
+  startingWeapon: 18, // Ion Cannon
   objectives: [{ type: 'kill_count', target: 120, description: 'Kill 120 aliens' }],
   spawnEntries: [
     // Aliens from top-right and top-left corners, decreasing interval
@@ -2134,6 +2153,7 @@ const QUEST_SYNTAX_TERROR: QuestData = {
   id: 'syntax_terror',
   name: 'Syntax Terror',
   description: 'Mixed enemy types in chaotic waves. (Bonus)',
+  timeLimitMs: 300000,
   isBonus: true,
   objectives: [{ type: 'kill_count', target: 150, description: 'Kill 150 enemies' }],
   spawnEntries: [

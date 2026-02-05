@@ -475,6 +475,43 @@ describe('QuestMode Transition State Machine', () => {
     // Verify hardcore mode check is available
     expect(mockCallbacks.isHardcoreMode()).toBe(true);
   });
+
+  it('should fail quest when time limit is exceeded', () => {
+    // Use a quest with a short time limit (land_hostile has 120000ms = 120s)
+    questMode.startQuest('land_hostile');
+
+    // Verify quest is active
+    expect(questMode.isRunning()).toBe(true);
+
+    // Simulate time passing beyond the time limit (120s + 1s buffer)
+    // Update with 121 seconds worth of time
+    for (let i = 0; i < 121; i++) {
+      questMode.update(1.0); // 1 second per update
+    }
+
+    // Quest should have failed
+    expect(mockCallbacks.onQuestFail).toHaveBeenCalled();
+    expect(questMode.isRunning()).toBe(false);
+  });
+
+  it('should not fail quest when time is within limit', () => {
+    // Use a quest with a time limit (land_hostile has 120000ms = 120s)
+    questMode.startQuest('land_hostile');
+
+    // Simulate time passing but within limit (50 seconds)
+    for (let i = 0; i < 50; i++) {
+      questMode.update(1.0);
+    }
+
+    // Quest should still be running
+    expect(mockCallbacks.onQuestFail).not.toHaveBeenCalled();
+    expect(questMode.isRunning()).toBe(true);
+
+    // Verify remaining time is correct
+    const remainingTime = questMode.getRemainingTime();
+    expect(remainingTime).toBeGreaterThan(0);
+    expect(remainingTime).toBeLessThan(71); // 120s - 50s = 70s remaining
+  });
 });
 
 describe('ProgressionManager Quest Unlock Indices', () => {

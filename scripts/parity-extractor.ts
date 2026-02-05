@@ -54,6 +54,8 @@ interface CanonicalData {
     id: string;
     name: string;
     objectiveTypes: string[];
+    timeLimitMs: number;
+    startWeaponId: number;
   }>;
 }
 
@@ -843,31 +845,56 @@ function extractPerkData(content: string): CanonicalData['perks'] {
 // ============================================================================
 
 /**
+ * Parse a numeric value from the decompiled source.
+ * Handles both decimal (e.g., 120000) and hex (e.g., 0xb) formats.
+ */
+function parseNumericValue(value: string): number {
+  if (value.startsWith('0x')) {
+    return Number.parseInt(value, 16);
+  }
+  return Number.parseInt(value, 10);
+}
+
+/**
  * Extract quest data from quest database initialization.
  *
  * Parses quest_database_init to extract:
  * - Quest names from string literals (s_Quest_Name_00XXXXXX)
  * - Quest IDs from builder function names (quest_build_XXX -> XXX)
- * - Time limits and start weapon IDs (for potential future use)
+ * - Time limits (time_limit_ms)
+ * - Starting weapon IDs (start_weapon_id)
  */
 function extractQuestData(content: string): CanonicalData['quests'] {
   const quests: CanonicalData['quests'] = [];
 
-  // Extract builder function names which give us quest IDs
+  // Extract all quest entry blocks
+  // Each quest has:
+  //   quest_meta_init_entry(...)
+  //   quest_meta_cursor->start_weapon_id = N;
+  //   quest_meta_cursor->time_limit_ms = N;
+  //   quest_meta_cursor->builder = quest_build_XXX;
+
+  // Find all builder assignments and their associated metadata
   // Pattern: quest_meta_cursor->builder = quest_build_quest_name;
   const builderRegex = /builder\s*=\s*quest_build_([A-Za-z0-9_]+);/g;
-  const questIds: string[] = [];
 
-  let builderMatch: RegExpExecArray | null = builderRegex.exec(content);
-  while (builderMatch !== null) {
-    questIds.push(builderMatch[1]);
-    builderMatch = builderRegex.exec(content);
-  }
+  // Pattern: quest_meta_cursor->start_weapon_id = N;
+  const weaponRegex = /start_weapon_id\s*=\s*(0x[0-9a-fA-F]+|\d+);/g;
 
-  // Combine extracted data
-  // Use builder names as IDs (they match the canonical quest IDs)
-  // Format names from the string literals
-  for (const id of questIds) {
+  // Pattern: quest_meta_cursor->time_limit_ms = N;
+  const timeRegex = /time_limit_ms\s*=\s*(0x[0-9a-fA-F]+|\d+);/g;
+
+  // Extract all matches
+  const builders = [...content.matchAll(builderRegex)];
+  const weapons = [...content.matchAll(weaponRegex)];
+  const times = [...content.matchAll(timeRegex)];
+
+  // Combine extracted data - each quest has one builder, one weapon, one time
+  for (let i = 0; i < builders.length; i++) {
+    const id = builders[i][1];
+    const startWeaponId = weapons[i] ? parseNumericValue(weapons[i][1]) : 1;
+    const timeLimitMs = times[i] ? parseNumericValue(times[i][1]) : 120000;
+
     // Format the name: convert snake_case to Title Case
     const name = id
       .split('_')
@@ -893,7 +920,7 @@ function extractQuestData(content: string): CanonicalData['quests'] {
       objectiveTypes.push('kill_bosses');
     }
 
-    quests.push({ id, name, objectiveTypes });
+    quests.push({ id, name, objectiveTypes, timeLimitMs, startWeaponId });
   }
 
   return quests;

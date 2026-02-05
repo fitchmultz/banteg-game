@@ -409,6 +409,38 @@ describe('Quest Parity', () => {
     }
     expect(unimplemented).toEqual([]);
   });
+
+  it('should have matching time limits', () => {
+    const mismatches: string[] = [];
+    for (const canonicalQuest of canonical.quests) {
+      const tsQuest = ALL_QUESTS.find((q) => q.id === canonicalQuest.id);
+      if (!tsQuest) continue;
+
+      const tsTimeLimit = tsQuest.timeLimitMs ?? 0;
+      if (tsTimeLimit !== canonicalQuest.timeLimitMs) {
+        mismatches.push(
+          `${canonicalQuest.id}: ts=${tsTimeLimit}, canonical=${canonicalQuest.timeLimitMs}`
+        );
+      }
+    }
+    expect(mismatches).toEqual([]);
+  });
+
+  it('should have matching starting weapons', () => {
+    const mismatches: string[] = [];
+    for (const canonicalQuest of canonical.quests) {
+      const tsQuest = ALL_QUESTS.find((q) => q.id === canonicalQuest.id);
+      if (!tsQuest) continue;
+
+      const tsWeapon = tsQuest.startingWeapon ?? 1; // Default to pistol (1) if not set
+      if (tsWeapon !== canonicalQuest.startWeaponId) {
+        mismatches.push(
+          `${canonicalQuest.id}: ts=${tsWeapon}, canonical=${canonicalQuest.startWeaponId}`
+        );
+      }
+    }
+    expect(mismatches).toEqual([]);
+  });
 });
 
 function isObjectiveImplemented(type: string): boolean {

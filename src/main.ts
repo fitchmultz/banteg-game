@@ -18,7 +18,7 @@ import {
 } from './engine';
 import { TerrainGenerator } from './engine/TerrainGenerator';
 import { TUNES, getDeathSample, loadGameAudio } from './game/audio';
-import { getUnlockedWeapons } from './game/data';
+import { getUnlockedWeapons, getQuestData } from './game/data';
 import { BonusFactory, PlayerFactory } from './game/entities';
 import { CreatureFactory } from './game/entities';
 import { GameModeManager, QuestMode, RushMode, SurvivalMode, TutorialMode } from './game/modes';
@@ -1062,15 +1062,24 @@ function startGame(mode: GameMode): void {
   // Create player entities
   const playerEntities: Entity[] = [];
 
+  // Determine starting weapon: use quest's starting weapon if in quest mode
+  let startingWeaponId = 0; // Default to Pistol
+  if (mode.type === 'QUEST') {
+    const questData = getQuestData(mode.questId);
+    if (questData?.startingWeapon !== undefined) {
+      startingWeaponId = questData.startingWeapon;
+    }
+  }
+
   if (isCoop) {
     // Create two players for co-op mode
     const player1 = PlayerFactory.create(entityManager, -50, 0, {
       playerIndex: 0,
-      weaponId: 0, // Pistol
+      weaponId: startingWeaponId,
     });
     const player2 = PlayerFactory.create(entityManager, 50, 0, {
       playerIndex: 1,
-      weaponId: 0, // Pistol
+      weaponId: startingWeaponId,
     });
     playerEntities.push(player1, player2);
     gameState.playerEntityId = player1.id;
@@ -1079,7 +1088,7 @@ function startGame(mode: GameMode): void {
     // Single player
     const playerEntity = PlayerFactory.create(entityManager, 0, 0, {
       playerIndex: 0,
-      weaponId: 0, // Pistol
+      weaponId: startingWeaponId,
     });
     playerEntities.push(playerEntity);
     gameState.playerEntityId = playerEntity.id;
