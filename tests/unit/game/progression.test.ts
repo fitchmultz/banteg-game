@@ -498,12 +498,16 @@ describe('ProgressionManager', () => {
       const corruptedManager = new ProgressionManager();
       expect(corruptedManager.getStatistics().totalKills).toBe(0);
       expect(corruptedManager.getCompletedQuests()).toEqual([]);
+      // Verify corrupt entry is cleared
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
     });
 
     it('should handle localStorage with null value', () => {
       store[STORAGE_KEY] = 'null';
       const nullManager = new ProgressionManager();
       expect(nullManager.getStatistics().totalKills).toBe(0);
+      // Verify corrupt entry is cleared
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
     });
 
     it('should handle missing required fields in stored data', () => {
@@ -668,8 +672,15 @@ describe('ProgressionManager', () => {
     it('should handle import with array instead of object', () => {
       const result = manager.importData('[]');
       expect(result).toBe(true);
-      // Should merge array with defaults via spread operator
+      // importData uses migrate which spreads, so array becomes object with indices
       expect(manager.getStatistics().totalKills).toBe(0);
+    });
+
+    it('should clear localStorage when stored data is an array', () => {
+      store[STORAGE_KEY] = '[]';
+      const arrayManager = new ProgressionManager();
+      expect(arrayManager.getStatistics().totalKills).toBe(0);
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
     });
 
     it('should handle localStorage quota exceeded error gracefully', () => {

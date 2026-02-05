@@ -125,6 +125,8 @@ describe('SettingsManager', () => {
 
       expect(manager.getConfig().sfxVolume).toBe(DEFAULT_GAME_CONFIG.sfxVolume);
       expect(manager.getConfig().resolution).toEqual(DEFAULT_GAME_CONFIG.resolution);
+      // Verify corrupt entry is cleared
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(SETTINGS_STORAGE_KEY);
     });
 
     it('should handle null in localStorage', () => {
@@ -132,6 +134,16 @@ describe('SettingsManager', () => {
       const manager = new SettingsManager();
 
       expect(manager.getConfig().sfxVolume).toBe(DEFAULT_GAME_CONFIG.sfxVolume);
+      // Verify corrupt entry is cleared
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(SETTINGS_STORAGE_KEY);
+    });
+
+    it('should clear localStorage when stored data is an array', () => {
+      store[SETTINGS_STORAGE_KEY] = '[]';
+      const manager = new SettingsManager();
+
+      expect(manager.getConfig().sfxVolume).toBe(DEFAULT_GAME_CONFIG.sfxVolume);
+      expect(localStorageMock.removeItem).toHaveBeenCalledWith(SETTINGS_STORAGE_KEY);
     });
   });
 

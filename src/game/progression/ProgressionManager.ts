@@ -7,6 +7,7 @@
 
 import type { QuestId, PerkId, WeaponId, CreatureTypeId, GameStats } from '../../types';
 import { getQuestData, isQuestUnlocked, getStartingQuest } from '../data/quests';
+import { safeParseStorage } from '../utils/storage';
 
 // Storage key for localStorage
 export const STORAGE_KEY = 'crimsonland_progression_v1';
@@ -115,15 +116,9 @@ export class ProgressionManager {
    * Load progression from storage
    */
   private load(): PlayerProgression {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as PlayerProgression;
-        // Migrate if needed
-        return this.migrate(parsed);
-      }
-    } catch (error) {
-      console.warn('Failed to load progression:', error);
+    const parsed = safeParseStorage<Partial<PlayerProgression>>(STORAGE_KEY);
+    if (parsed) {
+      return this.migrate(parsed);
     }
     return createDefaultProgression();
   }

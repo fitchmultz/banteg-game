@@ -22,6 +22,7 @@
 import type { AudioManager } from '../../engine/AudioManager';
 import type { Renderer } from '../../engine/Renderer';
 import type { GameConfig, KeyBindings } from '../../types';
+import { safeParseStorage } from '../utils/storage';
 
 // Storage key for localStorage
 export const SETTINGS_STORAGE_KEY = 'crimsonland_settings_v1';
@@ -313,14 +314,9 @@ export class SettingsManager {
    * Load settings from localStorage.
    */
   private load(): GameConfig {
-    try {
-      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as SettingsEnvelope;
-        return this.migrate(parsed);
-      }
-    } catch (error) {
-      console.warn('Failed to load settings:', error);
+    const parsed = safeParseStorage<Partial<SettingsEnvelope>>(SETTINGS_STORAGE_KEY);
+    if (parsed) {
+      return this.migrate(parsed);
     }
     return { ...DEFAULT_GAME_CONFIG };
   }
