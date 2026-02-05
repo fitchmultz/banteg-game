@@ -250,6 +250,25 @@ const SOUND_DEFS: SoundDef[] = [
       return applyLowpass(noise, 1500, sr);
     },
   },
+  // Shock hit (for shock chain effect)
+  {
+    name: 'shock_hit',
+    type: 'sfx',
+    duration: 0.2,
+    generate: (sr) => {
+      // Electrical zap sound - high frequency noise with rapid decay
+      const samples = Math.floor(sr * 0.2);
+      const buffer = new Float32Array(samples);
+      for (let i = 0; i < samples; i++) {
+        const t = i / sr;
+        // White noise with exponential decay
+        const noise = Math.random() * 2 - 1;
+        const envelope = Math.exp(-t / 0.05); // Fast 50ms decay
+        buffer[i] = noise * envelope * 0.4;
+      }
+      return applyLowpass(buffer, 6000, sr); // Higher cutoff for electrical sound
+    },
+  },
   // Music loop
   {
     name: 'music_game_loop',

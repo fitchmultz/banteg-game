@@ -51,7 +51,6 @@ export class QuestMode {
   private currentQuest: QuestData | null = null;
   private currentQuestId: QuestId | null = null;
   private isActive = false;
-  // private _startTime = 0; // TODO: Implement timing functionality
 
   // Progress tracking
   private killCount = 0;
@@ -105,7 +104,6 @@ export class QuestMode {
     this.currentQuest = quest;
     this.currentQuestId = questId;
     this.isActive = true;
-    // this._startTime = performance.now();
 
     // Reset progress
     this.killCount = 0;

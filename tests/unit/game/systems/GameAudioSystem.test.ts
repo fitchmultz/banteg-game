@@ -12,7 +12,10 @@ import {
 import { EntityManager } from '../../../../src/core/ecs';
 import type { AudioManager } from '../../../../src/engine';
 import { SAMPLES } from '../../../../src/game/audio/catalog';
-import { BonusType } from '../../../../src/types';
+import { BonusType, ProjectileTypeId } from '../../../../src/types';
+import { CollisionSystem } from '../../../../src/game/systems/CollisionSystem';
+import { setShockChainState, clearShockChainState } from '../../../../src/game/systems/ShockChainState';
+import { createProjectileEntity } from '../../../../src/game/entities/ProjectileFactory';
 
 // Mock AudioManager
 function createMockAudioManager(): AudioManager {
@@ -167,6 +170,231 @@ describe('GameAudioSystem', () => {
 
       system.update();
       expect(() => system.destroy()).not.toThrow();
+    });
+  });
+
+  describe('shock chain audio', () => {
+    beforeEach(() => {
+      clearShockChainState();
+    });
+
+    it('should play shock_hit sound when shock chain continues', () => {
+      // Create mock audio manager
+      const mockAudio = {
+        playSample: vi.fn(),
+        playSamplePanned: vi.fn(),
+      } as unknown as AudioManager;
+
+      // Create collision system with mock audio
+      const collisionSystem = new CollisionSystem(entityManager, mockAudio);
+
+      // Create two enemies within chain range
+      const enemy1 = entityManager.createEntity();
+      enemy1.addComponent({
+        type: 'creature',
+        creatureTypeId: 0,
+        health: 50,
+        maxHealth: 50,
+        speed: 100,
+        aiMode: 1,
+        hitboxSize: 20,
+        rewardValue: 10,
+      });
+      enemy1.addComponent({
+        type: 'transform',
+        x: 100,
+        y: 100,
+        rotation: 0,
+      });
+      enemy1.addComponent({
+        type: 'collider',
+        radius: 16,
+        layer: 2, // ENEMY
+        enabled: true,
+      });
+
+      const enemy2 = entityManager.createEntity();
+      enemy2.addComponent({
+        type: 'creature',
+        creatureTypeId: 0,
+        health: 50,
+        maxHealth: 50,
+        speed: 100,
+        aiMode: 1,
+        hitboxSize: 20,
+        rewardValue: 10,
+      });
+      enemy2.addComponent({
+        type: 'transform',
+        x: 150, // Within 100 units of enemy1
+        y: 100,
+        rotation: 0,
+      });
+      enemy2.addComponent({
+        type: 'collider',
+        radius: 16,
+        layer: 2, // ENEMY
+        enabled: true,
+      });
+
+      // Create ion rifle projectile with shock chain active
+      const projectile = createProjectileEntity(
+        entityManager,
+        ProjectileTypeId.ION_RIFLE,
+        100,
+        100,
+        0,
+        1,
+        { damage: 30 }
+      );
+      const projComponent = projectile.getComponent('projectile');
+      if (projComponent) {
+        projComponent.isShockChainActive = true;
+        projComponent.shockChainLinksLeft = 32;
+      }
+      setShockChainState(projectile.id, 32);
+
+      // Create a player entity (projectile owner)
+      const player = entityManager.createEntity();
+      player.addComponent({
+        type: 'player',
+        health: 100,
+        maxHealth: 100,
+        experience: 0,
+        level: 1,
+        currentWeapon: { weaponId: 0, clipSize: 10, ammo: 100 },
+        alternateWeapon: { weaponId: 1, clipSize: 30, ammo: 90 },
+        perkCounts: new Map(),
+        fireHeld: false,
+        fireJustPressed: false,
+        reloadRequested: false,
+        swapWeaponRequested: false,
+        shieldTimer: 0,
+      });
+      player.addComponent({
+        type: 'transform',
+        x: 100,
+        y: 100,
+        rotation: 0,
+      });
+      player.addComponent({
+        type: 'collider',
+        radius: 16,
+        layer: 1, // PLAYER
+        enabled: true,
+      });
+
+      // Run collision detection (hits enemy1, should chain to enemy2 and play shock_hit)
+      collisionSystem.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
+
+      // Verify shock_hit was played
+      expect(mockAudio.playSample).toHaveBeenCalledWith(SAMPLES.SHOCK_HIT);
+    });
+
+    it('should not play shock_hit sound when shock chain has no valid target', () => {
+      // Create mock audio manager
+      const mockAudio = {
+        playSample: vi.fn(),
+        playSamplePanned: vi.fn(),
+      } as unknown as AudioManager;
+
+      // Create collision system with mock audio
+      const collisionSystem = new CollisionSystem(entityManager, mockAudio);
+
+      // Create only one enemy (no chain target)
+      const enemy = entityManager.createEntity();
+      enemy.addComponent({
+        type: 'creature',
+        creatureTypeId: 0,
+        health: 50,
+        maxHealth: 50,
+        speed: 100,
+        aiMode: 1,
+        hitboxSize: 20,
+        rewardValue: 10,
+      });
+      enemy.addComponent({
+        type: 'transform',
+        x: 100,
+        y: 100,
+        rotation: 0,
+      });
+      enemy.addComponent({
+        type: 'collider',
+        radius: 16,
+        layer: 2, // ENEMY
+        enabled: true,
+      });
+
+      // Create ion rifle projectile with shock chain active
+      const projectile = createProjectileEntity(
+        entityManager,
+        ProjectileTypeId.ION_RIFLE,
+        100,
+        100,
+        0,
+        1,
+        { damage: 30 }
+      );
+      const projComponent = projectile.getComponent('projectile');
+      if (projComponent) {
+        projComponent.isShockChainActive = true;
+        projComponent.shockChainLinksLeft = 32;
+      }
+      setShockChainState(projectile.id, 32);
+
+      // Create a player entity (projectile owner)
+      const player = entityManager.createEntity();
+      player.addComponent({
+        type: 'player',
+        health: 100,
+        maxHealth: 100,
+        experience: 0,
+        level: 1,
+        currentWeapon: { weaponId: 0, clipSize: 10, ammo: 100 },
+        alternateWeapon: { weaponId: 1, clipSize: 30, ammo: 90 },
+        perkCounts: new Map(),
+        fireHeld: false,
+        fireJustPressed: false,
+        reloadRequested: false,
+        swapWeaponRequested: false,
+        shieldTimer: 0,
+      });
+      player.addComponent({
+        type: 'transform',
+        x: 100,
+        y: 100,
+        rotation: 0,
+      });
+      player.addComponent({
+        type: 'collider',
+        radius: 16,
+        layer: 1, // PLAYER
+        enabled: true,
+      });
+
+      // Clear any previous calls
+      vi.mocked(mockAudio.playSample).mockClear();
+
+      // Run collision detection (hits enemy, but no target to chain to)
+      collisionSystem.update(entityManager, {
+        dt: 0.016,
+        unscaledDt: 0.016,
+        gameTime: 0,
+        frameNumber: 0,
+        timeScale: 1,
+        setTimeScale: () => {},
+      });
+
+      // Verify shock_hit was NOT played (no valid target for chain)
+      expect(mockAudio.playSample).not.toHaveBeenCalledWith(SAMPLES.SHOCK_HIT);
     });
   });
 });

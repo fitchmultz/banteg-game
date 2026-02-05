@@ -795,7 +795,7 @@ function startGame(mode: GameMode): void {
   const weaponSystem = new WeaponSystem(entityManager, audio);
   const aiSystem = new AiSystem(entityManager);
   const projectileSystem = new ProjectileSystem(entityManager);
-  const collisionSystem = new CollisionSystem(entityManager);
+  const collisionSystem = new CollisionSystem(entityManager, audio);
   const gameAudioSystem = new GameAudioSystem(entityManager, audio);
 
   // Determine which mode we're starting

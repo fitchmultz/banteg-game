@@ -46,7 +46,7 @@ describe('Projectile Special Cases', () => {
 
   beforeEach(() => {
     entityManager = new EntityManager();
-    collisionSystem = new CollisionSystem(entityManager);
+    collisionSystem = new CollisionSystem(entityManager, undefined);
     clearShockChainState();
   });
 

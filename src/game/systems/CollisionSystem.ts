@@ -20,6 +20,8 @@ import { CollisionLayer, ProjectileTypeId } from '../components';
 import { getProjectileData } from '../data';
 import { createProjectileEntity } from '../entities/ProjectileFactory';
 import type { PerkSystem } from './PerkSystem';
+import type { AudioManager } from '../../engine';
+import { SAMPLES } from '../audio';
 import {
   getShockChainState,
   updateShockChainState,
@@ -68,10 +70,12 @@ export class CollisionSystem extends System {
 
   private entityManager: EntityManager;
   private perkSystem: PerkSystem | null = null;
+  private audio: AudioManager | null = null;
 
-  constructor(entityManager: EntityManager, perkSystem?: PerkSystem) {
+  constructor(entityManager: EntityManager, audio?: AudioManager, perkSystem?: PerkSystem) {
     super();
     this.entityManager = entityManager;
+    this.audio = audio ?? null;
     if (perkSystem) {
       this.perkSystem = perkSystem;
     }
@@ -82,6 +86,13 @@ export class CollisionSystem extends System {
    */
   setPerkSystem(perkSystem: PerkSystem): void {
     this.perkSystem = perkSystem;
+  }
+
+  /**
+   * Set the audio manager for playing SFX
+   */
+  setAudioManager(audio: AudioManager): void {
+    this.audio = audio;
   }
 
   update(_entityManager: EntityManager, _context: UpdateContext): void {
@@ -339,7 +350,10 @@ export class CollisionSystem extends System {
             // Update state to track new projectile
             updateShockChainState(newProjectile.id, newLinksLeft);
 
-            // TODO: Play sfx_shock_hit_01
+            // Play sfx_shock_hit_01 (decompiled: sfx_play_panned(sfx_shock_hit_01))
+            if (this.audio) {
+              this.audio.playSample(SAMPLES.SHOCK_HIT);
+            }
           } else {
             // No valid target, end chain
             clearShockChainState();
