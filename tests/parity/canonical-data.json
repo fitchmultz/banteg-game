@@ -3,300 +3,300 @@
     {
       "id": 0,
       "name": "Pistol",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.14000000059604645,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.2199999988079071,
+      "clipSize": 112,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 1,
       "name": "Assault Rifle",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.7117000222206116,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.2199999988079071,
+      "clipSize": 12,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 2,
       "name": "Shotgun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.11699999868869781,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.09000000357627869,
+      "clipSize": 25,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 3,
       "name": "Submachine Gun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.14000000059604645,
+      "fireRate": 3,
+      "reloadTime": 0.1599999964237213,
+      "clipSize": 16,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 4,
       "name": "Sawed-off Shotgun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.8500000238418579,
+      "fireRate": 1.899999976158142,
+      "reloadTime": 0.27000001072883606,
+      "clipSize": 12,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 5,
       "name": "Jackhammer",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.8700000047683716,
+      "fireRate": 1.899999976158142,
+      "reloadTime": 0.12999999523162842,
+      "clipSize": 12,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 6,
       "name": "Gauss Shotgun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.8500000238418579,
+      "fireRate": 1.899999976158142,
+      "reloadTime": 0.27000001072883606,
+      "clipSize": 16,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 7,
       "name": "Flamethrower",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.08811700344085693,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.0820000022649765,
+      "clipSize": 30,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 8,
       "name": "Plasma Rifle",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.008112999610602856,
+      "fireRate": 2,
+      "reloadTime": 0.014999999664723873,
+      "clipSize": 30,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 9,
       "name": "Multi-Plasma",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.290811687707901,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.18199999630451202,
+      "clipSize": 20,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 10,
       "name": "Plasma Minigun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.6208117008209229,
+      "fireRate": 1.399999976158142,
+      "reloadTime": 0.3199999928474426,
+      "clipSize": 8,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 11,
       "name": "Gauss Gun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.10999999940395355,
+      "fireRate": 1.2999999523162842,
+      "reloadTime": 0.09700000286102295,
+      "clipSize": 30,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 12,
       "name": "Pulse Gun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.11999999731779099,
+      "fireRate": 1.7999999523162842,
+      "reloadTime": 0.11999999731779099,
+      "clipSize": 16,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 13,
       "name": "Plasma Cannon",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 1.0499999523162842,
+      "fireRate": 2.0999999046325684,
+      "reloadTime": 0.27000001072883606,
+      "clipSize": 4,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 14,
       "name": "Rocket Launcher",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.6000000238418579,
+      "fireRate": 1.600000023841858,
+      "reloadTime": 0.41999998688697815,
+      "clipSize": 6,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 15,
       "name": "Seeker Rockets",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.7408117055892944,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.41999998688697815,
+      "clipSize": 5,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 16,
       "name": "Mean Minigun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.31081169843673706,
+      "fireRate": 1.2000000476837158,
+      "reloadTime": 0.3199999928474426,
+      "clipSize": 8,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 17,
       "name": "Plasma Shotgun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.09000000357627869,
+      "fireRate": 4,
+      "reloadTime": 0.06199999898672104,
+      "clipSize": 120,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 18,
       "name": "Blow Torch",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.47999998927116394,
+      "fireRate": 3.0999999046325684,
+      "reloadTime": 0.10999999940395355,
+      "clipSize": 8,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 19,
       "name": "HR Flamer",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.006113000214099884,
+      "fireRate": 1.5,
+      "reloadTime": 0.009999999776482582,
+      "clipSize": 30,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 20,
       "name": "Mini Rocket Swarmers",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.008500000461935997,
+      "fireRate": 1.7999999523162842,
+      "reloadTime": 0.009999999776482582,
+      "clipSize": 30,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 21,
       "name": "Rocket Minigun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 1.7999999523162842,
+      "fireRate": 1.7999999523162842,
+      "reloadTime": 0.11999999731779099,
+      "clipSize": 5,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 22,
       "name": "Ion Rifle",
-      "damage": 0,
-      "fireRate": 0,
+      "damage": 0.10000000149011612,
+      "fireRate": 0.10000000149011612,
       "reloadTime": 0,
-      "clipSize": 0,
+      "clipSize": 16,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 23,
       "name": "Ion Minigun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.4000000059604645,
+      "fireRate": 1.350000023841858,
+      "reloadTime": 0.1120000034570694,
+      "clipSize": 8,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 24,
       "name": "Ion Cannon",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.10000000149011612,
+      "fireRate": 1.7999999523162842,
+      "reloadTime": 0.09000000357627869,
+      "clipSize": 20,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 25,
       "name": "Ion Shotgun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 1,
+      "fireRate": 3,
+      "reloadTime": 0.6800000071525574,
+      "clipSize": 3,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 26,
       "name": "Evil Scythe",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.8999999761581421,
+      "fireRate": 2.700000047683716,
+      "reloadTime": 0.6000000238418579,
+      "clipSize": 3,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 27,
       "name": "Flameburst",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 1,
+      "fireRate": 3,
+      "reloadTime": 0.6800000071525574,
+      "clipSize": 3,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 28,
       "name": "Splitter Gun",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.699999988079071,
+      "fireRate": 2,
+      "reloadTime": 0.3799999952316284,
+      "clipSize": 12,
       "pelletCount": 1,
       "projectileType": 0
     },
     {
       "id": 29,
       "name": "Shrinkifier",
-      "damage": 0,
-      "fireRate": 0,
-      "reloadTime": 0,
-      "clipSize": 0,
+      "damage": 0.019999999552965164,
+      "fireRate": 3,
+      "reloadTime": 0.18000000715255737,
+      "clipSize": 60,
       "pelletCount": 1,
       "projectileType": 0
     },
@@ -421,76 +421,76 @@
       "name": "Atomic",
       "description": "",
       "duration": 1,
-      "rarity": 1
+      "rarity": 0
     },
     {
       "id": 3,
       "name": "Double Experience",
       "description": "",
-      "duration": 4,
-      "rarity": 1
+      "duration": 0,
+      "rarity": 0
     },
     {
       "id": 4,
       "name": "Fireblast",
       "description": "",
       "duration": 2,
-      "rarity": 1
+      "rarity": 0
     },
     {
       "id": 5,
       "name": "Shock Chain",
       "description": "",
       "duration": 3,
-      "rarity": 1
+      "rarity": 0
     },
     {
       "id": 6,
       "name": "Reflex Boost",
       "description": "",
-      "duration": 5,
+      "duration": 0,
       "rarity": 3
     },
     {
       "id": 7,
       "name": "Shield",
       "description": "",
-      "duration": 6,
+      "duration": 0,
       "rarity": 7
     },
     {
       "id": 8,
       "name": "Freeze",
       "description": "",
-      "duration": 8,
+      "duration": 0,
       "rarity": 5
     },
     {
       "id": 9,
       "name": "Speed",
       "description": "",
-      "duration": 9,
+      "duration": 0,
       "rarity": 8
     },
     {
       "id": 10,
       "name": "Energizer",
       "description": "",
-      "duration": 10,
+      "duration": 0,
       "rarity": 8
     },
     {
       "id": 11,
       "name": "Weapon Power Up",
       "description": "",
-      "duration": 7,
+      "duration": 0,
       "rarity": 10
     },
     {
       "id": 12,
       "name": "Fire Bullets",
       "description": "",
-      "duration": 11,
+      "duration": 0,
       "rarity": 4
     },
     {
@@ -594,273 +594,351 @@
   "perks": [
     {
       "id": 0,
-      "name": "Sharpshooter",
-      "description": "+15% damage per rank",
-      "category": "combat"
+      "name": "AntiPerk",
+      "description": "You should not be seeing this...",
+      "category": "meta"
     },
     {
       "id": 1,
-      "name": "Long Distance Runner",
-      "description": "+10% move speed",
-      "category": "movement"
+      "name": "Bloody Mess",
+      "description": "More the merrier! More blood guaranteed!",
+      "category": "combat"
     },
     {
       "id": 2,
-      "name": "Evil Eyes",
-      "description": "Damage bonus when looking at enemy",
+      "name": "Sharpshooter",
+      "description": "Miraculously your aiming improves!",
       "category": "combat"
     },
     {
       "id": 3,
-      "name": "Radioactive",
-      "description": "Radiation damage aura",
+      "name": "Fastloader",
+      "description": "Man, you sure know how to load a gun.",
       "category": "combat"
     },
     {
       "id": 4,
-      "name": "Fastshot",
-      "description": "+10% fire rate per rank",
-      "category": "combat"
-    },
-    {
-      "id": 5,
-      "name": "Pyromaniac",
-      "description": "Fire damage +25%",
-      "category": "combat"
-    },
-    {
-      "id": 6,
-      "name": "Doctor",
-      "description": "Medkits heal more",
-      "category": "defense"
-    },
-    {
-      "id": 7,
-      "name": "Pyrokinetic",
-      "description": "Fire bullets last longer",
-      "category": "combat"
-    },
-    {
-      "id": 8,
-      "name": "Bonus Magnet",
-      "description": "Auto-collect nearby bonuses",
+      "name": "Lean Mean Exp Machine",
+      "description": "Why kill for experience when you can just pick this?",
       "category": "utility"
     },
     {
+      "id": 5,
+      "name": "Long Distance Runner",
+      "description": "You move like a train that has full steam ahead!",
+      "category": "movement"
+    },
+    {
+      "id": 6,
+      "name": "Pyrokinetic",
+      "description": "You see flames everywhere. Bare also.",
+      "category": "combat"
+    },
+    {
+      "id": 7,
+      "name": "Instant Winner",
+      "description": "2500 experience points. Right away!",
+      "category": "gamble"
+    },
+    {
+      "id": 8,
+      "name": "Grim Deal",
+      "description": "I will make you a deal: I will give you experience for your health.",
+      "category": "gamble"
+    },
+    {
       "id": 9,
-      "name": "Reflex Boosted",
-      "description": "Slow time briefly when hit",
-      "category": "special"
+      "name": "Alternate Weapon",
+      "description": "Ever fancied about having two weapons at the same time?",
+      "category": "combat"
     },
     {
       "id": 10,
-      "name": "Thick Skinned",
-      "description": "+33% max health",
-      "category": "defense"
+      "name": "Plaguebearer",
+      "description": "You carry a horrible disease. Go spread it!",
+      "category": "meta"
     },
     {
       "id": 11,
-      "name": "Regeneration",
-      "description": "Heal 1 HP per second",
-      "category": "defense"
+      "name": "Evil Eyes",
+      "description": "No living, nor dead, can resist the power of your eyes!",
+      "category": "combat"
     },
     {
       "id": 12,
-      "name": "Greater Regeneration",
-      "description": "Heal 3 HP per second",
-      "category": "defense"
+      "name": "Ammo Maniac",
+      "description": "You squeeze and you push and you get more ammo!",
+      "category": "combat"
     },
     {
       "id": 13,
-      "name": "Bandage",
-      "description": "Random health boost",
-      "category": "defense"
+      "name": "Radioactive",
+      "description": "You are the Radioactive man, you are burning!",
+      "category": "combat"
     },
     {
       "id": 14,
-      "name": "Breathing Room",
-      "description": "Reduce enemy hitboxes",
-      "category": "defense"
+      "name": "Fastshot",
+      "description": "Funny how you make your gun spit faster!",
+      "category": "combat"
     },
     {
       "id": 15,
-      "name": "Regression Bullets",
-      "description": "Bullets return ammo on hit",
-      "category": "special"
+      "name": "Fatal Lottery",
+      "description": "Fifty fifty chance of dying OR getting loads of experience.",
+      "category": "gamble"
     },
     {
       "id": 16,
-      "name": "Uranium Filled Bullets",
-      "description": "Radiation damage over time",
-      "category": "special"
+      "name": "Random Weapon",
+      "description": "Here, have this weapon. No questions asked.",
+      "category": "combat"
     },
     {
       "id": 17,
-      "name": "Poison Bullets",
-      "description": "Poison enemies",
-      "category": "special"
+      "name": "Mr. Melee",
+      "description": "You master the art of melee fighting.",
+      "category": "combat"
     },
     {
       "id": 18,
-      "name": "Dodger",
-      "description": "Enhanced dodge ability",
-      "category": "special"
+      "name": "Anxious Loader",
+      "description": "When you can not stand waiting you load faster.",
+      "category": "combat"
     },
     {
       "id": 19,
       "name": "Final Revenge",
-      "description": "Revenge damage on death",
+      "description": "Pick this and you will get your revenge when you die.",
       "category": "special"
     },
     {
       "id": 20,
-      "name": "Ammunition Within",
-      "description": "Infinite ammo after reload",
-      "category": "combat"
+      "name": "Telekinetic",
+      "description": "Picking up bonuses has never been easier.",
+      "category": "utility"
     },
     {
       "id": 21,
-      "name": "Anxious Loader",
-      "description": "Faster reload when low ammo",
-      "category": "combat"
+      "name": "Perk Expert",
+      "description": "You sure know how to pick a perk. Better options available.",
+      "category": "meta"
     },
     {
       "id": 22,
-      "name": "Ammo Maniac",
-      "description": "Refill all weapons on pickup",
-      "category": "combat"
+      "name": "Unstoppable",
+      "description": "Monsters can not slow you down with their nasty bites.",
+      "category": "special"
     },
     {
       "id": 23,
-      "name": "My Favourite Weapon",
-      "description": "+2 clip size per rank",
-      "category": "combat"
+      "name": "Regression Bullets",
+      "description": "Attempt to shoot with an empty clip and it might just work.",
+      "category": "special"
     },
     {
       "id": 24,
-      "name": "Random Weapon",
-      "description": "Get random weapon with bonus stats",
-      "category": "combat"
+      "name": "Infernal Contract",
+      "description": "In exchange for your soul, a dark power grants you power.",
+      "category": "gamble"
     },
     {
       "id": 25,
-      "name": "Veins of Poison",
-      "description": "Poison damage synergy",
+      "name": "Poison Bullets",
+      "description": "You tend to explicitly treat each bullet with poison.",
       "category": "special"
     },
     {
       "id": 26,
-      "name": "Toxic Avenger",
-      "description": "Advanced poison effects",
+      "name": "Dodger",
+      "description": "It seems so stupid just to take the blow, so you dodge it.",
       "category": "special"
     },
     {
       "id": 27,
-      "name": "Ninja",
-      "description": "Enhanced dodging and movement",
-      "category": "special"
+      "name": "Bonus Magnet",
+      "description": "You somehow seem to lure all kinds of bonuses to you.",
+      "category": "utility"
     },
     {
       "id": 28,
-      "name": "Ion Gun Master",
-      "description": "Ion weapon specialist",
+      "name": "Uranium Filled Bullets",
+      "description": "Your bullets have a nice creamy uranium filling.",
       "category": "special"
     },
     {
       "id": 29,
-      "name": "Angry Reloader",
-      "description": "Reload-based damage boost",
-      "category": "special"
+      "name": "Doctor",
+      "description": "With a single glance you can tell what is wrong.",
+      "category": "defense"
     },
     {
       "id": 30,
-      "name": "Instant Winner",
-      "description": "+2500 XP immediately",
-      "category": "gamble"
+      "name": "Monster Vision",
+      "description": "With your newly enhanced senses you can see them all.",
+      "category": "utility"
     },
     {
       "id": 31,
-      "name": "Fatal Lottery",
-      "description": "50% chance +10000 XP or death",
-      "category": "gamble"
+      "name": "Hot Tempered",
+      "description": "It literally boils inside you. Touch them and they burn!",
+      "category": "combat"
     },
     {
       "id": 32,
-      "name": "Lifeline 50/50",
-      "description": "Kill 50% of damaged enemies instantly",
-      "category": "gamble"
+      "name": "Bonus Economist",
+      "description": "Your bonus power ups last 50% longer.",
+      "category": "utility"
     },
     {
       "id": 33,
-      "name": "Jinxed",
-      "description": "Negative effects on enemies, risk to player",
-      "category": "gamble"
+      "name": "Thick Skinned",
+      "description": "Trade 1/3 of your health for only getting 1/3 damage.",
+      "category": "defense"
     },
     {
       "id": 34,
-      "name": "Infernal Contract",
-      "description": "+3 levels but health reduced to 10%",
-      "category": "gamble"
+      "name": "Barrel Greaser",
+      "description": "After studying a lot of physics and applied mechanics.",
+      "category": "combat"
     },
     {
       "id": 35,
-      "name": "Grim Deal",
-      "description": "HP converted to XP then death",
-      "category": "gamble"
+      "name": "Ammunition Within",
+      "description": "Empty clip does not prevent you from firing.",
+      "category": "combat"
     },
     {
       "id": 36,
-      "name": "Death Clock",
-      "description": "Huge regen but limited time",
-      "category": "gamble"
+      "name": "Veins of Poison",
+      "description": "A strong poison runs through your veins.",
+      "category": "special"
     },
     {
       "id": 37,
-      "name": "Highlander",
-      "description": "Only one enemy type, more dangerous",
-      "category": "gamble"
+      "name": "Toxic Avenger",
+      "description": "You started out just by being poisonous.",
+      "category": "special"
     },
     {
       "id": 38,
-      "name": "Plaguebearer",
-      "description": "Enemies infect each other on death",
-      "category": "meta"
+      "name": "Regeneration",
+      "description": "Your health replenishes but very slowly.",
+      "category": "defense"
     },
     {
       "id": 39,
-      "name": "Monster Vision",
-      "description": "See enemies through walls",
-      "category": "utility"
+      "name": "Pyromaniac",
+      "description": "You just enjoy using fire as your weapon.",
+      "category": "combat"
     },
     {
       "id": 40,
-      "name": "Lean Mean EXP Machine",
-      "description": "+10% XP per rank",
-      "category": "utility"
+      "name": "Ninja",
+      "description": "You have taken your dodging abilities to a whole new level.",
+      "category": "special"
     },
     {
       "id": 41,
-      "name": "Perk Expert",
-      "description": "Better perk choices offered",
-      "category": "meta"
+      "name": "Highlander",
+      "description": "You are immortal. Well, almost immortal.",
+      "category": "gamble"
     },
     {
       "id": 42,
-      "name": "Perk Master",
-      "description": "Even better perk choices",
-      "category": "meta"
+      "name": "Jinxed",
+      "description": "Things happen near you. Strangest things.",
+      "category": "gamble"
     },
     {
       "id": 43,
-      "name": "Bonus Economist",
-      "description": "Bonuses last longer",
-      "category": "utility"
+      "name": "Perk Master",
+      "description": "Being the Perk Expert taught you even more.",
+      "category": "meta"
     },
     {
       "id": 44,
-      "name": "Bloody Mess",
-      "description": "Increases blood and gore effects",
+      "name": "Reflex Boosted",
+      "description": "To you the world seems to go on a lazy pace.",
+      "category": "special"
+    },
+    {
+      "id": 45,
+      "name": "Greater Regeneration",
+      "description": "Your health replenishes faster than normal.",
+      "category": "defense"
+    },
+    {
+      "id": 46,
+      "name": "Breathing Room",
+      "description": "Trade 2/3rds of your health for tiny enemies.",
+      "category": "defense"
+    },
+    {
+      "id": 47,
+      "name": "Death Clock",
+      "description": "You die exactly in 30 seconds. You gain huge regen.",
+      "category": "gamble"
+    },
+    {
+      "id": 48,
+      "name": "My Favourite Weapon",
+      "description": "You have grown very fond of your present weapon.",
       "category": "combat"
+    },
+    {
+      "id": 49,
+      "name": "Bandage",
+      "description": "Here, eat this bandage and you will feel better.",
+      "category": "defense"
+    },
+    {
+      "id": 50,
+      "name": "Angry Reloader",
+      "description": "You hate it when you run out of shots.",
+      "category": "special"
+    },
+    {
+      "id": 51,
+      "name": "Ion Gun Master",
+      "description": "You are good with ion weapons. You rock!",
+      "category": "special"
+    },
+    {
+      "id": 52,
+      "name": "Stationary Reloader",
+      "description": "It is incredibly hard to reload your weapons.",
+      "category": "special"
+    },
+    {
+      "id": 53,
+      "name": "Man Bomb",
+      "description": "You have the ability to go boom from time to time.",
+      "category": "special"
+    },
+    {
+      "id": 54,
+      "name": "Fire Caugh",
+      "description": "You have a fireball stuck in your throat.",
+      "category": "special"
+    },
+    {
+      "id": 55,
+      "name": "Living Fortress",
+      "description": "It comes a time in each mans life when he must take a stand.",
+      "category": "defense"
+    },
+    {
+      "id": 56,
+      "name": "Tough Reloader",
+      "description": "Damage received during reloading is reduced.",
+      "category": "special"
+    },
+    {
+      "id": 57,
+      "name": "Lifeline 50/50",
+      "description": "The computer removes half of the monsters.",
+      "category": "gamble"
     }
   ],
   "quests": [
@@ -955,6 +1033,16 @@
       ]
     },
     {
+      "id": "the_spanking_of_the_dead",
+      "name": "The Spanking Of The Dead",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
       "id": "hidden_evil",
       "name": "Hidden Evil",
       "objectiveTypes": [
@@ -1025,6 +1113,26 @@
       ]
     },
     {
+      "id": "the_random_factor",
+      "name": "The Random Factor",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "spider_wave_syndrome",
+      "name": "Spider Wave Syndrome",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
       "id": "nesting_grounds",
       "name": "Nesting Grounds",
       "objectiveTypes": [
@@ -1065,98 +1173,8 @@
       ]
     },
     {
-      "id": "land_of_lizards",
-      "name": "Land Of Lizards",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "lizard_kings",
-      "name": "Lizard Kings",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "lizard_raze",
-      "name": "Lizard Raze",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "lizard_zombie_pact",
-      "name": "Lizard Zombie Pact",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
       "id": "syntax_terror",
       "name": "Syntax Terror",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "target_practice",
-      "name": "Target Practice",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "frontline_assault",
-      "name": "Frontline Assault",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "spider_wave_syndrome",
-      "name": "Spider Wave Syndrome",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_random_factor",
-      "name": "The Random Factor",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "everred_pastures",
-      "name": "Everred Pastures",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1185,8 +1203,18 @@
       ]
     },
     {
-      "id": "sweep_stakes",
-      "name": "Sweep Stakes",
+      "id": "survival_of_the_fastest",
+      "name": "Survival Of The Fastest",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "spideroids",
+      "name": "Spideroids",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1205,8 +1233,8 @@
       ]
     },
     {
-      "id": "survival_of_the_fastest",
-      "name": "Survival Of The Fastest",
+      "id": "everred_pastures",
+      "name": "Everred Pastures",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1215,8 +1243,8 @@
       ]
     },
     {
-      "id": "the_blighting",
-      "name": "The Blighting",
+      "id": "lizard_kings",
+      "name": "Lizard Kings",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1225,38 +1253,8 @@
       ]
     },
     {
-      "id": "the_killing",
-      "name": "The Killing",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "surrounded_by_reptiles",
-      "name": "Surrounded By Reptiles",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_lizquidation",
-      "name": "The Lizquidation",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "spiders_inc",
-      "name": "Spiders Inc",
+      "id": "sweep_stakes",
+      "name": "Sweep Stakes",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1275,8 +1273,38 @@
       ]
     },
     {
+      "id": "target_practice",
+      "name": "Target Practice",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
       "id": "major_alien_breach",
       "name": "Major Alien Breach",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "land_of_lizards",
+      "name": "Land Of Lizards",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "the_lizquidation",
+      "name": "The Lizquidation",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1295,6 +1323,16 @@
       ]
     },
     {
+      "id": "frontline_assault",
+      "name": "Frontline Assault",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
       "id": "the_collaboration",
       "name": "The Collaboration",
       "objectiveTypes": [
@@ -1305,18 +1343,8 @@
       ]
     },
     {
-      "id": "the_massacre",
-      "name": "The Massacre",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "the_unblitzkrieg",
-      "name": "The Unblitzkrieg",
+      "id": "the_blighting",
+      "name": "The Blighting",
       "objectiveTypes": [
         "kill_count",
         "survive_time",
@@ -1335,6 +1363,66 @@
       ]
     },
     {
+      "id": "the_massacre",
+      "name": "The Massacre",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "the_killing",
+      "name": "The Killing",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "lizard_zombie_pact",
+      "name": "Lizard Zombie Pact",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "lizard_raze",
+      "name": "Lizard Raze",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "surrounded_by_reptiles",
+      "name": "Surrounded By Reptiles",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
+      "id": "the_unblitzkrieg",
+      "name": "The Unblitzkrieg",
+      "objectiveTypes": [
+        "kill_count",
+        "survive_time",
+        "reach_location",
+        "kill_bosses"
+      ]
+    },
+    {
       "id": "the_end_of_all",
       "name": "The End Of All",
       "objectiveTypes": [
@@ -1345,18 +1433,8 @@
       ]
     },
     {
-      "id": "the_spanking_of_the_dead",
-      "name": "The Spanking Of The Dead",
-      "objectiveTypes": [
-        "kill_count",
-        "survive_time",
-        "reach_location",
-        "kill_bosses"
-      ]
-    },
-    {
-      "id": "spideroids",
-      "name": "Spideroids",
+      "id": "spiders_inc",
+      "name": "Spiders Inc",
       "objectiveTypes": [
         "kill_count",
         "survive_time",

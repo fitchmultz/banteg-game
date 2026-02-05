@@ -5,7 +5,7 @@
 set -e
 
 # Run vitest and capture output
-OUTPUT=$(NODE_OPTIONS='--max-old-space-size=8192' pnpm vitest run 2>&1) || true
+OUTPUT=$(NODE_OPTIONS='--max-old-space-size=16384' pnpm vitest run 2>&1) || true
 
 # Print output for visibility
 echo "$OUTPUT"
