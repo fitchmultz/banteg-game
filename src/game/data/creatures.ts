@@ -3,9 +3,16 @@
  *
  * Based on creature_type_table from decompiled source.
  * Defines all enemy types with their stats and behaviors.
+ *
+ * Stats are derived from grim.dll runtime conversions in creature-conversions.ts
+ * to achieve exact parity with the decompiled Crimsonland source.
  */
 
 import { AiMode, CreatureTypeId } from '../../types';
+import {
+  convertCreatureStats,
+  CREATURE_TYPE_TO_TEMPLATE,
+} from './creature-conversions';
 
 export interface CreatureData {
   /** Creature display name */
@@ -36,16 +43,23 @@ export interface CreatureData {
   tint: { r: number; g: number; b: number; a: number };
 }
 
+// Helper to get converted stats from canonical formulas
+function getCreatureStats(id: CreatureTypeId) {
+  const templateId = CREATURE_TYPE_TO_TEMPLATE[id as number];
+  if (templateId === undefined) {
+    throw new Error(`No template mapping for creature ID: ${id}`);
+  }
+  return convertCreatureStats(templateId);
+}
+
 // Creature data matching the original game's balance
-// Values derived from decompiled creature_type_table initialization
+// Values derived from decompiled creature_type_table via creature-conversions.ts
 export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   [CreatureTypeId.ZOMBIE]: {
     name: 'Zombie',
-    health: 40,
-    speed: 60,
+    ...getCreatureStats(CreatureTypeId.ZOMBIE),
     size: 1.0,
     hitboxRadius: 16,
-    contactDamage: 10,
     rewardXP: 10,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.2,
@@ -56,11 +70,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.ZOMBIE_FAST]: {
     name: 'Fast Zombie',
-    health: 25,
-    speed: 100,
+    ...getCreatureStats(CreatureTypeId.ZOMBIE_FAST),
     size: 0.9,
     hitboxRadius: 14,
-    contactDamage: 8,
     rewardXP: 15,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.5,
@@ -71,11 +83,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.ZOMBIE_TANK]: {
     name: 'Tank Zombie',
-    health: 120,
-    speed: 30,
+    ...getCreatureStats(CreatureTypeId.ZOMBIE_TANK),
     size: 1.3,
     hitboxRadius: 22,
-    contactDamage: 20,
     rewardXP: 30,
     defaultAiMode: AiMode.CHASE,
     animRate: 0.9,
@@ -86,11 +96,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.SPIDER_SMALL]: {
     name: 'Small Spider',
-    health: 20,
-    speed: 80,
+    ...getCreatureStats(CreatureTypeId.SPIDER_SMALL),
     size: 0.6,
     hitboxRadius: 10,
-    contactDamage: 5,
     rewardXP: 12,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.8,
@@ -101,11 +109,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.SPIDER_LARGE]: {
     name: 'Large Spider',
-    health: 60,
-    speed: 50,
+    ...getCreatureStats(CreatureTypeId.SPIDER_LARGE),
     size: 1.1,
     hitboxRadius: 18,
-    contactDamage: 15,
     rewardXP: 25,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.3,
@@ -116,11 +122,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.ALIEN_TROOPER]: {
     name: 'Alien Trooper',
-    health: 50,
-    speed: 70,
+    ...getCreatureStats(CreatureTypeId.ALIEN_TROOPER),
     size: 1.0,
     hitboxRadius: 16,
-    contactDamage: 12,
     rewardXP: 20,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.1,
@@ -131,11 +135,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.ALIEN_ELITE]: {
     name: 'Alien Elite',
-    health: 80,
-    speed: 60,
+    ...getCreatureStats(CreatureTypeId.ALIEN_ELITE),
     size: 1.1,
     hitboxRadius: 18,
-    contactDamage: 18,
     rewardXP: 35,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.0,
@@ -146,11 +148,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.GHOST]: {
     name: 'Ghost',
-    health: 30,
-    speed: 90,
+    ...getCreatureStats(CreatureTypeId.GHOST),
     size: 1.0,
     hitboxRadius: 14,
-    contactDamage: 8,
     rewardXP: 25,
     defaultAiMode: AiMode.WANDER,
     animRate: 1.4,
@@ -161,11 +161,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.LIZARD]: {
     name: 'Lizard',
-    health: 83,
-    speed: 110,
+    ...getCreatureStats(CreatureTypeId.LIZARD),
     size: 1.0,
     hitboxRadius: 16,
-    contactDamage: 12,
     rewardXP: 22,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.3,
@@ -176,11 +174,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.LIZARD_KING]: {
     name: 'Lizard King',
-    health: 1500,
-    speed: 126,
+    ...getCreatureStats(CreatureTypeId.LIZARD_KING),
     size: 1.6,
     hitboxRadius: 26,
-    contactDamage: 35,
     rewardXP: 500,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.0,
@@ -191,11 +187,9 @@ export const CREATURE_DATA: Record<CreatureTypeId, CreatureData> = {
   },
   [CreatureTypeId.LIZARD_MINION]: {
     name: 'Lizard Minion',
-    health: 73,
-    speed: 110,
+    ...getCreatureStats(CreatureTypeId.LIZARD_MINION),
     size: 0.95,
     hitboxRadius: 15,
-    contactDamage: 10,
     rewardXP: 18,
     defaultAiMode: AiMode.CHASE,
     animRate: 1.3,

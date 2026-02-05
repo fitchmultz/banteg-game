@@ -166,10 +166,22 @@ describe('Creature Data', () => {
     const zombie = getCreatureData(CreatureTypeId.ZOMBIE);
     const fastZombie = getCreatureData(CreatureTypeId.ZOMBIE_FAST);
     const tankZombie = getCreatureData(CreatureTypeId.ZOMBIE_TANK);
+    const lizardKing = getCreatureData(CreatureTypeId.LIZARD_KING);
 
+    // Fast Zombie has higher speed than Zombie (canonical: 60 vs 31)
     expect(fastZombie.speed).toBeGreaterThan(zombie.speed);
+
+    // Tank Zombie has higher health than Zombie (canonical: 82 vs 72)
     expect(tankZombie.health).toBeGreaterThan(zombie.health);
-    expect(tankZombie.speed).toBeLessThan(zombie.speed);
+
+    // Lizard King (boss) has dramatically different stats
+    expect(lizardKing.health).toBeGreaterThan(tankZombie.health * 10);
+    expect(lizardKing.contactDamage).toBeGreaterThan(tankZombie.contactDamage);
+
+    // All creatures should have defined stats
+    expect(zombie.contactDamage).toBeGreaterThan(0);
+    expect(fastZombie.contactDamage).toBeGreaterThan(0);
+    expect(tankZombie.contactDamage).toBeGreaterThan(0);
   });
 });
 

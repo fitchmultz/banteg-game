@@ -223,87 +223,61 @@ describe('Creature Parity', () => {
 
   // Per-field stat parity tests
   describe('Creature Stat Parity', () => {
-    it('should have health values in reasonable ranges', () => {
-      // Creature health in canonical is based on randomized size formulas
-      // Gameplay uses representative values within expected ranges
-      const badHealth: string[] = [];
+    it('should have exact health parity with canonical values', () => {
+      // Creature health now uses grim.dll conversion formulas for exact parity
+      const mismatches: string[] = [];
       for (const canonicalCreature of canonical.creatures) {
         const tsCreature = CREATURE_DATA[canonicalCreature.id as CreatureTypeId];
         if (!tsCreature) continue;
 
-        // Check that gameplay health is reasonable (10 to 2000)
-        if (tsCreature.health < 10 || tsCreature.health > 2000) {
-          badHealth.push(
-            `${canonicalCreature.name}: ts=${tsCreature.health} (should be 10-2000)`
+        if (tsCreature.health !== canonicalCreature.health) {
+          mismatches.push(
+            `${canonicalCreature.name}: ts=${tsCreature.health}, canonical=${canonicalCreature.health}`
           );
         }
       }
-      if (badHealth.length > 0) {
-        console.log('Bad creature health values:', badHealth);
+      if (mismatches.length > 0) {
+        console.log('Creature health mismatches:', mismatches);
       }
-      expect(badHealth).toEqual([]);
+      expect(mismatches).toEqual([]);
     });
 
-    it('should have speed values in reasonable ranges', () => {
-      // Creature speed varies by type
-      const badSpeeds: string[] = [];
+    it('should have exact speed parity with canonical values', () => {
+      // Creature speed now uses grim.dll conversion formulas for exact parity
+      const mismatches: string[] = [];
       for (const canonicalCreature of canonical.creatures) {
         const tsCreature = CREATURE_DATA[canonicalCreature.id as CreatureTypeId];
         if (!tsCreature) continue;
 
-        // Check that gameplay speed is reasonable (20 to 150)
-        if (tsCreature.speed < 20 || tsCreature.speed > 150) {
-          badSpeeds.push(
-            `${canonicalCreature.name}: ts=${tsCreature.speed} (should be 20-150)`
+        if (tsCreature.speed !== canonicalCreature.speed) {
+          mismatches.push(
+            `${canonicalCreature.name}: ts=${tsCreature.speed}, canonical=${canonicalCreature.speed}`
           );
         }
       }
-      if (badSpeeds.length > 0) {
-        console.log('Bad creature speed values:', badSpeeds);
+      if (mismatches.length > 0) {
+        console.log('Creature speed mismatches:', mismatches);
       }
-      expect(badSpeeds).toEqual([]);
+      expect(mismatches).toEqual([]);
     });
 
-    it('should have contactDamage values in reasonable ranges', () => {
-      const badDamage: string[] = [];
+    it('should have exact contact damage parity with canonical values', () => {
+      // Creature damage now uses grim.dll conversion formulas for exact parity
+      const mismatches: string[] = [];
       for (const canonicalCreature of canonical.creatures) {
         const tsCreature = CREATURE_DATA[canonicalCreature.id as CreatureTypeId];
         if (!tsCreature) continue;
 
-        // Check that gameplay damage is reasonable (1 to 50)
-        if (tsCreature.contactDamage < 1 || tsCreature.contactDamage > 50) {
-          badDamage.push(
-            `${canonicalCreature.name}: ts=${tsCreature.contactDamage} (should be 1-50)`
+        if (tsCreature.contactDamage !== canonicalCreature.damage) {
+          mismatches.push(
+            `${canonicalCreature.name}: ts=${tsCreature.contactDamage}, canonical=${canonicalCreature.damage}`
           );
         }
       }
-      if (badDamage.length > 0) {
-        console.log('Bad creature damage values:', badDamage);
+      if (mismatches.length > 0) {
+        console.log('Creature damage mismatches:', mismatches);
       }
-      expect(badDamage).toEqual([]);
-    });
-
-    it('should match canonical Lizard King health (boss has fixed value)', () => {
-      // Lizard King is a boss with fixed health in both canonical and gameplay
-      const lizardKing = canonical.creatures.find((c: { id: number }) => c.id === 9);
-      const tsLizardKing = CREATURE_DATA[9];
-      
-      if (lizardKing && tsLizardKing) {
-        // Boss health is fixed at 1500 in both canonical and gameplay
-        expect(tsLizardKing.health).toBe(lizardKing.health);
-      }
-    });
-
-    it('should have reasonable Lizard King contact damage', () => {
-      // Lizard King damage in canonical is 150, but gameplay uses 35
-      // This is an intentional gameplay balance adjustment
-      const tsLizardKing = CREATURE_DATA[9];
-      
-      if (tsLizardKing) {
-        // Damage should be in reasonable boss range (20-200)
-        expect(tsLizardKing.contactDamage).toBeGreaterThanOrEqual(20);
-        expect(tsLizardKing.contactDamage).toBeLessThanOrEqual(200);
-      }
+      expect(mismatches).toEqual([]);
     });
   });
 });
@@ -327,62 +301,43 @@ describe('Bonus Parity', () => {
 
   // Per-field stat parity tests
   describe('Bonus Stat Parity', () => {
-    it('should have durations in reasonable ranges', () => {
-      // Bonus duration in canonical: -1 = permanent, 0 = instant, >0 = seconds
-      // Gameplay uses same convention
-      const badDurations: string[] = [];
+    it('should have exact duration parity with canonical values', () => {
+      // Bonus durations now use grim.dll conversion formulas for exact parity
+      const mismatches: string[] = [];
       for (const canonicalBonus of canonical.bonuses) {
         const tsBonus = BONUS_DATA[canonicalBonus.id as BonusType];
         if (!tsBonus) continue;
 
-        // Skip permanent (-1) and instant (0) bonuses
-        if (canonicalBonus.duration <= 0) continue;
-
-        // Check that gameplay duration is reasonable (1 to 30 seconds)
-        if (tsBonus.duration < 1 || tsBonus.duration > 30) {
-          badDurations.push(
-            `${canonicalBonus.name}: ts=${tsBonus.duration} (should be 1-30 for timed bonuses)`
+        if (tsBonus.duration !== canonicalBonus.duration) {
+          mismatches.push(
+            `${canonicalBonus.name}: ts=${tsBonus.duration}, canonical=${canonicalBonus.duration}`
           );
         }
       }
-      if (badDurations.length > 0) {
-        console.log('Bad bonus durations:', badDurations);
+      if (mismatches.length > 0) {
+        console.log('Bonus duration mismatches:', mismatches);
       }
-      expect(badDurations).toEqual([]);
+      expect(mismatches).toEqual([]);
     });
 
-    it('should have rarities in reasonable ranges', () => {
-      // Bonus rarity determines spawn weight
-      // Rarity 0 in canonical means "special spawn logic", minimum 1 for gameplay
-      const badRarities: string[] = [];
+    it('should have exact rarity parity with canonical values (after conversion)', () => {
+      // Bonus rarities now use grim.dll conversion formulas for exact parity
+      // Rarity 0 in canonical (special spawn) is converted to 1 in gameplay
+      const mismatches: string[] = [];
       for (const canonicalBonus of canonical.bonuses) {
         const tsBonus = BONUS_DATA[canonicalBonus.id as BonusType];
         if (!tsBonus) continue;
 
-        // Check that gameplay rarity is reasonable (1 to 1000)
-        if (tsBonus.rarity < 1 || tsBonus.rarity > 1000) {
-          badRarities.push(
-            `${canonicalBonus.name}: ts=${tsBonus.rarity} (should be 1-1000)`
+        if (tsBonus.rarity !== canonicalBonus.rarity) {
+          mismatches.push(
+            `${canonicalBonus.name}: ts=${tsBonus.rarity}, canonical=${canonicalBonus.rarity}`
           );
         }
       }
-      if (badRarities.length > 0) {
-        console.log('Bad bonus rarities:', badRarities);
+      if (mismatches.length > 0) {
+        console.log('Bonus rarity mismatches:', mismatches);
       }
-      expect(badRarities).toEqual([]);
-    });
-
-    it('should match Points bonus stats (most common bonus)', () => {
-      // Points bonus (ID 0) has well-defined canonical values
-      const pointsBonus = canonical.bonuses.find((b: { id: number }) => b.id === 0);
-      const tsPointsBonus = BONUS_DATA[0];
-      
-      if (pointsBonus && tsPointsBonus) {
-        // Duration should match (12 seconds)
-        expect(tsPointsBonus.duration).toBe(pointsBonus.duration);
-        // Rarity should match (500)
-        expect(tsPointsBonus.rarity).toBe(pointsBonus.rarity);
-      }
+      expect(mismatches).toEqual([]);
     });
   });
 });
