@@ -20,6 +20,8 @@ import {
   convertClipSize,
   getPelletCount,
 } from '../src/game/data/weapon-conversions';
+import { convertCreatureStats } from '../src/game/data/creature-conversions';
+import { convertBonusStats } from '../src/game/data/bonus-conversions';
 
 // ============================================================================
 // Types
@@ -427,29 +429,32 @@ function extractBonusData(content: string): CanonicalData['bonuses'] {
     const hexDuration = hexAssignments[pattern.durationAddr];
     const hexRarity = hexAssignments[pattern.rarityAddr];
 
-    let duration = 0;
-    let rarity = 0;
+    let canonicalDuration = 0;
+    let canonicalRarity = 0;
 
     if (hexDuration) {
       if (hexDuration.startsWith('0x')) {
         const val = hexToInt(hexDuration);
         // Duration can be negative (-1 = unlimited)
-        duration = val > 0x7fffffff ? val - 0x100000000 : val;
+        canonicalDuration = val > 0x7fffffff ? val - 0x100000000 : val;
       } else {
-        duration = Number.parseInt(hexDuration, 10);
+        canonicalDuration = Number.parseInt(hexDuration, 10);
       }
     }
 
     if (hexRarity) {
-      rarity = hexRarity.startsWith('0x') ? hexToInt(hexRarity) : Number.parseInt(hexRarity, 10);
+      canonicalRarity = hexRarity.startsWith('0x') ? hexToInt(hexRarity) : Number.parseInt(hexRarity, 10);
     }
+
+    // Apply conversion for gameplay values
+    const converted = convertBonusStats(canonicalRarity, canonicalDuration, pattern.id);
 
     bonuses.push({
       id: pattern.id,
       name: bonusNames[pattern.id],
       description: '', // Would need to extract from string literals
-      duration,
-      rarity,
+      duration: converted.duration,
+      rarity: converted.rarity,
     });
   }
 
@@ -463,256 +468,51 @@ function extractBonusData(content: string): CanonicalData['bonuses'] {
 
 /**
  * CREATURE STAT CONVERSION
- * 
+ *
  * The creature_spawn_template uses randomized stats based on creature size.
+ * We now use the conversion functions from creature-conversions.ts which
+ * implement the grim.dll runtime conversion logic.
+ *
  * The formulas in the decompiled source use:
  *   - health = size * multiplier + base_offset
- *   - move_speed = size * speed_factor + base_speed
- * 
- * We extract representative "average" values using typical size ranges.
- * Speed is converted from move_speed (units/sec) to game speed values.
+ *   - move_speed varies by template (size-based or random)
+ *   - contact_damage = rand() % 10 + 4
  */
-const CREATURE_SPEED_MULTIPLIER = 30; // move_speed * 30 ≈ game speed
 
 /**
  * Creature template info extracted from creature_spawn_template decompiled source.
  *
- * The creature_spawn_template function uses template_id to determine creature stats.
- * We extract the base templates that map to CreatureTypeId 0-10.
- * 
- * Creature stats are randomized based on size, so we calculate average values
- * using the typical size ranges from the decompiled formulas.
+ * Uses the conversion functions from creature-conversions.ts to convert
+ * raw engine values to gameplay values.
  */
 function extractCreatureData(_content: string): CanonicalData['creatures'] {
-  type TemplateFormula = {
-    typeId: number;
-    sizeRange: [number, number]; // min, max size from rand() % range + offset
-    healthMult: number;
-    healthOffset: number;
-    speedBase: number;
-    speedFactor: number;
-    damageRange?: [number, number];
-    damageFormula?: 'random' | 'fixed';
-    flags: number;
-  };
-
-  // Extract template formulas from decompiled source analysis
-  // These formulas come from parsing the creature_spawn_template function
-  const templateFormulas: Record<number, TemplateFormula> = {
-    // Zombie: template_id 0x41, type_id 0
-    // size = rand() % 30 + 40 (40-69), health = size * 1.1428572 + 10
-    // move_speed = size * 0.0025 + 0.9, damage = rand() % 10 + 4
-    65: {
-      typeId: 0,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 10,
-      speedBase: 0.9,
-      speedFactor: 0.0025,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Fast Zombie: template_id 0x1a, type_id 2
-    // size = rand() % 30 + 40, health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1, damage = rand() % 10 + 4
-    26: {
-      typeId: 2,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1, // applied to rand() % 18
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Tank Zombie: template_id 0x24, type_id 2
-    // size = rand() % 30 + 40, health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1
-    36: {
-      typeId: 2,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Small Spider: template_id 0x40, type_id 3
-    // size = rand() % 15 + 45 (45-59), health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1, damage = rand() % 10 + 4
-    64: {
-      typeId: 3,
-      sizeRange: [45, 59],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Large Spider: template_id 0x3d, type_id 3
-    // size = rand() % 20 + 40 (40-59), health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1, damage = rand() % 10 + 4
-    61: {
-      typeId: 3,
-      sizeRange: [40, 59],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Alien Trooper: template_id 5, type_id 4
-    // size = rand() % 30 + 40, health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1
-    5: {
-      typeId: 4,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Alien Elite: template_id 1, type_id 4
-    // Based on boss template with fixed higher stats
-    1: {
-      typeId: 4,
-      sizeRange: [55, 55], // Fixed size
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 8,
-    },
-    // Ghost: template_id 0x21, type_id 2
-    // size = rand() % 30 + 40, health = size * 1.1428572 + 20
-    // move_speed = rand() % 18 * 0.1 + 1.1
-    33: {
-      typeId: 2,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 20,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Lizard: template_id 0x31, type_id 1
-    // size = rand() % 30 + 40, health = size * 1.1428572 + 10
-    // move_speed = rand() % 18 * 0.1 + 1.1
-    49: {
-      typeId: 1,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 10,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-    // Lizard King: template_id 0x11, type_id 1
-    // Boss with fixed high stats: health 1500, move_speed 2.1, damage 150
-    17: {
-      typeId: 1,
-      sizeRange: [69, 69],
-      healthMult: 0,
-      healthOffset: 1500, // Fixed boss health
-      speedBase: 2.1,
-      speedFactor: 0,
-      damageRange: [150, 150],
-      damageFormula: 'fixed',
-      flags: 2,
-    },
-    // Lizard Minion: template_id 0x2e, type_id 1
-    // Minion with stats derived from size
-    46: {
-      typeId: 1,
-      sizeRange: [40, 69],
-      healthMult: 1.1428572,
-      healthOffset: 10,
-      speedBase: 1.1,
-      speedFactor: 0.1,
-      damageRange: [4, 13],
-      damageFormula: 'random',
-      flags: 0,
-    },
-  };
-
-  /**
-   * Calculate average health from formula: size * multiplier + offset
-   */
-  const calcHealth = (formula: TemplateFormula): number => {
-    if (formula.healthMult === 0) return formula.healthOffset;
-    const avgSize = (formula.sizeRange[0] + formula.sizeRange[1]) / 2;
-    return avgSize * formula.healthMult + formula.healthOffset;
-  };
-
-  /**
-   * Calculate average speed from formula
-   */
-  const calcSpeed = (formula: TemplateFormula): number => {
-    // For formulas with random speed component, use average
-    if (formula.speedFactor > 0.01) {
-      // rand() % 18 * speedFactor + base
-      const avgRand = 9; // average of 0-17
-      return (avgRand * formula.speedFactor + formula.speedBase) * CREATURE_SPEED_MULTIPLIER;
-    }
-    // For move_speed based on size
-    const avgSize = (formula.sizeRange[0] + formula.sizeRange[1]) / 2;
-    return (avgSize * formula.speedFactor + formula.speedBase) * CREATURE_SPEED_MULTIPLIER;
-  };
-
-  /**
-   * Calculate average damage
-   */
-  const calcDamage = (formula: TemplateFormula): number => {
-    if (!formula.damageRange) return 10;
-    return (formula.damageRange[0] + formula.damageRange[1]) / 2;
-  };
-
   const creatures: CanonicalData['creatures'] = [];
 
   // Creature mappings from template_id to creature ID
-  const creatureMappings: Array<{ id: number; name: string; templateId: number }> = [
-    { id: 0, name: 'Zombie', templateId: 0x41 },
-    { id: 1, name: 'Fast Zombie', templateId: 0x1a },
-    { id: 2, name: 'Tank Zombie', templateId: 0x24 },
-    { id: 3, name: 'Small Spider', templateId: 0x40 },
-    { id: 4, name: 'Large Spider', templateId: 0x3d },
-    { id: 5, name: 'Alien Trooper', templateId: 5 },
-    { id: 6, name: 'Alien Elite', templateId: 1 },
-    { id: 7, name: 'Ghost', templateId: 0x21 },
-    { id: 8, name: 'Lizard', templateId: 0x31 },
-    { id: 9, name: 'Lizard King', templateId: 0x11 },
-    { id: 10, name: 'Lizard Minion', templateId: 0x2e },
+  const creatureMappings: Array<{ id: number; name: string; templateId: number; flags: number }> = [
+    { id: 0, name: 'Zombie', templateId: 0x41, flags: 0 },
+    { id: 1, name: 'Fast Zombie', templateId: 0x1a, flags: 0 },
+    { id: 2, name: 'Tank Zombie', templateId: 0x24, flags: 0 },
+    { id: 3, name: 'Small Spider', templateId: 0x40, flags: 0 },
+    { id: 4, name: 'Large Spider', templateId: 0x3d, flags: 0 },
+    { id: 5, name: 'Alien Trooper', templateId: 0x05, flags: 0 },
+    { id: 6, name: 'Alien Elite', templateId: 0x01, flags: 8 },
+    { id: 7, name: 'Ghost', templateId: 0x21, flags: 0 },
+    { id: 8, name: 'Lizard', templateId: 0x31, flags: 0 },
+    { id: 9, name: 'Lizard King', templateId: 0x11, flags: 2 },
+    { id: 10, name: 'Lizard Minion', templateId: 0x2e, flags: 0 },
   ];
 
   for (const mapping of creatureMappings) {
-    const formula = templateFormulas[mapping.templateId];
-    if (formula) {
-      creatures.push({
-        id: mapping.id,
-        name: mapping.name,
-        health: Math.round(calcHealth(formula)),
-        speed: Math.round(calcSpeed(formula)),
-        damage: Math.round(calcDamage(formula)),
-        flags: formula.flags,
-      });
-    }
+    const stats = convertCreatureStats(mapping.templateId);
+    creatures.push({
+      id: mapping.id,
+      name: mapping.name,
+      health: stats.health,
+      speed: stats.speed,
+      damage: stats.contactDamage,
+      flags: mapping.flags,
+    });
   }
 
   return creatures.sort((a, b) => a.id - b.id);
