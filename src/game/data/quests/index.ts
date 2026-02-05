@@ -1,8 +1,7 @@
 /**
- * Quest Data Definitions (Legacy Barrel)
+ * Quest Data Module
  *
- * @deprecated Import from './quests/' subdirectory instead.
- * This file is maintained for backward compatibility.
+ * Re-exports all quest-related types, data, and utilities.
  */
 
 // Types
@@ -11,10 +10,10 @@ export type {
   QuestObjectiveType,
   QuestObjective,
   QuestData,
-} from './quests/types';
+} from './types';
 
 // Data
-export { ALL_QUESTS, QUEST_DATA_MAP } from './quests/data';
+export { ALL_QUESTS, QUEST_DATA_MAP } from './data';
 
 // Query functions
 export {
@@ -26,4 +25,4 @@ export {
   getNextQuest,
   areAllMainQuestsCompleted,
   getQuestStats,
-} from './quests/queries';
+} from './queries';
