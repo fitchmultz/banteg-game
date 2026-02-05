@@ -527,17 +527,17 @@ export class RenderSystem extends System {
       // Single player HUD (original layout)
       const player = sortedPlayers[0];
       if (player) {
-        this.renderSinglePlayerHUD(player, 10);
+        this.renderSinglePlayerHUD(player, 20);
       }
     } else {
       // Two-player HUD (side by side)
       const player1 = sortedPlayers[0];
       const player2 = sortedPlayers[1];
       if (player1) {
-        this.renderPlayerHUD(player1, 10, true); // P1 on left
+        this.renderPlayerHUD(player1, 20, true); // P1 on left
       }
       if (player2) {
-        this.renderPlayerHUD(player2, rightEdge - 220, false); // P2 on right
+        this.renderPlayerHUD(player2, rightEdge - 210, false); // P2 on right (adjusted for left padding change)
       }
     }
 
