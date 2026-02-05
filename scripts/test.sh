@@ -2,37 +2,33 @@
 # Run vitest and handle worker cleanup errors that occur after tests pass
 # This script ensures CI passes when all tests actually pass, despite vitest/tinypool cleanup issues
 
-set -e
-
-# Run vitest and capture output
-OUTPUT=$(NODE_OPTIONS='--max-old-space-size=16384' pnpm vitest run 2>&1) || true
+# Run vitest and capture output and exit code
+OUTPUT=$(NODE_OPTIONS='--max-old-space-size=16384' pnpm vitest run 2>&1) || EXIT_CODE=$?
 
 # Print output for visibility
 echo "$OUTPUT"
 
 # Check for actual test failures (not worker cleanup errors)
-# Look for patterns that indicate real test failures
-FAILED_TESTS=$(echo "$OUTPUT" | grep -E "(FAIL|✗|AssertionError|expect\(|Test Files.*failed)" | grep -v "passed.*failed" | grep -v "Errors.*error" || true)
+# Look for FAIL patterns that indicate real test failures
+FAILED_TEST_FILES=$(echo "$OUTPUT" | grep -E "FAIL\s+tests?/" || true)
+FAILED_ASSERTIONS=$(echo "$OUTPUT" | grep -E "(AssertionError|expect\()" || true)
 
-# Check final test summary
-TEST_SUMMARY=$(echo "$OUTPUT" | grep -E "Test Files.*passed" || true)
+# Check final test summary - look for "failed" in the summary line with non-zero count
+TEST_SUMMARY_FAILED=$(echo "$OUTPUT" | grep -E "Test Files.*\(\d+ failed\)" || true)
 
-if echo "$TEST_SUMMARY" | grep -E "failed" | grep -v "failed.*0" > /dev/null; then
+# If there are actual test file failures or assertion errors, fail
+if [ -n "$FAILED_TEST_FILES" ] || [ -n "$FAILED_ASSERTIONS" ] || [ -n "$TEST_SUMMARY_FAILED" ]; then
     echo ""
     echo "❌ Tests failed - check output above"
     exit 1
 fi
 
-if [ -n "$FAILED_TESTS" ]; then
-    echo ""
-    echo "❌ Tests failed:"
-    echo "$FAILED_TESTS"
-    exit 1
-fi
+# Check for passing tests
+TEST_SUMMARY_PASSED=$(echo "$OUTPUT" | grep -E "Test Files.*passed" || true)
 
-if echo "$TEST_SUMMARY" | grep -E "passed" > /dev/null; then
+if [ -n "$TEST_SUMMARY_PASSED" ]; then
     echo ""
-    echo "✅ All tests passed (worker cleanup error is a known vitest/tinypool issue)"
+    echo "✅ All tests passed"
     exit 0
 fi
 

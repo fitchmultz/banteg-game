@@ -765,7 +765,17 @@ export function generatePerkChoices(
   const choices: PerkId[] = [];
   const used = new Set<PerkId>();
 
-  while (choices.length < 3 && used.size < available.length) {
+  // Guard against empty weighted array
+  if (weighted.length === 0) {
+    return [];
+  }
+
+  // Safety limit to prevent infinite loops
+  let iterations = 0;
+  const MAX_ITERATIONS = weighted.length * 10;
+
+  while (choices.length < 3 && used.size < available.length && iterations < MAX_ITERATIONS) {
+    iterations++;
     const randomIndex = Math.floor(Math.random() * weighted.length);
     const perkId = weighted[randomIndex];
 

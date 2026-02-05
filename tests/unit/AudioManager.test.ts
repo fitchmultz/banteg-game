@@ -151,18 +151,28 @@ describe('AudioManager', () => {
     });
 
     it('should resume suspended context on init', async () => {
-      const ctx = new MockAudioContext();
-      ctx.state = 'suspended';
+      // Create a mock AudioContext that starts in suspended state
+      class SuspendedMockAudioContext extends MockAudioContext {
+        state = 'suspended';
+        resumeCalled = false;
 
-      vi.stubGlobal(
-        'AudioContext',
-        vi.fn(() => ctx)
-      );
+        async resume(): Promise<void> {
+          this.resumeCalled = true;
+          this.state = 'running';
+          return Promise.resolve();
+        }
+      }
 
-      const resumeSpy = vi.spyOn(ctx, 'resume');
-      await audio.initialize();
+      vi.stubGlobal('AudioContext', SuspendedMockAudioContext);
 
-      expect(resumeSpy).toHaveBeenCalled();
+      const customAudio = new AudioManager();
+      await customAudio.initialize();
+
+      const ctx = (customAudio as unknown as { ctx: SuspendedMockAudioContext | null }).ctx;
+      expect(ctx?.resumeCalled).toBe(true);
+      expect(ctx?.state).toBe('running');
+
+      customAudio.destroy();
     });
   });
 

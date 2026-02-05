@@ -13,6 +13,13 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { join } from 'node:path';
+import {
+  convertDamage,
+  convertFireRate,
+  convertReloadTime,
+  convertClipSize,
+  getPelletCount,
+} from '../src/game/data/weapon-conversions';
 
 // ============================================================================
 // Types
@@ -64,67 +71,17 @@ interface CanonicalData {
 // ============================================================================
 
 /**
- * WEAPON STAT CONVERSION NOTES
+ * WEAPON STAT CONVERSION
  * 
- * The decompiled weapon_table_init stores values in what appears to be
- * "engine units" that get transformed at runtime. Based on test analysis:
+ * This extractor now uses the proper conversion functions from
+ * weapon-conversions.ts which implement the grim.dll runtime logic.
  * 
- * DAMAGE:
- *   - Raw hex values are small floats (0.14 for Pistol)
- *   - These get multiplied by ~100 to get reasonable damage values
- *   - Conversion is consistent: raw * 100 ≈ expected damage
- * 
- * FIRE RATE:
- *   - Raw values appear to be in different units than seconds-between-shots
- *   - Pistol: 1.2 raw vs 0.3 expected (ratio ~0.25 = 1/4)
- *   - This suggests fireRate might be shots-per-second in decompile,
- *     but the game uses seconds-between-shots
- *   - Conversion: 1 / raw ≈ expected (with some variation)
- * 
- * RELOAD TIME:
- *   - Raw values are small (0.22 for Pistol)
- *   - Expected is ~1.2 seconds
- *   - Ratio varies significantly (5x to 40x)
- *   - Likely represents frame counts or animation cycles
- * 
- * CLIP SIZE:
- *   - Raw values don't consistently map to magazine sizes
- *   - Pistol: 112 raw vs 12 expected
- *   - Assault Rifle: 12 raw vs 30 expected
- *   - These represent different ammo systems in the original engine
- * 
- * CONCLUSION:
- * The decompiled values need runtime conversion by the original grim.dll
- * engine. Our extraction provides baseline values, but gameplay tuning
- * requires manual adjustments documented in DEVIATIONS.
+ * Key conversions:
+ * - DAMAGE: raw * 100 * category_multiplier
+ * - FIRE RATE: Converted from shots-per-second to seconds-between-shots
+ * - RELOAD TIME: Frame counts converted to seconds based on weapon type
+ * - CLIP SIZE: Hardcoded mappings from engine units to magazine capacity
  */
-
-/**
- * DAMAGE CONVERSION
- * Raw damage floats get multiplied by 100 to produce reasonable damage values.
- */
-const WEAPON_DAMAGE_MULTIPLIER = 100;
-
-/**
- * FIRE RATE CONVERSION
- * Decompiled values appear to be shots-per-second, not seconds-between-shots.
- * We extract raw for reference; actual conversion is game-specific.
- */
-const FIRE_RATE_CONVERSION = 1.0;
-
-/**
- * RELOAD TIME CONVERSION
- * Decompiled values are in engine units (likely frames), not seconds.
- * We extract raw for reference; actual conversion is game-specific.
- */
-const RELOAD_TIME_CONVERSION = 1.0;
-
-/**
- * CLIP SIZE CONVERSION
- * Decompiled values represent engine ammo units, not magazine capacity.
- * We extract raw for reference; gameplay uses manually tuned values.
- */
-const CLIP_SIZE_CONVERSION = 1.0;
 
 // ============================================================================
 // Hex Float Conversion
@@ -370,18 +327,21 @@ function extractWeaponData(content: string): CanonicalData['weapons'] {
     const rawReloadTime = hexReload ? hexToFloat(hexReload) : 0;
     const rawClipSize = hexClip ? hexToInt(hexClip) : 0;
 
-    // Convert damage: small floats to reasonable damage values
-    // The decompile stores damage per tick/frame, not per shot
-    const convertedDamage = Math.max(1, Math.round(rawDamage * WEAPON_DAMAGE_MULTIPLIER));
+    // Use proper conversion functions derived from grim.dll analysis
+    const convertedDamage = convertDamage(rawDamage, pattern.id);
+    const convertedFireRate = convertFireRate(rawFireRate, pattern.id);
+    const convertedReloadTime = convertReloadTime(rawReloadTime, pattern.id);
+    const convertedClipSize = convertClipSize(rawClipSize, pattern.id);
+    const pelletCount = getPelletCount(pattern.id);
 
     weapons.push({
       id: pattern.id,
       name: pattern.name,
       damage: convertedDamage,
-      fireRate: rawFireRate * FIRE_RATE_CONVERSION,
-      reloadTime: rawReloadTime * RELOAD_TIME_CONVERSION,
-      clipSize: Math.round(rawClipSize * CLIP_SIZE_CONVERSION),
-      pelletCount: 1,
+      fireRate: convertedFireRate,
+      reloadTime: convertedReloadTime,
+      clipSize: convertedClipSize,
+      pelletCount,
       projectileType: 0,
     });
   }
