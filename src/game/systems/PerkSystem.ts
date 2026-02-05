@@ -211,7 +211,26 @@ export class PerkSystem {
         case 'special_ammo_refill_on_pickup':
         case 'special_shield_on_hit':
         case 'special_regression_bullets':
-        case 'special_time_slow_on_hit': {
+        case 'special_time_slow_on_hit':
+        case 'special_radioactive_aura':
+        case 'special_evil_eyes':
+        case 'special_uranium_dot':
+        case 'special_poison_dot':
+        case 'special_dodger':
+        case 'special_final_revenge':
+        case 'special_veins_of_poison':
+        case 'special_toxic_avenger':
+        case 'special_ninja':
+        case 'special_ion_gun_master':
+        case 'special_angry_reloader':
+        case 'special_stationary_reloader':
+        case 'special_man_bomb':
+        case 'special_fire_caugh':
+        case 'special_living_fortress':
+        case 'special_tough_reloader':
+        case 'special_alternate_weapon':
+        case 'special_gore_intensity':
+        case 'special_bonus_magnet': {
           // These are handled by other systems checking perk counts
           break;
         }
@@ -977,11 +996,11 @@ export class PerkSystem {
   }
 
   /**
-   * Get gore intensity multiplier from Bloody Mess perk
+   * Get gore intensity multiplier from Bloody Mess perk (ID 1: BLOODY_MESS_QUICK_LEARNER)
    * Returns 1-4 based on rank (0-3)
    */
   getGoreIntensity(entityId: EntityId): number {
-    const rank = this.getPerkRank(entityId, PerkId.BLOODY_MESS);
+    const rank = this.getPerkRank(entityId, PerkId.BLOODY_MESS_QUICK_LEARNER);
     return 1 + rank; // Returns 1-4 based on rank (0-3)
   }
 

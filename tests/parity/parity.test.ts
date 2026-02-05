@@ -39,17 +39,14 @@ describe('Weapon Parity', () => {
 });
 
 describe('Perk Parity', () => {
-  // NOTE: Perks 45-57 are not yet implemented in TypeScript.
-  // Canonical data correctly has 58 perks (0-57) extracted from decompile.
-  // TypeScript currently has 45 perks (0-44).
-  // Skipping count/ID tests until remaining perks are implemented.
-  // See: Perk IDs 45-57 in tests/parity/canonical-data.json
+  // All 58 perks (IDs 0-57) are now implemented and match the decompiled source.
+  // See: tests/parity/canonical-data.json for canonical perk data.
 
-  it.skip('should have exactly the same number of perks as decompiled source', () => {
+  it('should have exactly the same number of perks as decompiled source', () => {
     expect(ALL_PERKS.length).toBe(canonical.perks.length);
   });
 
-  it.skip('should have matching perk IDs', () => {
+  it('should have matching perk IDs', () => {
     const tsIds = ALL_PERKS.map((p) => p.id).sort((a, b) => a - b);
     const canonicalIds = canonical.perks
       .map((p: { id: number }) => p.id)
